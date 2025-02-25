@@ -220,55 +220,55 @@ public:
     }
 
     [[nodiscard]] std::string get_compiled_query() const {
-        std::string result;
+        std::string query_string;
 
         // add a copyright section if it exists
         auto copyright_it = m_result_sections.find("copyright");
         if (copyright_it != m_result_sections.end()) {
-            result += copyright_it->second;
+            query_string += copyright_it->second;
         }
 
         // add a code section if it exists
         auto code_it = m_result_sections.find("code");
         if (code_it != m_result_sections.end()) {
-            result += code_it->second;
+            query_string += code_it->second;
         }
 
         // add a context section if it exists
         auto context_it = m_result_sections.find("context");
         if (context_it != m_result_sections.end()) {
-            result += context_it->second + "\n";
+            query_string += context_it->second + "\n";
         }
 
         // add a dependencies section if it exists
         auto dependencies_it = m_result_sections.find("dependencies");
         if (dependencies_it != m_result_sections.end()) {
-            result += dependencies_it->second + "\n";
+            query_string += dependencies_it->second + "\n";
         }
 
         // add a performance section if it exists
         auto performance_it = m_result_sections.find("performance");
         if (performance_it != m_result_sections.end()) {
-            result += performance_it->second + "\n";
+            query_string += performance_it->second + "\n";
         }
 
         // add test cases if we have any
         if (!m_test_cases.empty()) {
-            result += "Please include tests for the following cases:\n";
+            query_string += "Please include tests for the following cases:\n";
             for (const auto& test_case : m_test_cases) {
-                result += "- " + test_case + "\n";
+                query_string += "- " + test_case + "\n";
             }
-            result += "\n";
+            query_string += "\n";
         }
 
         // add a quality assurance section as a standard footer
-        result += "Quality Assurance Requirements:\n";
-        result += "- All code must be well-documented with comments\n";
-        result += "- Follow modern C++ best practices\n";
-        result += "- Ensure proper error handling\n";
-        result += "- Optimize for readability and maintainability\n";
+        query_string += "Quality Assurance Requirements:\n";
+        query_string += "- All code must be well-documented with comments\n";
+        query_string += "- Follow modern C++ best practices\n";
+        query_string += "- Ensure proper error handling\n";
+        query_string += "- Optimize for readability and maintainability\n";
 
-        return result;
+        return query_string;
     }
 
     void print_compiled_query(std::ostream& out = std::cout) const {
