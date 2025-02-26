@@ -91,12 +91,28 @@ code snippet libraries or documentation templates.
 
 ## Installation
 
+### Requirements
+
+- C++20 compatible compiler (GCC 10+, Clang 10+, MSVC 19.26+)
+- CMake 3.30 or higher
+- Git (for cloning the repository)
+
+### Building from Source
+
 ```bash
+# Clone the repository
 git clone https://github.com/dbjwhs/cql.git
 cd cql
+
+# Create a build directory and enter it
 mkdir build && cd build
+
+# Configure and build the project
 cmake ..
 make
+
+# Run the executable
+./cql --help
 ```
 
 ## Basic Usage
