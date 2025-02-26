@@ -895,8 +895,8 @@ void test_compiler() {
 
         // verify the compiled query contains expected sections
         assert(contains(result, "Please include the following copyright header"));
-        assert(contains(result, "// mit license"));
-        assert(contains(result, "// Copyright (c) 2025 dbjwhs"));
+        assert(contains(result, "MIT License"));
+        assert(contains(result, "Copyright (c) 2025 dbjwhs"));
         assert(contains(result, "Please generate C++ code that:"));
 
         Logger::getInstance().log(LogLevel::DEBUG, "Compiled query with copyright: ", result);
