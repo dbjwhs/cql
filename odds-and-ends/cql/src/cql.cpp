@@ -25,7 +25,7 @@
 //
 // common usage patterns:
 // 1. specification of technical requirements:
-//    @language "C++"
+//    @language "c++"
 //    @description "implement a thread-safe queue with timeout features"
 //
 // 2. providing implementation context:
@@ -42,7 +42,7 @@
 //    @performance "must handle 10k operations per second with <1ms latency"
 //
 // 5. copyright and license information:
-//    @copyright "MIT License" "2025 dbjwhs"
+//    @copyright "mit license" "2025 dbjwhs"
 
 // forward declarations
 class QueryNode;
@@ -297,7 +297,7 @@ enum class TokenType {
     END             // end of input
 };
 
-// utility function to convert TokenType to string
+// utility function to convert tokentype to string
 std::string token_type_to_string(TokenType type) {
     switch (type) {
         case TokenType::LANGUAGE: return "LANGUAGE";
@@ -895,7 +895,7 @@ void test_compiler() {
 
         // verify the compiled query contains expected sections
         assert(contains(result, "Please include the following copyright header"));
-        assert(contains(result, "// MIT License"));
+        assert(contains(result, "// mit license"));
         assert(contains(result, "// Copyright (c) 2025 dbjwhs"));
         assert(contains(result, "Please generate C++ code that:"));
 
@@ -1128,9 +1128,9 @@ bool process_file(const std::string& input_file, const std::string& output_file)
     }
 }
 
-#endif // CQL_HPP
+#endif // cql_hpp
 
-// main function for the CQL compiler
+// main function for the cql compiler
 int main(int argc, char* argv[]) {
     // initialize logger
     auto& logger = Logger::getInstance();
