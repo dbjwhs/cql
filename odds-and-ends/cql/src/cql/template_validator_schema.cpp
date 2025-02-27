@@ -231,8 +231,26 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
                 std::string var_name = match[1].str();
                 if (!std::regex_match(var_name, valid_name_regex)) {
                     issues.push_back(TemplateValidationIssue(
-                        TemplateValidationLevel::WARNING,
-                        "Variable name should contain only alphanumeric characters and underscores",
+                        TemplateValidationLevel::ERROR,
+                        "Variable name must contain only alphanumeric characters and underscores",
+                        var_name
+                    ));
+                }
+            }
+            search_start = match.suffix().first;
+        }
+        
+        // Also check variable declarations
+        std::regex var_decl_regex("@variable\\s+\"([^\"]+)\"");
+        search_start = content.begin();
+        
+        while (std::regex_search(search_start, content_end, match, var_decl_regex)) {
+            if (match.size() > 1) {
+                std::string var_name = match[1].str();
+                if (!std::regex_match(var_name, valid_name_regex)) {
+                    issues.push_back(TemplateValidationIssue(
+                        TemplateValidationLevel::ERROR,
+                        "Declared variable name must contain only alphanumeric characters and underscores",
                         var_name
                     ));
                 }
@@ -253,8 +271,8 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
             std::string desc = match[1].str();
             if (desc.length() < 10) {
                 issues.push_back(TemplateValidationIssue(
-                    TemplateValidationLevel::WARNING,
-                    "Description should be at least 10 characters long",
+                    TemplateValidationLevel::ERROR,
+                    "Description must be at least 10 characters long",
                     std::nullopt,
                     "@description"
                 ));
@@ -275,12 +293,44 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
             std::regex directive_regex(deprecated + "\\s+");
             if (std::regex_search(content, directive_regex)) {
                 issues.push_back(TemplateValidationIssue(
-                    TemplateValidationLevel::WARNING,
-                    "Deprecated directive found",
+                    TemplateValidationLevel::ERROR,
+                    "Deprecated directive found: " + deprecated,
                     std::nullopt,
                     deprecated
                 ));
             }
+        }
+        
+        return issues;
+    });
+    
+    // Rule: Check for unknown directives (malformed)
+    schema.add_validation_rule("unknown_directives", [](const std::string& content) {
+        std::vector<TemplateValidationIssue> issues;
+        std::regex directive_regex("^@([a-zA-Z0-9_]+)\\s+", std::regex::multiline);
+        std::set<std::string> known_directives = {
+            "@copyright", "@language", "@description", "@context", "@dependency", 
+            "@test", "@architecture", "@constraint", "@security", "@complexity",
+            "@example", "@variable", "@inherit", "@performance"
+        };
+        
+        std::string::const_iterator search_start(content.begin());
+        std::string::const_iterator content_end(content.end());
+        std::smatch match;
+        
+        while (std::regex_search(search_start, content_end, match, directive_regex)) {
+            if (match.size() > 1) {
+                std::string directive = "@" + match[1].str();
+                if (known_directives.find(directive) == known_directives.end()) {
+                    issues.push_back(TemplateValidationIssue(
+                        TemplateValidationLevel::ERROR,
+                        "Unknown directive: " + directive,
+                        std::nullopt,
+                        directive
+                    ));
+                }
+            }
+            search_start = match.suffix().first;
         }
         
         return issues;

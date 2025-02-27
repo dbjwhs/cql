@@ -1,0 +1,17 @@
+@inherit "base_data_structure"
+@description "Vector data structure template with standard operations"
+
+@variable "structure_type" "vector"
+@variable "complexity_insert" "O(1) amortized for push_back, O(n) for arbitrary position"
+@variable "complexity_remove" "O(n) worst case"
+@variable "complexity_search" "O(n) for unsorted, O(log n) for sorted"
+@variable "space_complexity" "O(n)"
+@variable "random_access" "true"
+@variable "language" "C++"
+@variable "memory_model" "contiguous"
+
+@architecture "Memory model: ${memory_model}"
+@security "Bounds checking on element access"
+@performance "Optimized for sequential access and back insertions"
+@test "Test vector resize operations"
+@test "Test vector capacity management"

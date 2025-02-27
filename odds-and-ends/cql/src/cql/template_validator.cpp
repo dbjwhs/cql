@@ -207,7 +207,7 @@ TemplateValidationResult TemplateValidator::validate_inheritance(const std::stri
             }
             
             result.add_issue(TemplateValidationIssue(
-                TemplateValidationLevel::INFO,
+                TemplateValidationLevel::WARNING,
                 chain_info.str()
             ));
             
@@ -283,7 +283,7 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_variables(const st
     for (const auto& var : declared_vars) {
         if (referenced_vars.find(var) == referenced_vars.end()) {
             issues.push_back(TemplateValidationIssue(
-                TemplateValidationLevel::INFO,
+                TemplateValidationLevel::WARNING,
                 "Declared variable is not used in the template",
                 var
             ));
@@ -325,8 +325,8 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_directives(const s
     for (const auto& directive : directives) {
         if (common_directives.find(directive) == common_directives.end()) {
             issues.push_back(TemplateValidationIssue(
-                TemplateValidationLevel::INFO,
-                "Uncommon directive found, verify it's intended",
+                TemplateValidationLevel::ERROR,
+                "Invalid directive found: " + directive,
                 std::nullopt,
                 directive
             ));
