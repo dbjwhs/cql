@@ -721,12 +721,18 @@ std::vector<std::string> TemplateManager::get_inheritance_chain(const std::strin
             if (visited.find(current) != visited.end()) {
                 Logger::getInstance().log(LogLevel::ERROR, 
                     "Circular inheritance detected for template: ", name);
-                throw std::runtime_error("Circular inheritance detected for template: " + name);
+                std::string cycle = "Inheritance cycle: ";
+                for (const auto& templ : visited) {
+                    cycle += templ + " -> ";
+                }
+                cycle += current;
+                throw std::runtime_error("Circular inheritance detected: " + cycle);
             }
         } catch (const std::exception& e) {
             Logger::getInstance().log(LogLevel::ERROR, 
                 "Error in inheritance chain for template '", name, "': ", e.what());
-            break;
+            // Rethrow to propagate the error
+            throw;
         }
     }
     
