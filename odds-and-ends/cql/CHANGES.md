@@ -2,6 +2,21 @@
 
 ## Phase 3: Template Management System
 
+### Template Documentation Generation (2025-02-28)
+- Added documentation generation system for templates
+- Implemented template metadata extraction for documentation
+- Added support for variable descriptions with `@variable_description` directive
+- Added support for example extraction with `@example` directive
+- Implemented documentation for inheritance chains
+- Added multiple documentation export formats (markdown, HTML, text)
+- Added CLI commands for documentation generation
+  - `template docs NAME` - Generate documentation for a template
+  - `template docsall` - Generate documentation for all templates
+  - `template export PATH [format]` - Export documentation to a file
+  - `--docs NAME` - Command-line option to generate template documentation
+  - `--docs-all` - Command-line option to generate documentation for all templates
+  - `--export PATH [format]` - Command-line option to export documentation to a file
+
 ### Template Validation System (2025-02-27)
 - Added TemplateValidator class for validating templates
 - Implemented validation rules schema system
