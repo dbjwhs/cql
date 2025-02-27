@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <filesystem>
+#include <iomanip>
 #include "../../include/cql/cql.hpp"
 #include "../../include/cql/template_manager.hpp"
 #include "../../include/cql/template_validator.hpp"
@@ -14,123 +15,245 @@ namespace fs = std::filesystem;
 
 namespace cql::test {
 
+// TestResult implementation
+TestResult::TestResult(bool passed, const std::string& error_message,
+                      const std::string& file_name, int line_number)
+    : m_passed(passed), 
+      m_error_message(error_message),
+      m_file_name(file_name),
+      m_line_number(line_number) {
+}
+
+TestResult TestResult::pass() {
+    return TestResult(true);
+}
+
+TestResult TestResult::fail(const std::string& error_message, 
+                           const std::string& file_name, 
+                           int line_number) {
+    return TestResult(false, error_message, file_name, line_number);
+}
+
+bool TestResult::passed() const {
+    return m_passed;
+}
+
+const std::string& TestResult::get_error_message() const {
+    return m_error_message;
+}
+
+const std::string& TestResult::get_file_name() const {
+    return m_file_name;
+}
+
+int TestResult::get_line_number() const {
+    return m_line_number;
+}
+
+// Define helper macros for tests
+#define TEST_ASSERT(condition, message) \
+    do { \
+        if (!(condition)) { \
+            return TestResult::fail(message, __FILE__, __LINE__); \
+        } \
+    } while (false)
+
+#define TEST_ASSERT_MESSAGE(condition, message) \
+    do { \
+        if (!(condition)) { \
+            std::stringstream ss; \
+            ss << message; \
+            return TestResult::fail(ss.str(), __FILE__, __LINE__); \
+        } \
+    } while (false)
+
+// Function to print a properly formatted test result
+void print_test_result(const std::string& test_name, const TestResult& result) {
+    const int name_width = 40;
+    
+    std::cout << std::left << std::setw(name_width) << test_name;
+    
+    if (result.passed()) {
+        std::cout << "[ \033[32mPASS\033[0m ]" << std::endl;
+    } else {
+        std::cout << "[ \033[31mFAIL\033[0m ]" << std::endl;
+        std::cout << "  Error: " << result.get_error_message() << std::endl;
+        if (!result.get_file_name().empty()) {
+            std::cout << "  Location: " << result.get_file_name() 
+                     << ":" << result.get_line_number() << std::endl;
+        }
+    }
+}
+
 // Run all tests
-void run_tests() {
+bool run_tests(bool fail_fast) {
     std::cout << "Running CQL Tests..." << std::endl;
     bool all_passed = true;
     
-    try {
-        // Test compiler functionalities
-        test_basic_compilation();
-        test_complex_compilation();
-        
-        // Test Phase 2 features
-        test_phase2_features();
-        
-        // Test template management
-        test_template_management();
-        
-        // Test template inheritance
-        test_template_inheritance();
-        
-        // Test template validator
-        test_template_validator();
-        
-        std::cout << "All tests passed!" << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "Test failed: " << e.what() << std::endl;
-        all_passed = false;
+    // Define the test functions with their names
+    struct TestInfo {
+        std::string name;
+        std::function<TestResult()> test_func;
+    };
+    
+    std::vector<TestInfo> tests = {
+        {"Basic Compilation", test_basic_compilation},
+        {"Complex Compilation", test_complex_compilation},
+        {"Phase 2 Features", test_phase2_features},
+        {"Template Management", test_template_management},
+        {"Template Inheritance", test_template_inheritance},
+        {"Template Validator", test_template_validator}
+    };
+    
+    // Run each test
+    for (const auto& test : tests) {
+        try {
+            TestResult result = test.test_func();
+            print_test_result(test.name, result);
+            
+            if (!result.passed()) {
+                all_passed = false;
+                if (fail_fast) {
+                    std::cout << "\nFailed fast: Stopping tests after first failure." << std::endl;
+                    break;
+                }
+            }
+        } catch (const std::exception& e) {
+            TestResult result = TestResult::fail("Uncaught exception: " + std::string(e.what()));
+            print_test_result(test.name, result);
+            all_passed = false;
+            
+            if (fail_fast) {
+                std::cout << "\nFailed fast: Stopping tests after first exception." << std::endl;
+                break;
+            }
+        }
     }
     
-    if (!all_passed) {
-        std::cerr << "Some tests failed!" << std::endl;
-        return;
+    // Print summary
+    if (all_passed) {
+        std::cout << "\n\033[32mAll tests passed!\033[0m" << std::endl;
+    } else {
+        std::cout << "\n\033[31mSome tests failed!\033[0m" << std::endl;
     }
+    
+    return all_passed;
 }
 
 // Test basic query compilation
-void test_basic_compilation() {
+TestResult test_basic_compilation() {
     std::cout << "Testing basic compilation..." << std::endl;
     
-    std::string query = "@copyright \"MIT License\" \"2025 dbjwhs\"\n@language \"C++\"\n@description \"test compilation\"";
-    std::string result = QueryProcessor::compile(query);
-    
-    assert(!result.empty());
-    assert(result.find("MIT License") != std::string::npos);
-    assert(result.find("Copyright (c) 2025 dbjwhs") != std::string::npos);
-    // No "Language: C++" string is produced in the output; 
-    // the language is used in the code request but not directly output
-    assert(result.find("C++") != std::string::npos);
-    
-    std::cout << "Basic compilation test passed." << std::endl;
+    try {
+        std::string query = "@copyright \"MIT License\" \"2025 dbjwhs\"\n@language \"C++\"\n@description \"test compilation\"";
+        std::string result = QueryProcessor::compile(query);
+        
+        TEST_ASSERT(!result.empty(), "Compilation result should not be empty");
+        TEST_ASSERT(result.find("MIT License") != std::string::npos, 
+                    "Result should contain 'MIT License'");
+        TEST_ASSERT(result.find("Copyright (c) 2025 dbjwhs") != std::string::npos,
+                   "Result should contain copyright information");
+        // No "Language: C++" string is produced in the output; 
+        // the language is used in the code request but not directly output
+        TEST_ASSERT(result.find("C++") != std::string::npos,
+                   "Result should contain language information");
+        
+        return TestResult::pass();
+    } catch (const std::exception& e) {
+        return TestResult::fail("Exception in test_basic_compilation: " + std::string(e.what()), 
+                                __FILE__, __LINE__);
+    }
 }
 
 // Test more complex query compilation
-void test_complex_compilation() {
+TestResult test_complex_compilation() {
     std::cout << "Testing complex compilation..." << std::endl;
     
-    std::string query = 
-        "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
-        "@language \"C++\"\n"
-        "@description \"implement a thread-safe queue\"\n"
-        "@context \"Using C++20 features\"\n"
-        "@context \"Must be exception-safe\"\n"
-        "@dependency \"std::mutex, std::condition_variable\"\n"
-        "@test \"Test concurrent push operations\"\n"
-        "@test \"Test concurrent pop operations\"\n";
-    
-    std::string result = QueryProcessor::compile(query);
-    
-    assert(!result.empty());
-    assert(result.find("MIT License") != std::string::npos);
-    assert(result.find("C++") != std::string::npos);
-    assert(result.find("thread-safe queue") != std::string::npos);
-    assert(result.find("C++20") != std::string::npos);
-    assert(result.find("exception-safe") != std::string::npos);
-    assert(result.find("Test concurrent push") != std::string::npos);
-    assert(result.find("Test concurrent pop") != std::string::npos);
-    
-    std::cout << "Complex compilation test passed." << std::endl;
+    try {
+        std::string query = 
+            "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+            "@language \"C++\"\n"
+            "@description \"implement a thread-safe queue\"\n"
+            "@context \"Using C++20 features\"\n"
+            "@context \"Must be exception-safe\"\n"
+            "@dependency \"std::mutex, std::condition_variable\"\n"
+            "@test \"Test concurrent push operations\"\n"
+            "@test \"Test concurrent pop operations\"\n";
+        
+        std::string result = QueryProcessor::compile(query);
+        
+        TEST_ASSERT(!result.empty(), "Compilation result should not be empty");
+        TEST_ASSERT(result.find("MIT License") != std::string::npos, 
+                   "Result should contain license information");
+        TEST_ASSERT(result.find("C++") != std::string::npos,
+                   "Result should contain language information");
+        TEST_ASSERT(result.find("thread-safe queue") != std::string::npos,
+                   "Result should contain the description");
+        TEST_ASSERT(result.find("C++20") != std::string::npos,
+                   "Result should contain context information about C++20");
+        TEST_ASSERT(result.find("exception-safe") != std::string::npos,
+                   "Result should contain context information about exception safety");
+        TEST_ASSERT(result.find("Test concurrent push") != std::string::npos,
+                   "Result should contain test information about push operations");
+        TEST_ASSERT(result.find("Test concurrent pop") != std::string::npos,
+                   "Result should contain test information about pop operations");
+        
+        return TestResult::pass();
+    } catch (const std::exception& e) {
+        return TestResult::fail("Exception in test_complex_compilation: " + std::string(e.what()),
+                               __FILE__, __LINE__);
+    }
 }
 
 // Test the Phase 2 features
-void test_phase2_features() {
+TestResult test_phase2_features() {
     std::cout << "Testing Phase 2 features..." << std::endl;
     
-    std::string query = 
-        "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
-        "@language \"C++\"\n"
-        "@description \"implement a thread-safe queue with a maximum size\"\n"
-        "@context \"Using C++20 features and RAII principles\"\n"
-        "@architecture \"Producer-consumer pattern with monitoring\"\n"
-        "@constraint \"Thread-safe for concurrent access\"\n"
-        "@security \"Prevent data races and deadlocks\"\n"
-        "@complexity \"O(1) for push and pop operations\"\n"
-        "@variable \"max_size\" \"1000\"\n"
-        "@example \"Basic Usage\" \"\n"
-        "ThreadSafeQueue<int> queue(${max_size});\n"
-        "queue.push(42);\n"
-        "auto value = queue.pop();\n"
-        "\"\n"
-        "@test \"Test concurrent push operations\"\n"
-        "@test \"Test concurrent pop operations\"\n"
-        "@test \"Test boundary conditions\"\n";
-    
-    std::string result = QueryProcessor::compile(query);
-    
-    assert(!result.empty());
-    // Check for presence of the content without the exact format string
-    assert(result.find("Producer-consumer pattern") != std::string::npos);
-    assert(result.find("Thread-safe for concurrent access") != std::string::npos);
-    assert(result.find("Prevent data races and deadlocks") != std::string::npos);
-    assert(result.find("O(1) for push and pop operations") != std::string::npos);
-    assert(result.find("ThreadSafeQueue<int> queue(1000)") != std::string::npos);
-    
-    std::cout << "Phase 2 features test passed." << std::endl;
+    try {
+        std::string query = 
+            "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+            "@language \"C++\"\n"
+            "@description \"implement a thread-safe queue with a maximum size\"\n"
+            "@context \"Using C++20 features and RAII principles\"\n"
+            "@architecture \"Producer-consumer pattern with monitoring\"\n"
+            "@constraint \"Thread-safe for concurrent access\"\n"
+            "@security \"Prevent data races and deadlocks\"\n"
+            "@complexity \"O(1) for push and pop operations\"\n"
+            "@variable \"max_size\" \"1000\"\n"
+            "@example \"Basic Usage\" \"\n"
+            "ThreadSafeQueue<int> queue(${max_size});\n"
+            "queue.push(42);\n"
+            "auto value = queue.pop();\n"
+            "\"\n"
+            "@test \"Test concurrent push operations\"\n"
+            "@test \"Test concurrent pop operations\"\n"
+            "@test \"Test boundary conditions\"\n";
+        
+        std::string result = QueryProcessor::compile(query);
+        
+        TEST_ASSERT(!result.empty(), "Compilation result should not be empty");
+        
+        // Check for presence of the content without the exact format string
+        TEST_ASSERT(result.find("Producer-consumer pattern") != std::string::npos,
+                   "Result should contain architecture information");
+        TEST_ASSERT(result.find("Thread-safe for concurrent access") != std::string::npos,
+                   "Result should contain constraint information");
+        TEST_ASSERT(result.find("Prevent data races and deadlocks") != std::string::npos,
+                   "Result should contain security information");
+        TEST_ASSERT(result.find("O(1) for push and pop operations") != std::string::npos,
+                   "Result should contain complexity information");
+        TEST_ASSERT(result.find("ThreadSafeQueue<int> queue(1000)") != std::string::npos,
+                   "Result should contain variable substitution in example");
+        
+        return TestResult::pass();
+    } catch (const std::exception& e) {
+        return TestResult::fail("Exception in test_phase2_features: " + std::string(e.what()),
+                               __FILE__, __LINE__);
+    }
 }
 
 // Test template management
-void test_template_management() {
+TestResult test_template_management() {
     std::cout << "Testing template management..." << std::endl;
     
     // Create a temporary template directory for testing
@@ -164,34 +287,42 @@ void test_template_management() {
         
         // Test listing templates
         auto templates = manager.list_templates();
-        assert(templates.size() == 1);
-        assert(templates[0].find("test_template") != std::string::npos);
+        TEST_ASSERT(templates.size() == 1, "Should have exactly one template");
+        TEST_ASSERT(templates[0].find("test_template") != std::string::npos,
+                   "Template list should contain 'test_template'");
         
         // Test loading a template
         std::string loaded = manager.load_template("test_template");
-        assert(loaded == template_content);
+        TEST_ASSERT(loaded == template_content, "Loaded template content should match original");
         
         // Test getting template metadata
         auto metadata = manager.get_template_metadata("test_template");
-        assert(metadata.name.find("test_template") != std::string::npos);
-        assert(metadata.description == "test template");
-        assert(metadata.variables.size() == 1);
-        assert(metadata.variables[0] == "test_var");
+        TEST_ASSERT(metadata.name.find("test_template") != std::string::npos,
+                   "Template metadata name should contain 'test_template'");
+        TEST_ASSERT(metadata.description == "test template",
+                   "Template metadata description should match");
+        TEST_ASSERT(metadata.variables.size() == 1,
+                   "Template should have one variable");
+        TEST_ASSERT(metadata.variables[0] == "test_var",
+                   "Template variable should be 'test_var'");
         
         // Test template instantiation with variables
         std::map<std::string, std::string> vars = {{"test_var", "C++"}};
         std::string instantiated = manager.instantiate_template("test_template", vars);
-        assert(instantiated.find("@language \"C++\"") != std::string::npos);
+        TEST_ASSERT(instantiated.find("@language \"C++\"") != std::string::npos,
+                   "Instantiated template should contain substituted variable");
         
         // Test creating a category
-        assert(manager.create_category("test_category"));
+        bool category_created = manager.create_category("test_category");
+        TEST_ASSERT(category_created, "Should be able to create a category");
         
         // Test saving a template in a category
         manager.save_template("test_category/category_template", template_content);
         
         // Test listing categories
         auto categories = manager.list_categories();
-        assert(categories.size() >= 3); // common, user, test_category
+        TEST_ASSERT(categories.size() >= 3, "Should have at least common, user, and test_category");
+        
         bool found_category = false;
         for (const auto& cat : categories) {
             if (cat == "test_category") {
@@ -199,10 +330,12 @@ void test_template_management() {
                 break;
             }
         }
-        assert(found_category);
+        TEST_ASSERT(found_category, "Should find the test_category in the category list");
         
         // Test deleting a template
-        assert(manager.delete_template("test_template"));
+        bool template_deleted = manager.delete_template("test_template");
+        TEST_ASSERT(template_deleted, "Should be able to delete a template");
+        
         templates = manager.list_templates();
         bool template_found = false;
         for (const auto& tmpl : templates) {
@@ -212,23 +345,24 @@ void test_template_management() {
                 break;
             }
         }
-        assert(!template_found);
+        TEST_ASSERT(!template_found, "Deleted template should not be in the template list");
         
         // Cleanup
         fs::remove_all(temp_dir);
         
-        std::cout << "Template management test passed." << std::endl;
+        return TestResult::pass();
     } catch (const std::exception& e) {
         // Ensure cleanup even if test fails
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
         }
-        throw;
+        return TestResult::fail("Exception in test_template_management: " + std::string(e.what()),
+                               __FILE__, __LINE__);
     }
 }
 
 // Test template inheritance feature
-void test_template_inheritance() {
+TestResult test_template_inheritance() {
     std::cout << "Testing template inheritance..." << std::endl;
     
     // Create a temporary template directory for testing
@@ -281,30 +415,38 @@ void test_template_inheritance() {
         
         // Test inheritance chain
         auto chain = manager.get_inheritance_chain("grandchild_template");
-        assert(chain.size() == 3);
-        assert(chain[0] == "base_template");
-        assert(chain[1] == "child_template");
-        assert(chain[2] == "grandchild_template");
+        TEST_ASSERT(chain.size() == 3, "Inheritance chain should have 3 templates");
+        TEST_ASSERT(chain[0] == "base_template", "First template in chain should be base_template");
+        TEST_ASSERT(chain[1] == "child_template", "Second template in chain should be child_template");
+        TEST_ASSERT(chain[2] == "grandchild_template", "Third template in chain should be grandchild_template");
         
         // Test metadata includes parent information
         auto metadata = manager.get_template_metadata("child_template");
-        assert(metadata.parent.has_value());
-        assert(metadata.parent.value() == "base_template");
+        TEST_ASSERT(metadata.parent.has_value(), "Child template should have parent metadata");
+        TEST_ASSERT(metadata.parent.value() == "base_template", "Parent template should be base_template");
         
         // Test template loading with inheritance
         std::string loaded = manager.load_template_with_inheritance("grandchild_template");
         
         // Verify variable merging and overriding
-        assert(loaded.find("\"base_var\" \"base_value\"") != std::string::npos); // Base var preserved
-        assert(loaded.find("\"child_var\" \"child_value\"") != std::string::npos); // Child var preserved
-        assert(loaded.find("\"grandchild_var\" \"grandchild_value\"") != std::string::npos); // Grandchild var preserved
-        assert(loaded.find("\"shared_var\" \"child_shared_value\"") != std::string::npos); // Child override preserved
-        assert(loaded.find("\"shared_var\" \"base_shared_value\"") == std::string::npos); // Base override removed
+        TEST_ASSERT(loaded.find("\"base_var\" \"base_value\"") != std::string::npos, 
+                   "Base var should be preserved in merged template");
+        TEST_ASSERT(loaded.find("\"child_var\" \"child_value\"") != std::string::npos, 
+                   "Child var should be preserved in merged template");
+        TEST_ASSERT(loaded.find("\"grandchild_var\" \"grandchild_value\"") != std::string::npos, 
+                   "Grandchild var should be preserved in merged template");
+        TEST_ASSERT(loaded.find("\"shared_var\" \"child_shared_value\"") != std::string::npos, 
+                   "Child's override of shared_var should be preserved");
+        TEST_ASSERT(loaded.find("\"shared_var\" \"base_shared_value\"") == std::string::npos, 
+                   "Base's version of shared_var should be removed");
         
         // Verify content merging
-        assert(loaded.find("Base test") != std::string::npos); // Base test included
-        assert(loaded.find("Child test") != std::string::npos); // Child test included
-        assert(loaded.find("Grandchild test") != std::string::npos); // Grandchild test included
+        TEST_ASSERT(loaded.find("Base test") != std::string::npos, 
+                   "Base test should be included in merged template");
+        TEST_ASSERT(loaded.find("Child test") != std::string::npos, 
+                   "Child test should be included in merged template");
+        TEST_ASSERT(loaded.find("Grandchild test") != std::string::npos, 
+                   "Grandchild test should be included in merged template");
         
         // Test instantiation with inheritance
         std::map<std::string, std::string> vars = {
@@ -317,10 +459,14 @@ void test_template_inheritance() {
         std::string instantiated = manager.instantiate_template("grandchild_template", vars);
         
         // Verify variable replacement with overrides
-        assert(instantiated.find("\"base_var\" \"new_base_value\"") != std::string::npos);
-        assert(instantiated.find("\"child_var\" \"new_child_value\"") != std::string::npos);
-        assert(instantiated.find("\"grandchild_var\" \"new_grandchild_value\"") != std::string::npos);
-        assert(instantiated.find("\"shared_var\" \"new_shared_value\"") != std::string::npos);
+        TEST_ASSERT(instantiated.find("\"base_var\" \"new_base_value\"") != std::string::npos,
+                   "base_var should be replaced with new value");
+        TEST_ASSERT(instantiated.find("\"child_var\" \"new_child_value\"") != std::string::npos,
+                   "child_var should be replaced with new value");
+        TEST_ASSERT(instantiated.find("\"grandchild_var\" \"new_grandchild_value\"") != std::string::npos,
+                   "grandchild_var should be replaced with new value");
+        TEST_ASSERT(instantiated.find("\"shared_var\" \"new_shared_value\"") != std::string::npos,
+                   "shared_var should be replaced with new value");
         
         // Test circular inheritance detection with targeted logging suppression
         // Create unique template names with timestamps to avoid collisions
@@ -348,36 +494,38 @@ void test_template_inheritance() {
             try {
                 // This should throw an exception due to circular inheritance
                 std::string circular_result = manager.load_template_with_inheritance(name1);
-                std::cout << "Unexpected success loading circular template: " << circular_result << std::endl;
-                assert(false); // Should not reach here
+                return TestResult::fail("Circular inheritance not detected - this should have thrown an exception", 
+                                      __FILE__, __LINE__);
             } catch (const std::exception& e) {
                 // Exception is expected
                 std::string error = e.what();
-                assert(error.find("circular") != std::string::npos);
+                TEST_ASSERT(error.find("circular") != std::string::npos,
+                           "Exception message should mention circular inheritance");
             }
         }
         
         // Cleanup
         fs::remove_all(temp_dir);
         
-        std::cout << "Template inheritance test passed." << std::endl;
+        return TestResult::pass();
     } catch (const std::exception& e) {
         // Ensure cleanup even if test fails
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
         }
-        throw;
+        return TestResult::fail("Exception in test_template_inheritance: " + std::string(e.what()),
+                               __FILE__, __LINE__);
     }
 }
 
 // Show example queries for documentation
-void query_examples() {
+TestResult query_examples() {
     std::cout << "\nCQL Query Examples:" << std::endl;
     
     // Define some example queries
     std::vector<std::pair<std::string, std::string>> examples = {
         {"Basic Copyright and Language", 
-         "@copyright \"MIT License\" \"2025 dbjwhs\"\n@language \"C++\""},
+         "@copyright \"MIT License\" \"2025 dbjwhs\"\n@language \"C++\"\n@description \"Basic example\""},
          
         {"Thread-safe Queue", 
          "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
@@ -390,12 +538,28 @@ void query_examples() {
          "@test \"Test concurrent pop operations\"\n"},
          
         {"Variable Example",
+         "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+         "@language \"C++\"\n"
+         "@description \"implement a ${container_type}<${element_type}> class\"\n"
+         "@variable \"container_type\" \"vector\"\n"
+         "@variable \"element_type\" \"int\"\n"
+         "@test \"Test ${container_type} operations\"\n"},
+         
+        // Uncomment this to test the failure detection
+        // This intentionally has variables before description which causes an error
+        /*
+        {"Broken Example",
          "@variable \"container_type\" \"vector\"\n"
          "@variable \"element_type\" \"int\"\n"
          "@description \"implement a ${container_type}<${element_type}> class\"\n"
          "@language \"C++\"\n"
          "@test \"Test ${container_type} operations\"\n"}
+        */
     };
+    
+    bool all_examples_compiled = true;
+    std::string failed_example;
+    std::string error_message;
     
     // Process and display each example
     for (const auto& [title, query] : examples) {
@@ -407,12 +571,22 @@ void query_examples() {
             std::cout << "\nCompiled Result:\n" << result << std::endl;
         } catch (const std::exception& e) {
             std::cerr << "Error compiling example: " << e.what() << std::endl;
+            all_examples_compiled = false;
+            failed_example = title;
+            error_message = e.what();
         }
     }
+    
+    if (!all_examples_compiled) {
+        return TestResult::fail("Failed to compile example: " + failed_example + "\nError: " + error_message,
+                               __FILE__, __LINE__);
+    }
+    
+    return TestResult::pass();
 }
 
 // Test template validator
-void test_template_validator() {
+TestResult test_template_validator() {
     std::cout << "Testing template validator..." << std::endl;
     
     // Create a temporary template directory for testing
@@ -449,8 +623,10 @@ void test_template_validator() {
         manager.save_template("good_template", good_template);
         
         auto good_result = validator.validate_template("good_template");
-        assert(!good_result.has_issues(TemplateValidationLevel::ERROR));
-        assert(!good_result.has_issues(TemplateValidationLevel::WARNING));
+        TEST_ASSERT(!good_result.has_issues(TemplateValidationLevel::ERROR),
+                   "Good template should not have ERROR level issues");
+        TEST_ASSERT(!good_result.has_issues(TemplateValidationLevel::WARNING),
+                   "Good template should not have WARNING level issues");
         
         // Test 2: Template with undeclared variable (should generate warning)
         std::string warning_template = 
@@ -462,9 +638,12 @@ void test_template_validator() {
         manager.save_template("warning_template", warning_template);
         
         auto warning_result = validator.validate_template("warning_template");
-        assert(!warning_result.has_issues(TemplateValidationLevel::ERROR));
-        assert(warning_result.has_issues(TemplateValidationLevel::WARNING));
-        assert(warning_result.count_warnings() > 0);
+        TEST_ASSERT(!warning_result.has_issues(TemplateValidationLevel::ERROR),
+                   "Warning template should not have ERROR level issues");
+        TEST_ASSERT(warning_result.has_issues(TemplateValidationLevel::WARNING),
+                   "Warning template should have WARNING level issues");
+        TEST_ASSERT(warning_result.count_warnings() > 0,
+                   "Warning template should have at least one warning");
         
         // Test 3: Template with unused variable (should generate info)
         std::string info_template = 
@@ -476,10 +655,13 @@ void test_template_validator() {
         manager.save_template("info_template", info_template);
         
         auto info_result = validator.validate_template("info_template");
-        assert(!info_result.has_issues(TemplateValidationLevel::ERROR));
+        TEST_ASSERT(!info_result.has_issues(TemplateValidationLevel::ERROR),
+                   "Info template should not have ERROR level issues");
         // We've upgraded INFO level issues to WARNING, so adjust the test accordingly
-        assert(info_result.has_issues(TemplateValidationLevel::WARNING));
-        assert(info_result.count_warnings() > 0);
+        TEST_ASSERT(info_result.has_issues(TemplateValidationLevel::WARNING),
+                   "Info template should have WARNING level issues for unused variables");
+        TEST_ASSERT(info_result.count_warnings() > 0,
+                   "Info template should have at least one warning");
         
         // Test 4: Template with circular inheritance (should generate error)
         // Create unique names for this test run
@@ -497,8 +679,10 @@ void test_template_validator() {
             manager.save_template(circular1_name, circular1);
             manager.save_template(circular2_name, circular2);
             auto circular_result = validator.validate_template(circular1_name);
-            assert(circular_result.has_issues(TemplateValidationLevel::ERROR));
-            assert(circular_result.count_errors() > 0);
+            TEST_ASSERT(circular_result.has_issues(TemplateValidationLevel::ERROR),
+                       "Circular inheritance should generate ERROR level issues");
+            TEST_ASSERT(circular_result.count_errors() > 0,
+                       "Circular inheritance should have at least one error");
         }
         
         // Test 5: Template with proper inheritance
@@ -517,7 +701,8 @@ void test_template_validator() {
         manager.save_template("child", child);
         
         auto inheritance_result = validator.validate_template("child");
-        assert(!inheritance_result.has_issues(TemplateValidationLevel::ERROR));
+        TEST_ASSERT(!inheritance_result.has_issues(TemplateValidationLevel::ERROR),
+                   "Valid inheritance should not generate ERROR level issues");
         
         // Test schema validation
         auto schema = TemplateValidatorSchema::create_default_schema();
@@ -584,21 +769,25 @@ void test_template_validator() {
             Logger::StderrSuppressionGuard stderr_guard;
             manager.save_template(malformed_name, malformed);
             auto schema_result = strict_validator.validate_template(malformed_name);
-            assert(schema_result.has_issues(TemplateValidationLevel::ERROR));
-            assert(schema_result.count_errors() > 0);
-            assert(schema_result.get_issues().size() > 0);
+            TEST_ASSERT(schema_result.has_issues(TemplateValidationLevel::ERROR),
+                       "Malformed template should generate ERROR level issues");
+            TEST_ASSERT(schema_result.count_errors() > 0,
+                       "Malformed template should have at least one error");
+            TEST_ASSERT(schema_result.get_issues().size() > 0,
+                       "Malformed template should have validation issues");
         }
         
         // Cleanup
         fs::remove_all(temp_dir);
         
-        std::cout << "Template validator test passed." << std::endl;
+        return TestResult::pass();
     } catch (const std::exception& e) {
         // Ensure cleanup even if test fails
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
         }
-        throw;
+        return TestResult::fail("Exception in test_template_validator: " + std::string(e.what()),
+                               __FILE__, __LINE__);
     }
 }
 

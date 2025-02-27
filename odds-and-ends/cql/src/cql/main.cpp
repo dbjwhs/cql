@@ -43,10 +43,27 @@ int main(int argc, char* argv[]) {
                           << "If OUTPUT_FILE is also provided, the compiled query will be written to it.\n";
             } else if (arg1 == "--test" || arg1 == "-t") {
                 // Run the test suite
-                cql::test::run_tests();
+                bool fail_fast = true;
+                
+                // Check for --no-fail-fast flag
+                for (int ndx = 2; ndx < argc; ndx++) {
+                    std::string option = argv[ndx];
+                    if (option == "--no-fail-fast") {
+                        fail_fast = false;
+                    }
+                }
+                
+                // Run tests and return appropriate exit code
+                if (!cql::test::run_tests(fail_fast)) {
+                    return 1;
+                }
             } else if (arg1 == "--examples" || arg1 == "-e") {
                 // Show example queries
-                cql::test::query_examples();
+                auto result = cql::test::query_examples();
+                if (!result.passed()) {
+                    std::cerr << "\nError running examples: " << result.get_error_message() << std::endl;
+                    return 1;
+                }
             } else if (arg1 == "--interactive" || arg1 == "-i") {
                 // Run in interactive mode
                 cql::cli::run_cli();
@@ -94,8 +111,8 @@ int main(int argc, char* argv[]) {
                 std::map<std::string, std::string> variables;
                 
                 // Process variable assignments (VAR=VALUE format)
-                for (int i = 3; i < argc; i++) {
-                    std::string arg = argv[i];
+                for (int ndx = 3; ndx < argc; ndx++) {
+                    std::string arg = argv[ndx];
                     size_t pos = arg.find('=');
                     if (pos != std::string::npos) {
                         std::string name = arg.substr(0, pos);
@@ -127,8 +144,8 @@ int main(int argc, char* argv[]) {
                         
                         // In non-interactive mode, if --force is not specified, fail on errors
                         bool force = false;
-                        for (int i = 3; i < argc; i++) {
-                            std::string arg = argv[i];
+                        for (int ndx = 3; ndx < argc; ndx++) {
+                            std::string arg = argv[ndx];
                             if (arg == "--force" || arg == "-f") {
                                 force = true;
                                 break;
@@ -416,10 +433,20 @@ int main(int argc, char* argv[]) {
             // No arguments, run comprehensive tests and examples
             std::cout << "Running in default mode - tests and examples" << std::endl;
             logger.log(LogLevel::INFO, "Running in default mode - tests and examples");
+            
+            // Run tests with fail-fast enabled
             std::cout << "Running tests..." << std::endl;
-            cql::test::run_tests();
+            if (!cql::test::run_tests(true)) {
+                return 1;
+            }
+            
+            // Run examples
             std::cout << "Running query examples..." << std::endl;
-            cql::test::query_examples();
+            auto example_result = cql::test::query_examples();
+            if (!example_result.passed()) {
+                std::cerr << "\nError running examples: " << example_result.get_error_message() << std::endl;
+                return 1;
+            }
 
             // Example query with Phase 2 features
             std::string query =

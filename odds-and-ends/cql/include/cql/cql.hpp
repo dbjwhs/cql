@@ -86,44 +86,136 @@ public:
 };
 
 /**
- * Test functions
+ * Test framework
  */
 namespace test {
-    // Run all tests
-    void run_tests();
+    /**
+     * Class to represent test results
+     */
+    class TestResult {
+    public:
+        /**
+         * Constructor for a passing test result
+         */
+        static TestResult pass();
+        
+        /**
+         * Constructor for a failing test result
+         * @param error_message The error message describing the failure
+         * @param file_name The source file where the failure occurred
+         * @param line_number The line number where the failure occurred
+         */
+        static TestResult fail(const std::string& error_message, 
+                               const std::string& file_name = "", 
+                               int line_number = 0);
+        
+        /**
+         * Check if the test passed
+         * @return true if the test passed, false otherwise
+         */
+        bool passed() const;
+        
+        /**
+         * Get the error message for a failing test
+         * @return The error message
+         */
+        const std::string& get_error_message() const;
+        
+        /**
+         * Get the source file where the failure occurred
+         * @return The source file name
+         */
+        const std::string& get_file_name() const;
+        
+        /**
+         * Get the line number where the failure occurred
+         * @return The line number
+         */
+        int get_line_number() const;
+        
+    private:
+        bool m_passed;
+        std::string m_error_message;
+        std::string m_file_name;
+        int m_line_number;
+        
+        // Private constructor used by static factory methods
+        TestResult(bool passed, const std::string& error_message = "",
+                  const std::string& file_name = "", int line_number = 0);
+    };
     
-    // Test the lexer
-    void test_lexer();
+    /**
+     * Run all tests
+     * @param fail_fast If true, stop testing after the first failure
+     * @return true if all tests passed, false otherwise
+     */
+    bool run_tests(bool fail_fast = true);
     
-    // Test the parser
-    void test_parser();
+    /**
+     * Test the lexer
+     * @return TestResult indicating pass/fail with error details
+     */
+    TestResult test_lexer();
     
-    // Test the compiler
-    void test_compiler();
+    /**
+     * Test the parser
+     * @return TestResult indicating pass/fail with error details
+     */
+    TestResult test_parser();
     
-    // Test basic compilation
-    void test_basic_compilation();
+    /**
+     * Test the compiler
+     * @return TestResult indicating pass/fail with error details
+     */
+    TestResult test_compiler();
     
-    // Test complex compilation
-    void test_complex_compilation();
+    /**
+     * Test basic compilation
+     * @return TestResult indicating pass/fail with error details
+     */
+    TestResult test_basic_compilation();
     
-    // Test Phase 2 features
-    void test_phase2_features();
+    /**
+     * Test complex compilation
+     * @return TestResult indicating pass/fail with error details
+     */
+    TestResult test_complex_compilation();
     
-    // Test the template manager
-    void test_template_manager();
+    /**
+     * Test Phase 2 features
+     * @return TestResult indicating pass/fail with error details
+     */
+    TestResult test_phase2_features();
     
-    // Test template management
-    void test_template_management();
+    /**
+     * Test the template manager
+     * @return TestResult indicating pass/fail with error details
+     */
+    TestResult test_template_manager();
     
-    // Test template inheritance
-    void test_template_inheritance();
+    /**
+     * Test template management
+     * @return TestResult indicating pass/fail with error details
+     */
+    TestResult test_template_management();
     
-    // Test template validator
-    void test_template_validator();
+    /**
+     * Test template inheritance
+     * @return TestResult indicating pass/fail with error details
+     */
+    TestResult test_template_inheritance();
     
-    // Example queries
-    void query_examples();
+    /**
+     * Test template validator
+     * @return TestResult indicating pass/fail with error details
+     */
+    TestResult test_template_validator();
+    
+    /**
+     * Example queries
+     * @return TestResult indicating pass/fail with error details
+     */
+    TestResult query_examples();
 }
 
 /**
