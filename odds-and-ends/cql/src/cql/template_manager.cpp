@@ -168,7 +168,10 @@ std::string TemplateManager::instantiate_template(
         content = variables_section + "\n" + content;
     }
     
-    return content;
+    // replace all variable references with their values
+    std::string result = replace_variables(content, variables);
+    
+    return result;
 }
 
 std::string TemplateManager::get_templates_directory() const {
@@ -286,6 +289,82 @@ std::string TemplateManager::extract_description(const std::string& content) {
     }
     
     return "No description available";
+}
+
+std::string TemplateManager::replace_variables(
+    const std::string& content,
+    const std::map<std::string, std::string>& variables
+) {
+    std::string result = content;
+    std::regex variable_ref_regex("\\$\\{([^}]+)\\}");
+    
+    // first collect all variables from the content (declared with @variable)
+    auto all_variables = collect_variables(content);
+    
+    // add or override with provided variables
+    for (const auto& [name, value] : variables) {
+        all_variables[name] = value;
+    }
+    
+    // replace all ${var} occurrences with their values
+    std::string::const_iterator search_start(result.cbegin());
+    std::smatch match;
+    std::string output;
+    std::size_t last_pos = 0;
+    
+    while (std::regex_search(search_start, result.cend(), match, variable_ref_regex)) {
+        // get the variable name from the match
+        std::string var_name = match[1].str();
+        
+        // get positions for replacement
+        std::size_t start_pos = std::distance(result.cbegin(), match[0].first);
+        std::size_t end_pos = std::distance(result.cbegin(), match[0].second);
+        
+        // append text before the variable reference
+        output.append(result.substr(last_pos, start_pos - last_pos));
+        
+        // append the variable value or the original reference if not found
+        if (all_variables.find(var_name) != all_variables.end()) {
+            output.append(all_variables[var_name]);
+            Logger::getInstance().log(LogLevel::INFO, "Replaced variable: ", var_name, " with: ", all_variables[var_name]);
+        } else {
+            // keep the original reference
+            output.append(match[0].str());
+            Logger::getInstance().log(LogLevel::ERROR, "Variable not found: ", var_name);
+        }
+        
+        // update positions for next iteration
+        last_pos = end_pos;
+        search_start = match[0].second;
+    }
+    
+    // append remaining content
+    if (last_pos < result.length()) {
+        output.append(result.substr(last_pos));
+    }
+    
+    return output;
+}
+
+std::map<std::string, std::string> TemplateManager::collect_variables(const std::string& content) {
+    std::map<std::string, std::string> variables;
+    std::regex variable_decl_regex("@variable\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"");
+    
+    std::string::const_iterator search_start(content.cbegin());
+    std::smatch match;
+    
+    // extract all @variable declarations
+    while (std::regex_search(search_start, content.cend(), match, variable_decl_regex)) {
+        if (match.size() > 2) {
+            std::string name = match[1].str();
+            std::string value = match[2].str();
+            variables[name] = value;
+            Logger::getInstance().log(LogLevel::INFO, "Found variable declaration: ", name, "=", value);
+        }
+        search_start = match.suffix().first;
+    }
+    
+    return variables;
 }
 
 } // namespace cql

@@ -72,6 +72,13 @@ private:
     
     // extract description from a template
     std::string extract_description(const std::string& content);
+    
+    // replace variable references with their values
+    std::string replace_variables(const std::string& content, 
+                                  const std::map<std::string, std::string>& variables);
+    
+    // extract and combine all variables from template content and declared variables
+    std::map<std::string, std::string> collect_variables(const std::string& content);
 };
 
 } // namespace cql
