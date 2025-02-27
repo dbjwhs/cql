@@ -11,6 +11,7 @@
 #include <set>
 #include <functional>
 #include "template_manager.hpp"
+#include <regex>
 
 namespace cql {
 

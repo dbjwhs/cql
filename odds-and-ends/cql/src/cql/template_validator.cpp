@@ -2,6 +2,7 @@
 // Copyright (c) 2025 dbjwhs
 
 #include "../../include/cql/template_validator.hpp"
+#include "../../include/cql/template_validator_schema.hpp"
 #include "../../../headers/project_utils.hpp"
 
 #include <regex>

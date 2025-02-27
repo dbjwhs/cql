@@ -6,6 +6,8 @@
 #include <filesystem>
 #include "../../include/cql/cql.hpp"
 #include "../../include/cql/template_manager.hpp"
+#include "../../include/cql/template_validator.hpp"
+#include "../../include/cql/template_validator_schema.hpp"
 #include "../../../headers/project_utils.hpp"
 
 namespace fs = std::filesystem;
@@ -464,6 +466,26 @@ void test_template_validator() {
         
         auto inheritance_result = validator.validate_template("child");
         assert(!inheritance_result.has_issues(TemplateValidationLevel::ERROR));
+        
+        // Test schema validation
+        auto schema = TemplateValidatorSchema::create_default_schema();
+        
+        // Create validator with schema rules
+        for (const auto& [name, rule] : schema.get_validation_rules()) {
+            validator.add_validation_rule(rule);
+        }
+        
+        // Test schema rules with malformed template
+        std::string malformed = 
+            "@description \"Too short\"\n"  // Description too short warning
+            "@variable \"bad-name\" \"bad\"\n"  // Invalid variable name
+            "@language \"${bad-name}\"\n"
+            "@invalidDirective \"something\"\n";  // Unknown directive
+        
+        manager.save_template("malformed", malformed);
+        
+        auto schema_result = validator.validate_template("malformed");
+        assert(schema_result.has_issues(TemplateValidationLevel::WARNING));
         
         // Cleanup
         fs::remove_all(temp_dir);

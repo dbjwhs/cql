@@ -31,6 +31,7 @@
 #include "validator.hpp"
 #include "template_manager.hpp"
 #include "template_validator.hpp"
+#include "template_validator_schema.hpp"
 
 namespace cql {
 
