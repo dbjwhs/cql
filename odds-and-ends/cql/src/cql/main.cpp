@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include "../../include/cql/cql.hpp"
+#include "../../include/cql/template_validator.hpp"
+#include "../../include/cql/template_validator_schema.hpp"
 #include "../../../headers/project_utils.hpp"
 
 int main(int argc, char* argv[]) {
@@ -29,7 +31,9 @@ int main(int argc, char* argv[]) {
                           << "  --interactive, -i       Run in interactive mode\n"
                           << "  --copyright             Show copyright example\n"
                           << "  --templates, -l         List all available templates\n"
-                          << "  --template NAME, -T     Use a specific template\n\n"
+                          << "  --template NAME, -T     Use a specific template\n"
+                          << "  --validate NAME         Validate a specific template\n"
+                          << "  --validate-all          Validate all templates\n\n"
                           << "If INPUT_FILE is provided, it will be processed as a CQL query.\n"
                           << "If OUTPUT_FILE is also provided, the compiled query will be written to it.\n";
             } else if (arg1 == "--test" || arg1 == "-t") {
@@ -103,6 +107,152 @@ int main(int argc, char* argv[]) {
                     std::cout << compiled << std::endl;
                 } catch (const std::exception& e) {
                     std::cerr << "Error using template: " << e.what() << std::endl;
+                    return 1;
+                }
+            } else if (arg1 == "--validate") {
+                // Validate a specific template
+                if (argc < 3) {
+                    std::cerr << "Error: Template name required" << std::endl;
+                    std::cerr << "Usage: cql --validate TEMPLATE_NAME" << std::endl;
+                    return 1;
+                }
+                
+                std::string template_name = argv[2];
+                
+                try {
+                    // Create template manager and validator
+                    cql::TemplateManager manager;
+                    cql::TemplateValidator validator(manager);
+                    
+                    // Add schema validation rules
+                    auto schema = cql::TemplateValidatorSchema::create_default_schema();
+                    for (const auto& [name, rule] : schema.get_validation_rules()) {
+                        validator.add_validation_rule(rule);
+                    }
+                    
+                    // Validate the template
+                    auto result = validator.validate_template(template_name);
+                    
+                    // Output validation results
+                    std::cout << "Validation results for template '" << template_name << "':" << std::endl;
+                    std::cout << "------------------------------------------" << std::endl;
+                    
+                    if (result.has_issues()) {
+                        std::cout << "Found " << result.count_errors() << " errors, "
+                                  << result.count_warnings() << " warnings, "
+                                  << result.count_infos() << " info messages." << std::endl;
+                        
+                        // Print errors
+                        if (result.count_errors() > 0) {
+                            std::cout << "\nErrors:" << std::endl;
+                            for (const auto& issue : result.get_issues(cql::TemplateValidationLevel::ERROR)) {
+                                std::cout << "  - " << issue.to_string() << std::endl;
+                            }
+                        }
+                        
+                        // Print warnings
+                        if (result.count_warnings() > 0) {
+                            std::cout << "\nWarnings:" << std::endl;
+                            for (const auto& issue : result.get_issues(cql::TemplateValidationLevel::WARNING)) {
+                                std::cout << "  - " << issue.to_string() << std::endl;
+                            }
+                        }
+                        
+                        // Print info messages (only if there are no errors or warnings)
+                        if (result.count_infos() > 0 && result.count_errors() == 0 && result.count_warnings() == 0) {
+                            std::cout << "\nInfo:" << std::endl;
+                            for (const auto& issue : result.get_issues(cql::TemplateValidationLevel::INFO)) {
+                                std::cout << "  - " << issue.to_string() << std::endl;
+                            }
+                        }
+                    } else {
+                        std::cout << "Template validated successfully with no issues." << std::endl;
+                    }
+                } catch (const std::exception& e) {
+                    std::cerr << "Error validating template: " << e.what() << std::endl;
+                    return 1;
+                }
+            } else if (arg1 == "--validate-all") {
+                // Validate all templates
+                try {
+                    // Create template manager and validator
+                    cql::TemplateManager manager;
+                    cql::TemplateValidator validator(manager);
+                    
+                    // Add schema validation rules
+                    auto schema = cql::TemplateValidatorSchema::create_default_schema();
+                    for (const auto& [name, rule] : schema.get_validation_rules()) {
+                        validator.add_validation_rule(rule);
+                    }
+                    
+                    // Get list of templates
+                    auto templates = manager.list_templates();
+                    
+                    if (templates.empty()) {
+                        std::cout << "No templates found to validate." << std::endl;
+                    } else {
+                        std::cout << "Validating " << templates.size() << " templates..." << std::endl;
+                        std::cout << "----------------------------" << std::endl;
+                        
+                        int error_count = 0;
+                        int warning_count = 0;
+                        int info_count = 0;
+                        
+                        // Keep track of templates with issues
+                        std::vector<std::string> templates_with_errors;
+                        std::vector<std::string> templates_with_warnings;
+                        
+                        for (const auto& tmpl : templates) {
+                            auto result = validator.validate_template(tmpl);
+                            
+                            // Count issues
+                            error_count += result.count_errors();
+                            warning_count += result.count_warnings();
+                            info_count += result.count_infos();
+                            
+                            // Print progress
+                            if (result.has_issues(cql::TemplateValidationLevel::ERROR)) {
+                                templates_with_errors.push_back(tmpl);
+                                std::cout << "❌ " << tmpl << ": " << result.count_errors() << " errors, "
+                                          << result.count_warnings() << " warnings" << std::endl;
+                            } else if (result.has_issues(cql::TemplateValidationLevel::WARNING)) {
+                                templates_with_warnings.push_back(tmpl);
+                                std::cout << "⚠️ " << tmpl << ": " << result.count_warnings() << " warnings" << std::endl;
+                            } else {
+                                std::cout << "✅ " << tmpl << ": No issues" << std::endl;
+                            }
+                        }
+                        
+                        // Print summary
+                        std::cout << "\nValidation Summary:" << std::endl;
+                        std::cout << "----------------------------" << std::endl;
+                        std::cout << "Templates validated: " << templates.size() << std::endl;
+                        std::cout << "Total issues: " << (error_count + warning_count + info_count) << " ("
+                                  << error_count << " errors, " 
+                                  << warning_count << " warnings, " 
+                                  << info_count << " info messages)" << std::endl;
+                        
+                        // List templates with errors
+                        if (!templates_with_errors.empty()) {
+                            std::cout << "\nTemplates with errors:" << std::endl;
+                            for (const auto& tmpl : templates_with_errors) {
+                                std::cout << "  - " << tmpl << std::endl;
+                            }
+                            std::cout << "Run 'cql --validate <name>' for details" << std::endl;
+                        }
+                        
+                        // Print status message
+                        if (error_count > 0) {
+                            std::cerr << "Validation found errors." << std::endl;
+                            return 1;
+                        } else if (warning_count > 0) {
+                            std::cout << "Validation successful, but found warnings." << std::endl;
+                        } else {
+                            std::cout << "All templates passed validation!" << std::endl;
+                        }
+                    }
+                } catch (const std::exception& e) {
+                    std::cerr << "Error validating templates: " << e.what() << std::endl;
                     return 1;
                 }
             } else {

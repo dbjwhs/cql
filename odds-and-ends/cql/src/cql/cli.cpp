@@ -8,6 +8,8 @@
 #include <regex>
 #include "../../include/cql/cql.hpp"
 #include "../../include/cql/template_manager.hpp"
+#include "../../include/cql/template_validator.hpp"
+#include "../../include/cql/template_validator_schema.hpp"
 #include "../../../headers/project_utils.hpp"
 
 namespace cql::cli {
@@ -20,6 +22,15 @@ void run_cli() {
     std::string line;
     std::string current_query;
     TemplateManager template_manager;
+    
+    // Create template validator with default schema
+    TemplateValidator template_validator(template_manager);
+    auto schema = TemplateValidatorSchema::create_default_schema();
+    
+    // Add schema validation rules
+    for (const auto& [name, rule] : schema.get_validation_rules()) {
+        template_validator.add_validation_rule(rule);
+    }
     
     // store variables in memory for template instantiation
     std::map<std::string, std::string> current_variables;
@@ -55,6 +66,8 @@ void run_cli() {
                       << "  template dir [PATH]     - Show or set templates directory\n"
                       << "  template inherit CHILD PARENT - Create a template inheriting from another\n"
                       << "  template parents NAME   - Show inheritance chain for a template\n"
+                      << "  template validate NAME  - Validate a template\n"
+                      << "  template validateall    - Validate all templates\n"
                       << "  categories              - List template categories\n"
                       << "  category create NAME    - Create a new template category\n";
         } else if (line == "clear") {
@@ -414,6 +427,121 @@ void run_cli() {
                 }
             } catch (const std::exception& e) {
                 Logger::getInstance().log(LogLevel::ERROR, "Error getting inheritance chain: ", e.what());
+            }
+        } else if (line.substr(0, 18) == "template validate ") {
+            // Validate a specific template
+            std::string template_name = line.substr(18);
+            try {
+                auto result = template_validator.validate_template(template_name);
+                
+                // Output validation results
+                std::cout << "Validation results for template '" << template_name << "':" << std::endl;
+                std::cout << "------------------------------------------" << std::endl;
+                
+                if (result.has_issues()) {
+                    std::cout << "Found " << result.count_errors() << " errors, "
+                              << result.count_warnings() << " warnings, "
+                              << result.count_infos() << " info messages." << std::endl;
+                    
+                    // Print errors
+                    if (result.count_errors() > 0) {
+                        std::cout << "\nErrors:" << std::endl;
+                        for (const auto& issue : result.get_issues(TemplateValidationLevel::ERROR)) {
+                            std::cout << "  - " << issue.to_string() << std::endl;
+                        }
+                    }
+                    
+                    // Print warnings
+                    if (result.count_warnings() > 0) {
+                        std::cout << "\nWarnings:" << std::endl;
+                        for (const auto& issue : result.get_issues(TemplateValidationLevel::WARNING)) {
+                            std::cout << "  - " << issue.to_string() << std::endl;
+                        }
+                    }
+                    
+                    // Print info messages
+                    if (result.count_infos() > 0) {
+                        std::cout << "\nInfo:" << std::endl;
+                        for (const auto& issue : result.get_issues(TemplateValidationLevel::INFO)) {
+                            std::cout << "  - " << issue.to_string() << std::endl;
+                        }
+                    }
+                } else {
+                    Logger::getInstance().log(LogLevel::INFO, "Template validated successfully with no issues");
+                }
+            } catch (const std::exception& e) {
+                Logger::getInstance().log(LogLevel::ERROR, "Error validating template: ", e.what());
+            }
+        } else if (line == "template validateall") {
+            // Validate all templates
+            try {
+                auto templates = template_manager.list_templates();
+                
+                if (templates.empty()) {
+                    Logger::getInstance().log(LogLevel::INFO, "No templates found to validate");
+                } else {
+                    std::cout << "Validating " << templates.size() << " templates..." << std::endl;
+                    std::cout << "----------------------------" << std::endl;
+                    
+                    int error_count = 0;
+                    int warning_count = 0;
+                    int info_count = 0;
+                    
+                    // Keep track of templates with issues
+                    std::vector<std::string> templates_with_errors;
+                    std::vector<std::string> templates_with_warnings;
+                    
+                    for (const auto& tmpl : templates) {
+                        auto result = template_validator.validate_template(tmpl);
+                        
+                        // Count issues
+                        error_count += result.count_errors();
+                        warning_count += result.count_warnings();
+                        info_count += result.count_infos();
+                        
+                        // Print progress
+                        if (result.has_issues(TemplateValidationLevel::ERROR)) {
+                            templates_with_errors.push_back(tmpl);
+                            std::cout << "❌ " << tmpl << ": " << result.count_errors() << " errors, "
+                                      << result.count_warnings() << " warnings" << std::endl;
+                        } else if (result.has_issues(TemplateValidationLevel::WARNING)) {
+                            templates_with_warnings.push_back(tmpl);
+                            std::cout << "⚠️ " << tmpl << ": " << result.count_warnings() << " warnings" << std::endl;
+                        } else {
+                            std::cout << "✅ " << tmpl << ": No issues" << std::endl;
+                        }
+                    }
+                    
+                    // Print summary
+                    std::cout << "\nValidation Summary:" << std::endl;
+                    std::cout << "----------------------------" << std::endl;
+                    std::cout << "Templates validated: " << templates.size() << std::endl;
+                    std::cout << "Total issues: " << (error_count + warning_count + info_count) << " ("
+                              << error_count << " errors, " 
+                              << warning_count << " warnings, " 
+                              << info_count << " info messages)" << std::endl;
+                    
+                    // List templates with errors
+                    if (!templates_with_errors.empty()) {
+                        std::cout << "\nTemplates with errors:" << std::endl;
+                        for (const auto& tmpl : templates_with_errors) {
+                            std::cout << "  - " << tmpl << std::endl;
+                        }
+                        std::cout << "Run 'template validate <name>' for details" << std::endl;
+                    }
+                    
+                    if (error_count > 0) {
+                        Logger::getInstance().log(LogLevel::ERROR, 
+                            "Validation found ", error_count, " errors in ", templates_with_errors.size(), " template(s)");
+                    } else if (warning_count > 0) {
+                        Logger::getInstance().log(LogLevel::NORMAL, 
+                            "Validation found ", warning_count, " warnings in ", templates_with_warnings.size(), " template(s)");
+                    } else {
+                        Logger::getInstance().log(LogLevel::INFO, "All templates validated successfully");
+                    }
+                }
+            } catch (const std::exception& e) {
+                Logger::getInstance().log(LogLevel::ERROR, "Error validating templates: ", e.what());
             }
         } else {
             // Add line to the current query
