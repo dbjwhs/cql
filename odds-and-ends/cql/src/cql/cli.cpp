@@ -53,6 +53,8 @@ void run_cli() {
                       << "  template clearvars      - Clear all current variables\n"
                       << "  template use NAME       - Use a template with current variables\n"
                       << "  template dir [PATH]     - Show or set templates directory\n"
+                      << "  template inherit CHILD PARENT - Create a template inheriting from another\n"
+                      << "  template parents NAME   - Show inheritance chain for a template\n"
                       << "  categories              - List template categories\n"
                       << "  category create NAME    - Create a new template category\n";
         } else if (line == "clear") {
@@ -142,6 +144,11 @@ void run_cli() {
                 std::cout << "Template: " << metadata.name << std::endl;
                 std::cout << "Description: " << metadata.description << std::endl;
                 std::cout << "Last modified: " << metadata.last_modified << std::endl;
+                
+                // Show parent template if it exists
+                if (metadata.parent.has_value() && !metadata.parent.value().empty()) {
+                    std::cout << "Inherits from: " << metadata.parent.value() << std::endl;
+                }
                 
                 if (!metadata.variables.empty()) {
                     std::cout << "Variables:" << std::endl;
@@ -357,6 +364,57 @@ void run_cli() {
             }
             
             Logger::getInstance().log(LogLevel::INFO, "Finished setting variables");
+        } else if (line.substr(0, 17) == "template inherit ") {
+            // Create a template that inherits from another template
+            std::string params = line.substr(17);
+            size_t space_pos = params.find(' ');
+            if (space_pos == std::string::npos) {
+                Logger::getInstance().log(LogLevel::ERROR, 
+                    "Invalid format. Use: template inherit CHILD_NAME PARENT_NAME");
+                continue;
+            }
+            
+            std::string child_name = params.substr(0, space_pos);
+            std::string parent_name = params.substr(space_pos + 1);
+            
+            try {
+                if (current_query.empty()) {
+                    Logger::getInstance().log(LogLevel::ERROR, "Cannot create inherited template with empty content");
+                    continue;
+                }
+                
+                template_manager.create_inherited_template(child_name, parent_name, current_query);
+                Logger::getInstance().log(LogLevel::INFO, "Created template '", child_name, 
+                                         "' inheriting from '", parent_name, "'");
+            } catch (const std::exception& e) {
+                Logger::getInstance().log(LogLevel::ERROR, "Failed to create inherited template: ", e.what());
+            }
+        } else if (line.substr(0, 17) == "template parents ") {
+            // Show inheritance chain for a template
+            std::string template_name = line.substr(17);
+            try {
+                auto chain = template_manager.get_inheritance_chain(template_name);
+                
+                if (chain.size() <= 1) {
+                    Logger::getInstance().log(LogLevel::INFO, "Template '", template_name, 
+                                             "' does not inherit from any other template");
+                } else {
+                    Logger::getInstance().log(LogLevel::INFO, "Inheritance chain for '", template_name, "':");
+                    
+                    for (size_t i = 0; i < chain.size(); ++i) {
+                        // First template is the base, last is the current template
+                        if (i == 0) {
+                            std::cout << "  Base: " << chain[i] << std::endl;
+                        } else if (i == chain.size() - 1) {
+                            std::cout << "  Current: " << chain[i] << std::endl;
+                        } else {
+                            std::cout << "  Parent " << i << ": " << chain[i] << std::endl;
+                        }
+                    }
+                }
+            } catch (const std::exception& e) {
+                Logger::getInstance().log(LogLevel::ERROR, "Error getting inheritance chain: ", e.what());
+            }
         } else {
             // Add line to the current query
             if (!current_query.empty()) {

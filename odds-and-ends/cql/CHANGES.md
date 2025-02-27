@@ -1,3 +1,70 @@
+# Change Log
+
+## Phase 3: Template Management System
+
+### Template Inheritance Support (2025-02-26)
+- Added template inheritance with `@inherit` directive
+- Implemented inheritance chain management
+- Added circular inheritance detection
+- Added variable override support in inheritance hierarchy
+- Added CLI commands for working with template inheritance
+  - `template inherit CHILD PARENT` - Create a child template that inherits from a parent
+  - `template parents NAME` - Show the inheritance chain for a template
+- Added inheritance information to template metadata
+- Updated `instantiate_template` to work with inherited templates
+- Added comprehensive tests for inheritance functionality
+- Created example templates demonstrating inheritance chains
+
+### Template Variable System (2025-02-20)
+- Standardized comment styling in codebase
+- Added variable replacement system
+- Implemented variable collection from templates
+- Added CLI commands for working with template variables
+  - `template vars` - Show current variables in memory
+  - `template clearvars` - Clear all current variables
+  - `template setvars` - Enter variables interactively
+- Enhanced template use to combine in-memory and template variables
+
+### Template Directory Structure (2025-02-15)
+- Implemented standard directory structure (common/user)
+- Added directory structure validation
+- Added repair functionality for invalid structures
+- Enhanced path handling to support category/template format
+- Added README explaining directory structure
+
+## Phase 2: Enhanced Query Directives (2025-02-10)
+
+### New Directives
+- Added `@architecture` directive
+- Added `@constraint` directive
+- Added `@security` directive
+- Added `@complexity` directive
+- Added `@example` directive with named examples
+- Added `@variable` directive for template parameters
+
+### Variable Interpolation
+- Implemented `${variable}` syntax for variable references
+- Added variable extraction and resolution
+- Added variable validation
+
+## Phase 1: Basic CQL Implementation (2025-02-01)
+
+### Initial Features
+- Implemented basic directive parsing
+- Added `@copyright` directive
+- Added `@language` directive
+- Added `@description` directive
+- Added `@context` directive
+- Added `@dependency` directive
+- Added `@test` directive
+
+### Infrastructure
+- Set up basic project structure
+- Implemented lexer, parser, and compiler
+- Added command-line interface
+- Added interactive mode
+- Implemented file processing
+
 # CQL - Phase 1 Refactoring Summary
 
 ## Overview of Changes
@@ -38,39 +105,3 @@ This phase focused on restructuring the codebase by:
 
 ### Project Infrastructure
 - `LICENSE` - MIT license file
-
-## Key Improvements
-
-1. **Code Organization**
-   - Split monolithic file into separate header and implementation files
-   - Used namespaces to organize code
-   - Improved class interfaces with detailed documentation
-
-2. **Error Handling**
-   - Added custom error classes (LexerError, ParserError)
-   - Improved error messages with line/column information
-   - Better error recovery mechanisms
-
-3. **Build System**
-   - Updated CMake configuration for modern C++20
-   - Added proper include paths
-   - Set up automated testing
-   - Configured installation targets
-
-4. **CLI Improvements**
-   - Added proper help command output
-   - Better argument handling
-   - Improved user feedback during execution
-
-5. **Documentation**
-   - Added detailed class and function documentation
-   - Improved README with build instructions
-   - Added clear examples and usage instructions
-
-## Next Steps (Phase 2)
-
-The next phase will focus on enhancing the core features:
-- Adding new directives (@architecture, @constraint, @example, etc.)
-- Implementing validation rules for query structure
-- Creating flexible output formatting for different LLM models
-- Adding template variables and string interpolation

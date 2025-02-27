@@ -83,8 +83,23 @@ namespace test {
     // Test the compiler
     void test_compiler();
     
+    // Test basic compilation
+    void test_basic_compilation();
+    
+    // Test complex compilation
+    void test_complex_compilation();
+    
+    // Test Phase 2 features
+    void test_phase2_features();
+    
     // Test the template manager
     void test_template_manager();
+    
+    // Test template management
+    void test_template_management();
+    
+    // Test template inheritance
+    void test_template_inheritance();
     
     // Example queries
     void query_examples();

@@ -10,6 +10,7 @@
 #include <map>
 #include <optional>
 #include <filesystem>
+#include <set>
 
 namespace cql {
 
@@ -33,6 +34,7 @@ public:
         std::string description;
         std::vector<std::string> variables;
         std::string last_modified;
+        std::optional<std::string> parent; // parent template name if inheriting
     };
     
     TemplateMetadata get_template_metadata(const std::string& name);
@@ -56,6 +58,18 @@ public:
     
     // list all categories
     std::vector<std::string> list_categories();
+    
+    // template inheritance methods
+    
+    // create a new template that inherits from another
+    void create_inherited_template(const std::string& name, const std::string& parent_name, 
+                                  const std::string& content);
+    
+    // load a template and merge in inherited content from parent templates
+    std::string load_template_with_inheritance(const std::string& name);
+    
+    // get a list of parent templates (inheritance chain)
+    std::vector<std::string> get_inheritance_chain(const std::string& name);
 
 private:
     // directory where templates are stored
@@ -85,6 +99,13 @@ private:
     // replace variable references with their values
     std::string replace_variables(const std::string& content, 
                                   const std::map<std::string, std::string>& variables);
+    
+    // extract parent template name if this template inherits from another
+    std::optional<std::string> extract_parent_template(const std::string& content);
+    
+    // merge parent template content with child template content
+    std::string merge_template_content(const std::string& parent_content, 
+                                      const std::string& child_content);
 
 public: // make public to allow direct access from CLI
     // extract and combine all variables from template content and declared variables

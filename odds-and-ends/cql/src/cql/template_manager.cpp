@@ -133,12 +133,16 @@ TemplateManager::TemplateMetadata TemplateManager::get_template_metadata(const s
         std::stringstream ss;
         ss << std::put_time(std::localtime(&last_write_time_t), "%Y-%m-%d %H:%M:%S");
         
+        // Extract parent template if any
+        auto parent = extract_parent_template(content);
+        
         // create and return the metadata
         TemplateMetadata metadata{
             .name = name,
             .description = extract_description(content),
             .variables = extract_variables(content),
-            .last_modified = ss.str()
+            .last_modified = ss.str(),
+            .parent = parent
         };
         
         return metadata;
@@ -278,8 +282,8 @@ std::string TemplateManager::instantiate_template(
     const std::string& name, 
     const std::map<std::string, std::string>& variables
 ) {
-    // load the template content
-    std::string content = load_template(name);
+    // load the template content with inheritance support
+    std::string content = load_template_with_inheritance(name);
     
     // create variable declarations at the top of the template
     std::string variables_section;
@@ -648,6 +652,149 @@ std::map<std::string, std::string> TemplateManager::collect_variables(const std:
     }
     
     return variables;
+}
+
+// Extract parent template name if this template inherits from another
+std::optional<std::string> TemplateManager::extract_parent_template(const std::string& content) {
+    std::regex inherit_regex("@inherit\\s+\"([^\"]*)\"");
+    std::smatch match;
+    
+    if (std::regex_search(content, match, inherit_regex) && match.size() > 1) {
+        Logger::getInstance().log(LogLevel::INFO, "Found parent template: ", match[1].str());
+        return match[1].str();
+    }
+    
+    return std::nullopt;
+}
+
+// Create a new template that inherits from another
+void TemplateManager::create_inherited_template(const std::string& name, 
+                                               const std::string& parent_name, 
+                                               const std::string& content) {
+    // Verify parent template exists
+    std::string parent_path = get_template_path(parent_name);
+    if (!fs::exists(parent_path)) {
+        throw std::runtime_error("Parent template not found: " + parent_name);
+    }
+    
+    // Add inheritance directive if not already present
+    std::regex inherit_regex("@inherit\\s+\"([^\"]*)\"");
+    std::string modified_content = content;
+    
+    if (!std::regex_search(content, inherit_regex)) {
+        // Add @inherit directive at the beginning of the content
+        modified_content = "@inherit \"" + parent_name + "\"\n" + content;
+    }
+    
+    // Save the template
+    save_template(name, modified_content);
+    Logger::getInstance().log(LogLevel::INFO, "Created template '", name, 
+                              "' inheriting from '", parent_name, "'");
+}
+
+// Get a list of parent templates (inheritance chain)
+std::vector<std::string> TemplateManager::get_inheritance_chain(const std::string& name) {
+    std::vector<std::string> chain;
+    std::set<std::string> visited; // To detect circular inheritance
+    
+    std::string current = name;
+    while (!current.empty()) {
+        // Add to chain
+        chain.push_back(current);
+        
+        // Mark as visited
+        visited.insert(current);
+        
+        try {
+            // Load the template content
+            std::string content = load_template(current);
+            
+            // Extract parent template name
+            auto parent = extract_parent_template(content);
+            if (!parent.has_value() || parent.value().empty()) {
+                break; // No parent, end of chain
+            }
+            
+            current = parent.value();
+            
+            // Check for circular inheritance
+            if (visited.find(current) != visited.end()) {
+                Logger::getInstance().log(LogLevel::ERROR, 
+                    "Circular inheritance detected for template: ", name);
+                throw std::runtime_error("Circular inheritance detected for template: " + name);
+            }
+        } catch (const std::exception& e) {
+            Logger::getInstance().log(LogLevel::ERROR, 
+                "Error in inheritance chain for template '", name, "': ", e.what());
+            break;
+        }
+    }
+    
+    // Reverse to get base template first, followed by derived templates
+    std::reverse(chain.begin(), chain.end());
+    return chain;
+}
+
+// Load a template and merge in inherited content from parent templates
+std::string TemplateManager::load_template_with_inheritance(const std::string& name) {
+    // Get the inheritance chain
+    std::vector<std::string> chain = get_inheritance_chain(name);
+    
+    if (chain.empty()) {
+        throw std::runtime_error("Failed to resolve inheritance chain for template: " + name);
+    }
+    
+    // Start with empty content
+    std::string merged_content;
+    
+    // Process each template in the chain, starting from base class
+    for (const auto& template_name : chain) {
+        std::string template_content = load_template(template_name);
+        
+        if (merged_content.empty()) {
+            // For the first template (base class), use its content directly
+            merged_content = template_content;
+        } else {
+            // For derived templates, merge with existing content
+            merged_content = merge_template_content(merged_content, template_content);
+        }
+    }
+    
+    return merged_content;
+}
+
+// Merge parent template content with child template content
+std::string TemplateManager::merge_template_content(const std::string& parent_content, 
+                                                  const std::string& child_content) {
+    // Strip @inherit directive from child content
+    std::regex inherit_regex("@inherit\\s+\"[^\"]*\"\\s*\n?");
+    std::string stripped_child = std::regex_replace(child_content, inherit_regex, "");
+    
+    // Collect variables from both templates
+    auto parent_vars = collect_variables(parent_content);
+    auto child_vars = collect_variables(child_content);
+    
+    // Child variables override parent variables
+    std::map<std::string, std::string> merged_vars = parent_vars;
+    for (const auto& [name, value] : child_vars) {
+        merged_vars[name] = value;
+    }
+    
+    // Create the variable declarations section
+    std::string variables_section;
+    for (const auto& [name, value] : merged_vars) {
+        variables_section += "@variable \"" + name + "\" \"" + value + "\"\n";
+    }
+    
+    // Strip variable declarations from parent content
+    std::regex var_regex("@variable\\s+\"[^\"]*\"\\s+\"[^\"]*\"\\s*\n?");
+    std::string parent_without_vars = std::regex_replace(parent_content, var_regex, "");
+    
+    // Strip variable declarations from child content
+    std::string child_without_vars = std::regex_replace(stripped_child, var_regex, "");
+    
+    // Combine the content
+    return variables_section + "\n" + parent_without_vars + "\n" + child_without_vars;
 }
 
 } // namespace cql
