@@ -461,25 +461,12 @@ bool TemplateManager::validate_template_directory() const {
 
 void TemplateManager::initialize_template_structure() {
     try {
-        // create standard subdirectories
-        fs::create_directory(fs::path(m_templates_dir) / "common");
-        fs::create_directory(fs::path(m_templates_dir) / "user");
+        // Create standard directory structure
+        ensure_standard_directories();
         
-        // create a README file explaining the structure
-        std::string readme_path = (fs::path(m_templates_dir) / "README.txt").string();
-        std::ofstream readme(readme_path);
-        if (readme.is_open()) {
-            readme << "CQL Template Directory Structure\n";
-            readme << "===============================\n\n";
-            readme << "This directory contains CQL templates organized as follows:\n\n";
-            readme << "- common/ : Standard templates that ship with CQL\n";
-            readme << "- user/   : User-created templates\n\n";
-            readme << "You can also create your own categories as subdirectories.\n";
-            readme << "Each template should be a .cql file.\n";
-            readme.close();
-            
-            Logger::getInstance().log(LogLevel::INFO, "Created template directory structure");
-        }
+        // Create README file
+        create_readme_file();
+        Logger::getInstance().log(LogLevel::INFO, "Created template directory structure");
     } catch (const std::exception& e) {
         Logger::getInstance().log(LogLevel::ERROR, "Failed to initialize template structure: ", e.what());
     }
@@ -487,37 +474,18 @@ void TemplateManager::initialize_template_structure() {
 
 bool TemplateManager::repair_template_directory() {
     try {
-        // ensure main directory exists
+        // Ensure main directory exists
         if (!fs::exists(m_templates_dir)) {
             fs::create_directories(m_templates_dir);
         }
         
-        // ensure common subdirectory exists
-        if (!fs::exists(fs::path(m_templates_dir) / "common") || 
-            !fs::is_directory(fs::path(m_templates_dir) / "common")) {
-            fs::create_directory(fs::path(m_templates_dir) / "common");
-        }
+        // Ensure standard directory structure
+        ensure_standard_directories();
         
-        // ensure user subdirectory exists
-        if (!fs::exists(fs::path(m_templates_dir) / "user") || 
-            !fs::is_directory(fs::path(m_templates_dir) / "user")) {
-            fs::create_directory(fs::path(m_templates_dir) / "user");
-        }
-        
-        // recreate README if missing
+        // Recreate README if missing
         std::string readme_path = (fs::path(m_templates_dir) / "README.txt").string();
         if (!fs::exists(readme_path)) {
-            std::ofstream readme(readme_path);
-            if (readme.is_open()) {
-                readme << "CQL Template Directory Structure\n";
-                readme << "===============================\n\n";
-                readme << "This directory contains CQL templates organized as follows:\n\n";
-                readme << "- common/ : Standard templates that ship with CQL\n";
-                readme << "- user/   : User-created templates\n\n";
-                readme << "You can also create your own categories as subdirectories.\n";
-                readme << "Each template should be a .cql file.\n";
-                readme.close();
-            }
+            create_readme_file();
         }
         
         Logger::getInstance().log(LogLevel::INFO, "Repaired template directory structure");
@@ -529,47 +497,47 @@ bool TemplateManager::repair_template_directory() {
 }
 
 std::vector<std::string> TemplateManager::extract_variables(const std::string& content) {
+    // Get all declared variables
+    auto declared_vars = cql::util::extract_regex_group_values(
+        content,
+        "@variable\\s+\"([^\"]+)\"\\s+\"[^\"]*\"",
+        1
+    );
+    
+    // Get all referenced variables
+    auto referenced_vars = cql::util::extract_regex_group_values(
+        content,
+        "\\$\\{([^}]+)\\}",
+        1
+    );
+    
+    // Combine both sets into a vector
     std::vector<std::string> variables;
-    std::regex variable_regex("@variable\\s+\"([^\"]+)\"\\s+\"[^\"]*\"");
+    variables.insert(variables.end(), declared_vars.begin(), declared_vars.end());
     
-    std::string::const_iterator search_start(content.cbegin());
-    std::smatch match;
-    
-    // find all variable declarations
-    while (std::regex_search(search_start, content.cend(), match, variable_regex)) {
-        if (match.size() > 1) {
-            variables.push_back(match[1].str());
+    // Add referenced variables that aren't already in the list
+    for (const auto& var : referenced_vars) {
+        if (declared_vars.find(var) == declared_vars.end()) {
+            variables.push_back(var);
         }
-        search_start = match.suffix().first;
-    }
-    
-    // also look for variable references
-    std::regex reference_regex("\\$\\{([^}]+)\\}");
-    search_start = content.cbegin();
-    
-    while (std::regex_search(search_start, content.cend(), match, reference_regex)) {
-        if (match.size() > 1) {
-            std::string var_name = match[1].str();
-            if (std::find(variables.begin(), variables.end(), var_name) == variables.end()) {
-                variables.push_back(var_name);
-            }
-        }
-        search_start = match.suffix().first;
     }
     
     return variables;
 }
 
 std::string TemplateManager::extract_description(const std::string& content) {
-    // try to extract a description from @description directive
-    std::regex desc_regex("@description\\s+\"([^\"]*)\"");
-    std::smatch match;
+    // Try to extract a description from @description directive
+    auto descriptions = cql::util::extract_regex_group_values(
+        content,
+        "@description\\s+\"([^\"]*)\"",
+        1
+    );
     
-    if (std::regex_search(content, match, desc_regex) && match.size() > 1) {
-        return match[1].str();
+    if (!descriptions.empty()) {
+        return *descriptions.begin();
     }
     
-    // if no description directive found, return the first line as a fallback
+    // If no description directive found, return the first line as a fallback
     size_t eol = content.find('\n');
     if (eol != std::string::npos) {
         return content.substr(0, eol);
@@ -635,20 +603,21 @@ std::string TemplateManager::replace_variables(
 
 std::map<std::string, std::string> TemplateManager::collect_variables(const std::string& content) {
     std::map<std::string, std::string> variables;
-    std::regex variable_decl_regex("@variable\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"");
     
-    std::string::const_iterator search_start(content.cbegin());
-    std::smatch match;
+    // Extract all @variable declarations with their values
+    auto variable_matches = cql::util::extract_regex_matches(
+        content,
+        "@variable\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"",
+        2
+    );
     
-    // extract all @variable declarations
-    while (std::regex_search(search_start, content.cend(), match, variable_decl_regex)) {
+    for (const auto& match : variable_matches) {
         if (match.size() > 2) {
-            std::string name = match[1].str();
-            std::string value = match[2].str();
+            std::string name = match[1];
+            std::string value = match[2];
             variables[name] = value;
             Logger::getInstance().log(LogLevel::INFO, "Found variable declaration: ", name, "=", value);
         }
-        search_start = match.suffix().first;
     }
     
     return variables;
@@ -656,12 +625,16 @@ std::map<std::string, std::string> TemplateManager::collect_variables(const std:
 
 // Extract parent template name if this template inherits from another
 std::optional<std::string> TemplateManager::extract_parent_template(const std::string& content) {
-    std::regex inherit_regex("@inherit\\s+\"([^\"]*)\"");
-    std::smatch match;
+    auto parents = cql::util::extract_regex_group_values(
+        content,
+        "@inherit\\s+\"([^\"]*)\"",
+        1
+    );
     
-    if (std::regex_search(content, match, inherit_regex) && match.size() > 1) {
-        Logger::getInstance().log(LogLevel::INFO, "Found parent template: ", match[1].str());
-        return match[1].str();
+    if (!parents.empty()) {
+        std::string parent = *parents.begin();
+        Logger::getInstance().log(LogLevel::INFO, "Found parent template: ", parent);
+        return parent;
     }
     
     return std::nullopt;
@@ -835,81 +808,8 @@ std::string TemplateManager::generate_template_documentation(const std::string& 
         // load the template content
         std::string content = load_template(name);
         
-        // extract example
-        std::string example = extract_example(content);
-        
-        // format the documentation
-        std::stringstream doc;
-        
-        // template name as title
-        doc << "# " << metadata.name << "\n\n";
-        
-        // description
-        doc << "## Description\n\n" << metadata.description << "\n\n";
-        
-        // last modified date
-        doc << "**Last Modified:** " << metadata.last_modified << "\n\n";
-        
-        // parent template if any
-        if (metadata.parent.has_value() && !metadata.parent.value().empty()) {
-            doc << "**Inherits From:** " << metadata.parent.value() << "\n\n";
-        }
-        
-        // variables section
-        doc << "## Variables\n\n";
-        if (metadata.variables.empty()) {
-            doc << "This template has no variables.\n\n";
-        } else {
-            doc << "| Name | Description |\n";
-            doc << "|------|-------------|\n";
-            
-            // extract variable descriptions from content if available
-            std::regex var_desc_regex("@variable_description\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"");
-            std::map<std::string, std::string> var_descriptions;
-            
-            std::string::const_iterator search_start(content.cbegin());
-            std::smatch var_match;
-            
-            while (std::regex_search(search_start, content.cend(), var_match, var_desc_regex)) {
-                if (var_match.size() > 2) {
-                    var_descriptions[var_match[1].str()] = var_match[2].str();
-                }
-                search_start = var_match.suffix().first;
-            }
-            
-            for (const auto& var : metadata.variables) {
-                std::string desc = var_descriptions.count(var) > 0 ? 
-                                  var_descriptions[var] : "No description available";
-                doc << "| " << var << " | " << desc << " |\n";
-            }
-            doc << "\n";
-        }
-        
-        // example usage
-        doc << "## Example\n\n";
-        doc << "```sql\n" << example << "\n```\n\n";
-        
-        // inheritance chain if applicable
-        if (metadata.parent.has_value() && !metadata.parent.value().empty()) {
-            try {
-                auto chain = get_inheritance_chain(name);
-                if (chain.size() > 1) {  // more than just the current template
-                    doc << "## Inheritance Chain\n\n";
-                    for (size_t i = 0; i < chain.size(); ++i) {
-                        doc << (i + 1) << ". " << chain[i] << "\n";
-                    }
-                    doc << "\n";
-                }
-            } catch (const std::exception& e) {
-                doc << "**Note:** Error retrieving inheritance chain: " << e.what() << "\n\n";
-            }
-        }
-        
-        // location info
-        doc << "## File Location\n\n";
-        doc << "```\n" << get_template_path(name) << "\n```\n";
-        
-        return doc.str();
+        // format the template documentation using common helper
+        return format_template_markdown(metadata, content);
     } catch (const std::exception& e) {
         return "Error generating documentation: " + std::string(e.what());
     }
@@ -978,15 +878,16 @@ std::string TemplateManager::generate_all_template_documentation() {
             // info about templates in this category
             for (const auto& templ : templ_list) {
                 try {
-                    // get template metadata
-                    TemplateMetadata metadata = get_template_metadata(templ);
-                    
                     // add a separator before each template
                     doc << "<a id=\"" << templ << "\"></a>\n\n";
                     doc << "---\n\n";
                     
-                    // add template documentation
-                    doc << generate_template_documentation(templ) << "\n\n";
+                    // get template metadata and content
+                    TemplateMetadata metadata = get_template_metadata(templ);
+                    std::string content = load_template(templ);
+                    
+                    // add template documentation using the common formatter
+                    doc << format_template_markdown(metadata, content) << "\n\n";
                 } catch (const std::exception& e) {
                     doc << "### " << templ << "\n\n";
                     doc << "Error generating documentation: " << e.what() << "\n\n";
@@ -1219,6 +1120,114 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
         Logger::getInstance().log(LogLevel::ERROR, "Failed to export documentation: ", e.what());
         return false;
     }
+}
+
+void TemplateManager::create_readme_file() {
+    std::string readme_path = (fs::path(m_templates_dir) / "README.txt").string();
+    std::ofstream readme(readme_path);
+    if (readme.is_open()) {
+        readme << "CQL Template Directory Structure\n";
+        readme << "===============================\n\n";
+        readme << "This directory contains CQL templates organized as follows:\n\n";
+        readme << "- common/ : Standard templates that ship with CQL\n";
+        readme << "- user/   : User-created templates\n\n";
+        readme << "You can also create your own categories as subdirectories.\n";
+        readme << "Each template should be a .cql file.\n";
+        readme.close();
+    }
+}
+
+void TemplateManager::ensure_standard_directories() {
+    // Create common subdirectory if it doesn't exist
+    if (!fs::exists(fs::path(m_templates_dir) / "common") || 
+        !fs::is_directory(fs::path(m_templates_dir) / "common")) {
+        fs::create_directory(fs::path(m_templates_dir) / "common");
+    }
+    
+    // Create user subdirectory if it doesn't exist
+    if (!fs::exists(fs::path(m_templates_dir) / "user") || 
+        !fs::is_directory(fs::path(m_templates_dir) / "user")) {
+        fs::create_directory(fs::path(m_templates_dir) / "user");
+    }
+}
+
+// Format template documentation as markdown
+std::string TemplateManager::format_template_markdown(const TemplateMetadata& metadata, const std::string& content) {
+    // Extract example
+    std::string example = extract_example(content);
+    
+    // Format the documentation
+    std::stringstream doc;
+    
+    // Template name as title
+    doc << "# " << metadata.name << "\n\n";
+    
+    // Description
+    doc << "## Description\n\n" << metadata.description << "\n\n";
+    
+    // Last modified date
+    doc << "**Last Modified:** " << metadata.last_modified << "\n\n";
+    
+    // Parent template if any
+    if (metadata.parent.has_value() && !metadata.parent.value().empty()) {
+        doc << "**Inherits From:** " << metadata.parent.value() << "\n\n";
+    }
+    
+    // Variables section
+    doc << "## Variables\n\n";
+    if (metadata.variables.empty()) {
+        doc << "This template has no variables.\n\n";
+    } else {
+        doc << "| Name | Description |\n";
+        doc << "|------|-------------|\n";
+        
+        // Extract variable descriptions from content if available
+        auto var_desc_matches = cql::util::extract_regex_matches(
+            content,
+            "@variable_description\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"",
+            2
+        );
+        
+        std::map<std::string, std::string> var_descriptions;
+        for (const auto& match : var_desc_matches) {
+            if (match.size() > 2) {
+                var_descriptions[match[1]] = match[2];
+            }
+        }
+        
+        for (const auto& var : metadata.variables) {
+            std::string desc = var_descriptions.count(var) > 0 ? 
+                              var_descriptions[var] : "No description available";
+            doc << "| " << var << " | " << desc << " |\n";
+        }
+        doc << "\n";
+    }
+    
+    // Example usage
+    doc << "## Example\n\n";
+    doc << "```sql\n" << example << "\n```\n\n";
+    
+    // Inheritance chain if applicable
+    if (metadata.parent.has_value() && !metadata.parent.value().empty()) {
+        try {
+            auto chain = get_inheritance_chain(metadata.name);
+            if (chain.size() > 1) {  // more than just the current template
+                doc << "## Inheritance Chain\n\n";
+                for (size_t i = 0; i < chain.size(); ++i) {
+                    doc << (i + 1) << ". " << chain[i] << "\n";
+                }
+                doc << "\n";
+            }
+        } catch (const std::exception& e) {
+            doc << "**Note:** Error retrieving inheritance chain: " << e.what() << "\n\n";
+        }
+    }
+    
+    // Location info
+    doc << "## File Location\n\n";
+    doc << "```\n" << get_template_path(metadata.name) << "\n```\n";
+    
+    return doc.str();
 }
 
 } // namespace cql

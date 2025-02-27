@@ -9,6 +9,7 @@
 #include <sstream>
 #include <algorithm>
 #include <unordered_set>
+#include "../../include/cql/cql.hpp" // For util namespace
 
 namespace cql {
 
@@ -107,24 +108,23 @@ std::string TemplateValidationResult::get_summary() const {
     
     ss << error_count << " error(s), " << warning_count << " warning(s), " << info_count << " info message(s)";
     
-    if (error_count > 0) {
-        ss << "\n\nErrors:";
-        for (const auto& issue : get_issues(TemplateValidationLevel::ERROR)) {
-            ss << "\n- " << issue.get_message();
-        }
-    }
+    // Use a structure to iterate through all issue levels with their counts
+    const struct {
+        TemplateValidationLevel level;
+        size_t count;
+        std::string label;
+    } issue_types[] = {
+        {TemplateValidationLevel::ERROR, error_count, "Errors"},
+        {TemplateValidationLevel::WARNING, warning_count, "Warnings"},
+        {TemplateValidationLevel::INFO, info_count, "Info"}
+    };
     
-    if (warning_count > 0) {
-        ss << "\n\nWarnings:";
-        for (const auto& issue : get_issues(TemplateValidationLevel::WARNING)) {
-            ss << "\n- " << issue.get_message();
-        }
-    }
-    
-    if (info_count > 0) {
-        ss << "\n\nInfo:";
-        for (const auto& issue : get_issues(TemplateValidationLevel::INFO)) {
-            ss << "\n- " << issue.get_message();
+    for (const auto& type : issue_types) {
+        if (type.count > 0) {
+            ss << "\n\n" << type.label << ":";
+            for (const auto& issue : get_issues(type.level)) {
+                ss << "\n- " << issue.get_message();
+            }
         }
     }
     
@@ -359,54 +359,27 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_inheritance_cycle(
 }
 
 std::set<std::string> TemplateValidator::extract_declared_variables(const std::string& content) {
-    std::set<std::string> variables;
-    std::regex variable_decl_regex("@variable\\s+\"([^\"]*)\"\\s+\"[^\"]*\"");
-    
-    auto begin = std::sregex_iterator(content.begin(), content.end(), variable_decl_regex);
-    auto end = std::sregex_iterator();
-    
-    for (std::sregex_iterator it = begin; it != end; ++it) {
-        std::smatch match = *it;
-        if (match.size() > 1) {
-            variables.insert(match[1].str());
-        }
-    }
-    
-    return variables;
+    return cql::util::extract_regex_group_values(
+        content,
+        "@variable\\s+\"([^\"]*)\"\\s+\"[^\"]*\"",
+        1
+    );
 }
 
 std::set<std::string> TemplateValidator::extract_referenced_variables(const std::string& content) {
-    std::set<std::string> variables;
-    std::regex variable_ref_regex("\\$\\{([^}]+)\\}");
-    
-    auto begin = std::sregex_iterator(content.begin(), content.end(), variable_ref_regex);
-    auto end = std::sregex_iterator();
-    
-    for (std::sregex_iterator it = begin; it != end; ++it) {
-        std::smatch match = *it;
-        if (match.size() > 1) {
-            variables.insert(match[1].str());
-        }
-    }
-    
-    return variables;
+    return cql::util::extract_regex_group_values(
+        content,
+        "\\$\\{([^}]+)\\}",
+        1
+    );
 }
 
 std::set<std::string> TemplateValidator::extract_directives(const std::string& content) {
-    std::set<std::string> directives;
-    std::regex directive_regex("^(@[a-zA-Z_]+)\\s+", std::regex::multiline);
-    
-    auto begin = std::sregex_iterator(content.begin(), content.end(), directive_regex);
-    auto end = std::sregex_iterator();
-    
-    for (std::sregex_iterator it = begin; it != end; ++it) {
-        std::smatch match = *it;
-        if (match.size() > 1) {
-            directives.insert(match[1].str());
-        }
-    }
-    
-    return directives;
+    return cql::util::extract_regex_group_values(
+        content,
+        "^(@[a-zA-Z_]+)\\s+",
+        1
+    );
 }
 
 } // namespace cql

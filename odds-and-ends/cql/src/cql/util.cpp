@@ -3,6 +3,8 @@
 
 #include <fstream>
 #include <stdexcept>
+#include <regex>
+#include <set>
 #include "../../include/cql/cql.hpp"
 #include "../../../headers/project_utils.hpp"
 
@@ -27,6 +29,60 @@ void write_file(const std::string& filepath, const std::string& content) {
 
 bool contains(const std::string& str, const std::string& substr) {
     return str.find(substr) != std::string::npos;
+}
+
+// Extract regex matches from text using a pattern
+std::vector<std::vector<std::string>> extract_regex_matches(
+    const std::string& content, 
+    const std::string& pattern,
+    size_t expected_groups
+) {
+    std::vector<std::vector<std::string>> results;
+    std::regex regex_pattern(pattern);
+    
+    auto begin = std::sregex_iterator(content.begin(), content.end(), regex_pattern);
+    auto end = std::sregex_iterator();
+    
+    for (std::sregex_iterator it = begin; it != end; ++it) {
+        std::smatch match = *it;
+        
+        // Skip if we don't have the expected number of groups
+        if (expected_groups > 0 && match.size() <= expected_groups) {
+            continue;
+        }
+        
+        // Each match has multiple groups
+        std::vector<std::string> groups;
+        for (size_t i = 0; i < match.size(); ++i) {
+            groups.push_back(match[i].str());
+        }
+        
+        results.push_back(groups);
+    }
+    
+    return results;
+}
+
+// Extract string values that match a specific regex group
+std::set<std::string> extract_regex_group_values(
+    const std::string& content, 
+    const std::string& pattern,
+    size_t group_index
+) {
+    std::set<std::string> values;
+    std::regex regex_pattern(pattern);
+    
+    auto begin = std::sregex_iterator(content.begin(), content.end(), regex_pattern);
+    auto end = std::sregex_iterator();
+    
+    for (std::sregex_iterator it = begin; it != end; ++it) {
+        std::smatch match = *it;
+        if (match.size() > group_index) {
+            values.insert(match[group_index].str());
+        }
+    }
+    
+    return values;
 }
 
 } // namespace cql::util

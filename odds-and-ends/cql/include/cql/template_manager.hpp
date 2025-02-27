@@ -99,6 +99,15 @@ private:
     // repair template directory if needed
     bool repair_template_directory();
     
+    // create README file with standard content
+    void create_readme_file();
+    
+    // ensure standard directory structure (common/ and user/ directories)
+    void ensure_standard_directories();
+    
+    // format template metadata as markdown
+    std::string format_template_markdown(const TemplateMetadata& metadata, const std::string& content);
+    
     // extract variables from a template
     std::vector<std::string> extract_variables(const std::string& content);
     

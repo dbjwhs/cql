@@ -36,7 +36,7 @@
 namespace cql {
 
 /**
- * File utility functions
+ * File and string utility functions
  */
 namespace util {
     // Read the contents of a file
@@ -47,6 +47,22 @@ namespace util {
     
     // Check if a string contains a substring
     bool contains(const std::string& str, const std::string& substr);
+    
+    // Extract regex matches from text using a pattern
+    // Returns a vector of matched groups for each match
+    std::vector<std::vector<std::string>> extract_regex_matches(
+        const std::string& content, 
+        const std::string& pattern,
+        size_t expected_groups = 0
+    );
+    
+    // Extract string values that match a specific regex group
+    // Returns a set of unique matched values from the specified group
+    std::set<std::string> extract_regex_group_values(
+        const std::string& content, 
+        const std::string& pattern,
+        size_t group_index = 1
+    );
 }
 
 /**
