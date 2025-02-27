@@ -51,55 +51,98 @@ across teams and integrated into development workflows.
 
 See [PHASE2_FEATURES.md](PHASE2_FEATURES.md) for detailed information on the new features.
 
-## Template Storage and Reusability
+## Phase 3 Feature: Query Template System
 
-CQL provides powerful reusability through its template storage and modification capabilities, enabling teams to maintain libraries
-of effective queries. When developers find a query structure that consistently produces excellent results from Claude, they can
-save it as a template file using CQL's file I/O capabilities:
+CQL now includes a powerful template system that enables saving, loading, and reusing effective query patterns. The template system provides:
+
+- **Template storage**: Save effective query patterns for future use
+- **Variable interpolation**: Customize templates with variables using `${var}` syntax
+- **Template organization**: Categorize templates for better management
+- **Template metadata**: View information about available templates
+
+### Template Commands
+
+The CQL CLI now includes comprehensive template commands:
 
 ```bash
-# In interactive mode
-> save successful_thread_safe_pattern.cql
+# List all templates
+> templates
+
+# Save the current query as a template
+> template save thread_safe_queue
+
+# Load a template
+> template load thread_safe_queue
+
+# Show information about a template
+> template info thread_safe_queue
+
+# Delete a template
+> template delete thread_safe_queue
+
+# Set a template variable
+> template setvar collection_type=stack
+
+# Use a template with current variables
+> template use thread_safe_queue
+
+# Manage template directories
+> template dir
+> template dir ~/my_templates
+
+# Manage template categories
+> categories
+> category create design_patterns
 ```
 
-These template files store the complete structured query with all its directives (`@language`, `@description`, `@context`, etc.)
-in the original DSL format, not the compiled output.
+### Using Templates from Command Line
 
-Later, when facing a similar task, any team member can:
+Templates can also be used directly from the command line:
 
-1. Load the template:
-   ```bash
-   > load successful_thread_safe_pattern.cql
-   ```
+```bash
+# List all available templates
+cql --templates
 
-2. Make targeted modifications while preserving the effective structure:
-   ```bash
-   # Change just what's needed, keeping the valuable context and test structure
-   > show
-   @language "C++"
-   @description "implement a thread-safe queue"
-   @context "Using C++20 features and RAII principles"
-   @test "Test concurrent operations"
-   ...
-   
-   # Modify just the description
-   @description "implement a thread-safe stack"
-   ```
+# Use a template with variable substitutions
+cql --template thread_safe_queue collection_type=stack language=Rust
 
-3. Compile and use the adapted query:
-   ```bash
-   > compile
-   ```
+# Save the result to a file
+cql --template thread_safe_queue collection_type=stack > my_query.txt
+```
 
-This process creates a "knowledge repository" of effective query patterns that:
-- Preserves institutional knowledge about what works well
-- Reduces repeated effort in crafting similar queries
-- Enables standardization across teams
-- Improves consistency of LLM outputs
-- Allows iterative refinement of query templates over time
+### Template Organization
 
-Teams can organize libraries of templates by domain, complexity, or programming language, similar to how they might maintain
-code snippet libraries or documentation templates.
+CQL templates are stored in `~/.cql/templates` by default and can be organized into categories (subdirectories) for better management. Each template is a regular `.cql` file that can contain variables using the `${var}` syntax.
+
+### Example Template
+
+Here's an example of a template with variables:
+
+```
+@variable "license_type" "MIT License"
+@variable "license_owner" "2025 dbjwhs"
+@variable "language" "C++"
+@variable "collection_type" "queue"
+@variable "language_version" "C++20"
+@variable "ops_per_second" "100k"
+@variable "synchronization_method" "mutex and condition variables"
+
+@copyright "${license_type}" "${license_owner}"
+@language "${language}"
+@description "implement a ${collection_type} class with thread-safety"
+@context "Using ${language_version} features and RAII principles"
+@context "Must be exception-safe"
+@dependency "std::mutex, std::condition_variable"
+@performance "Support ${ops_per_second} operations per second"
+@security "Prevent data races through proper synchronization"
+@architecture "Thread-safe implementation with ${synchronization_method}"
+@test "Test concurrent push operations"
+@test "Test concurrent pop operations"
+@test "Test boundary conditions (empty/full)"
+@test "Test exception safety guarantees"
+```
+
+This template can be customized by setting different values for the variables, allowing teams to create standardized query patterns while maintaining flexibility.
 
 ## Installation
 

@@ -23,11 +23,13 @@ int main(int argc, char* argv[]) {
                 std::cout << "Claude Query Language (CQL) Compiler v1.0\n"
                           << "Usage: cql [OPTIONS] [INPUT_FILE] [OUTPUT_FILE]\n\n"
                           << "Options:\n"
-                          << "  --help, -h        Show this help information\n"
-                          << "  --test, -t        Run the test suite\n"
-                          << "  --examples, -e    Show example queries\n"
-                          << "  --interactive, -i Run in interactive mode\n"
-                          << "  --copyright       Show copyright example\n\n"
+                          << "  --help, -h              Show this help information\n"
+                          << "  --test, -t              Run the test suite\n"
+                          << "  --examples, -e          Show example queries\n"
+                          << "  --interactive, -i       Run in interactive mode\n"
+                          << "  --copyright             Show copyright example\n"
+                          << "  --templates, -l         List all available templates\n"
+                          << "  --template NAME, -T     Use a specific template\n\n"
                           << "If INPUT_FILE is provided, it will be processed as a CQL query.\n"
                           << "If OUTPUT_FILE is also provided, the compiled query will be written to it.\n";
             } else if (arg1 == "--test" || arg1 == "-t") {
@@ -51,6 +53,58 @@ int main(int argc, char* argv[]) {
                 std::string result = cql::QueryProcessor::compile(copyright_example);
                 logger.log(LogLevel::INFO, "\n=== Compiled Query with Copyright ===\n\n", 
                           result, "\n===================");
+            } else if (arg1 == "--templates" || arg1 == "-l") {
+                // List all templates
+                cql::TemplateManager manager;
+                auto templates = manager.list_templates();
+                
+                if (templates.empty()) {
+                    std::cout << "No templates found in " << manager.get_templates_directory() << std::endl;
+                } else {
+                    std::cout << "Available templates:" << std::endl;
+                    for (const auto& tmpl : templates) {
+                        // Get template metadata for more info
+                        try {
+                            auto metadata = manager.get_template_metadata(tmpl);
+                            std::cout << "  " << tmpl << " - " << metadata.description << std::endl;
+                        } catch (const std::exception&) {
+                            // If we can't get metadata, just show the name
+                            std::cout << "  " << tmpl << std::endl;
+                        }
+                    }
+                }
+            } else if (arg1 == "--template" || arg1 == "-T") {
+                // Use a specific template
+                if (argc < 3) {
+                    std::cerr << "Error: Template name required" << std::endl;
+                    std::cerr << "Usage: cql --template TEMPLATE_NAME [VAR1=VALUE1 VAR2=VALUE2 ...]" << std::endl;
+                    return 1;
+                }
+                
+                std::string template_name = argv[2];
+                std::map<std::string, std::string> variables;
+                
+                // Process variable assignments (VAR=VALUE format)
+                for (int i = 3; i < argc; i++) {
+                    std::string arg = argv[i];
+                    size_t pos = arg.find('=');
+                    if (pos != std::string::npos) {
+                        std::string name = arg.substr(0, pos);
+                        std::string value = arg.substr(pos + 1);
+                        variables[name] = value;
+                    }
+                }
+                
+                try {
+                    cql::TemplateManager manager;
+                    std::string instantiated = manager.instantiate_template(template_name, variables);
+                    std::string compiled = cql::QueryProcessor::compile(instantiated);
+                    
+                    std::cout << compiled << std::endl;
+                } catch (const std::exception& e) {
+                    std::cerr << "Error using template: " << e.what() << std::endl;
+                    return 1;
+                }
             } else {
                 // Assume it's an input file
                 std::string output_file;

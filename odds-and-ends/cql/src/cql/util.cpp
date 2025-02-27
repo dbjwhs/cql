@@ -88,4 +88,13 @@ void QueryProcessor::save_compiled(const std::string_view query_str, const std::
     util::write_file(filepath, compiled);
 }
 
+std::string QueryProcessor::compile_template(
+    const std::string& template_name, 
+    const std::map<std::string, std::string>& variables
+) {
+    TemplateManager manager;
+    std::string instantiated = manager.instantiate_template(template_name, variables);
+    return compile(instantiated);
+}
+
 } // namespace cql

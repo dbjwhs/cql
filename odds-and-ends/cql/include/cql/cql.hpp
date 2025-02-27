@@ -21,6 +21,7 @@
 #include <memory>
 #include <fstream>
 #include <optional>
+#include <map>
 
 #include "nodes.hpp"
 #include "visitor.hpp"
@@ -28,6 +29,7 @@
 #include "parser.hpp"
 #include "compiler.hpp"
 #include "validator.hpp"
+#include "template_manager.hpp"
 
 namespace cql {
 
@@ -59,6 +61,10 @@ public:
     
     // Save a compiled query to a file
     static void save_compiled(const std::string_view query_str, const std::string& filepath);
+    
+    // Compile a template with variable substitutions
+    static std::string compile_template(const std::string& template_name, 
+                                     const std::map<std::string, std::string>& variables);
 };
 
 /**
@@ -76,6 +82,9 @@ namespace test {
     
     // Test the compiler
     void test_compiler();
+    
+    // Test the template manager
+    void test_template_manager();
     
     // Example queries
     void query_examples();

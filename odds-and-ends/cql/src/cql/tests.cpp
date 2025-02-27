@@ -562,6 +562,72 @@ void test_validator() {
     Logger::getInstance().log(LogLevel::INFO, "Validator tests passed!");
 }
 
+// Test template manager
+void test_template_manager() {
+    std::cout << "Running template manager tests..." << std::endl;
+    Logger::getInstance().log(LogLevel::INFO, "Running template manager tests...");
+
+    try {
+        // Create a temporary directory for testing
+        std::string temp_dir = "./temp_test_templates";
+        TemplateManager manager(temp_dir);
+        
+        // Test saving a template
+        std::string test_template = 
+            "@language \"C++\"\n"
+            "@description \"test template\"\n"
+            "@variable \"class_name\" \"DefaultClass\"\n"
+            "@context \"Using ${class_name} for implementation\"\n"
+            "@test \"Test ${class_name} constructor\"\n";
+        
+        manager.save_template("test_template", test_template);
+        
+        // Test listing templates
+        auto templates = manager.list_templates();
+        assert(!templates.empty());
+        assert(templates[0] == "test_template.cql");
+        
+        // Test loading a template
+        std::string loaded_template = manager.load_template("test_template");
+        assert(loaded_template == test_template);
+        
+        // Test getting template metadata
+        auto metadata = manager.get_template_metadata("test_template");
+        assert(metadata.name == "test_template");
+        assert(metadata.description == "test template");
+        assert(metadata.variables.size() == 1);
+        assert(metadata.variables[0] == "class_name");
+        
+        // Test instantiating a template with variables
+        std::map<std::string, std::string> variables{{"class_name", "TestClass"}};
+        std::string instantiated = manager.instantiate_template("test_template", variables);
+        assert(instantiated.find("@variable \"class_name\" \"TestClass\"") != std::string::npos);
+        
+        // Test deleting a template
+        bool deleted = manager.delete_template("test_template");
+        assert(deleted);
+        templates = manager.list_templates();
+        assert(templates.empty());
+        
+        // Test categories
+        bool created = manager.create_category("test_category");
+        assert(created);
+        auto categories = manager.list_categories();
+        assert(!categories.empty());
+        assert(categories[0] == "test_category");
+        
+        // Clean up
+        std::filesystem::remove_all(temp_dir);
+        
+        std::cout << "Template manager tests passed!" << std::endl;
+        Logger::getInstance().log(LogLevel::INFO, "Template manager tests passed!");
+    } catch (const std::exception& e) {
+        std::cerr << "Template manager test failed: " << e.what() << std::endl;
+        Logger::getInstance().log(LogLevel::ERROR, "Template manager test failed: ", e.what());
+        throw;
+    }
+}
+
 void run_tests() {
     std::cout << "Starting CQL test suite" << std::endl;
     Logger::getInstance().log(LogLevel::INFO, "Starting CQL test suite");
@@ -575,6 +641,8 @@ void run_tests() {
         test_compiler();
         std::cout << "Running validator tests..." << std::endl;
         test_validator();
+        std::cout << "Running template manager tests..." << std::endl;
+        test_template_manager();
 
         std::cout << "All tests passed!" << std::endl;
         Logger::getInstance().log(LogLevel::INFO, "All tests passed!");
