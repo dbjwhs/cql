@@ -30,6 +30,7 @@
 #include "compiler.hpp"
 #include "validator.hpp"
 #include "template_manager.hpp"
+#include "template_validator.hpp"
 
 namespace cql {
 
@@ -100,6 +101,9 @@ namespace test {
     
     // Test template inheritance
     void test_template_inheritance();
+    
+    // Test template validator
+    void test_template_validator();
     
     // Example queries
     void query_examples();

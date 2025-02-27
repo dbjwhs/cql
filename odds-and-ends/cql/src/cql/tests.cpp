@@ -31,6 +31,9 @@ void run_tests() {
         // Test template inheritance
         test_template_inheritance();
         
+        // Test template validator
+        test_template_validator();
+        
         std::cout << "All tests passed!" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "Test failed: " << e.what() << std::endl;
@@ -368,6 +371,110 @@ void query_examples() {
         } catch (const std::exception& e) {
             std::cerr << "Error compiling example: " << e.what() << std::endl;
         }
+    }
+}
+
+// Test template validator
+void test_template_validator() {
+    std::cout << "Testing template validator..." << std::endl;
+    
+    // Create a temporary template directory for testing
+    std::string temp_dir = "./temp_templates";
+    
+    try {
+        // Create a temporary template directory
+        if (fs::exists(temp_dir)) {
+            fs::remove_all(temp_dir);
+        }
+        fs::create_directory(temp_dir);
+        
+        // Create a template manager with the temp directory
+        TemplateManager manager(temp_dir);
+        
+        // Create a template validator
+        TemplateValidator validator(manager);
+        
+        // Test 1: Template with all variables declared and used
+        std::string good_template = 
+            "@description \"A good template with proper variables\"\n"
+            "@variable \"var1\" \"value1\"\n"
+            "@variable \"var2\" \"value2\"\n"
+            "@language \"${var1}\"\n"
+            "@context \"Using ${var2} features\"\n";
+        
+        manager.save_template("good_template", good_template);
+        
+        auto good_result = validator.validate_template("good_template");
+        assert(!good_result.has_issues(TemplateValidationLevel::ERROR));
+        assert(!good_result.has_issues(TemplateValidationLevel::WARNING));
+        
+        // Test 2: Template with undeclared variable (should generate warning)
+        std::string warning_template = 
+            "@description \"A template with undeclared variable\"\n"
+            "@variable \"var1\" \"value1\"\n"
+            "@language \"${var1}\"\n"
+            "@context \"Using ${undeclared_var} features\"\n";
+        
+        manager.save_template("warning_template", warning_template);
+        
+        auto warning_result = validator.validate_template("warning_template");
+        assert(!warning_result.has_issues(TemplateValidationLevel::ERROR));
+        assert(warning_result.has_issues(TemplateValidationLevel::WARNING));
+        assert(warning_result.count_warnings() > 0);
+        
+        // Test 3: Template with unused variable (should generate info)
+        std::string info_template = 
+            "@description \"A template with unused variable\"\n"
+            "@variable \"var1\" \"value1\"\n"
+            "@variable \"unused_var\" \"unused_value\"\n"
+            "@language \"${var1}\"\n";
+        
+        manager.save_template("info_template", info_template);
+        
+        auto info_result = validator.validate_template("info_template");
+        assert(!info_result.has_issues(TemplateValidationLevel::ERROR));
+        assert(info_result.has_issues(TemplateValidationLevel::INFO));
+        assert(info_result.count_infos() > 0);
+        
+        // Test 4: Template with circular inheritance (should generate error)
+        std::string circular1 = "@description \"Template with circular inheritance\"\n@inherit \"circular2\"\n";
+        std::string circular2 = "@description \"Another template in the circle\"\n@inherit \"circular1\"\n";
+        
+        manager.save_template("circular1", circular1);
+        manager.save_template("circular2", circular2);
+        
+        auto circular_result = validator.validate_template("circular1");
+        assert(circular_result.has_issues(TemplateValidationLevel::ERROR));
+        assert(circular_result.count_errors() > 0);
+        
+        // Test 5: Template with proper inheritance
+        std::string parent = 
+            "@description \"Parent template\"\n"
+            "@variable \"parent_var\" \"parent_value\"\n"
+            "@language \"${parent_var}\"\n";
+        
+        std::string child = 
+            "@inherit \"parent\"\n"
+            "@description \"Child template\"\n"
+            "@variable \"child_var\" \"child_value\"\n"
+            "@context \"${child_var} with ${parent_var}\"\n";
+        
+        manager.save_template("parent", parent);
+        manager.save_template("child", child);
+        
+        auto inheritance_result = validator.validate_template("child");
+        assert(!inheritance_result.has_issues(TemplateValidationLevel::ERROR));
+        
+        // Cleanup
+        fs::remove_all(temp_dir);
+        
+        std::cout << "Template validator test passed." << std::endl;
+    } catch (const std::exception& e) {
+        // Ensure cleanup even if test fails
+        if (fs::exists(temp_dir)) {
+            fs::remove_all(temp_dir);
+        }
+        throw;
     }
 }
 

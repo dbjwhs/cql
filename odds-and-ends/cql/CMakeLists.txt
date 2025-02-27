@@ -34,6 +34,7 @@ set(CQL_SOURCES
     src/cql/tests.cpp
     src/cql/validator.cpp
     src/cql/template_manager.cpp
+    src/cql/template_validator.cpp
 )
 
 # Add executable
