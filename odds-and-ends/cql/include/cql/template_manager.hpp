@@ -39,6 +39,15 @@ public:
     
     TemplateMetadata get_template_metadata(const std::string& name);
     
+    // generate documentation for a template
+    std::string generate_template_documentation(const std::string& name);
+    
+    // generate documentation for all templates
+    std::string generate_all_template_documentation();
+    
+    // export documentation to a file
+    bool export_documentation(const std::string& output_path, const std::string& format = "markdown");
+    
     // list all available templates
     std::vector<std::string> list_templates();
     
@@ -106,6 +115,9 @@ private:
     // merge parent template content with child template content
     std::string merge_template_content(const std::string& parent_content, 
                                       const std::string& child_content);
+                                      
+    // extract example usage from template content
+    std::string extract_example(const std::string& content);
 
 public: // make public to allow direct access from CLI
     // extract and combine all variables from template content and declared variables

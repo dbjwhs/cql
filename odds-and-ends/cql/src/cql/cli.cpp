@@ -68,6 +68,9 @@ void run_cli() {
                       << "  template parents NAME   - Show inheritance chain for a template\n"
                       << "  template validate NAME  - Validate a template\n"
                       << "  template validateall    - Validate all templates\n"
+                      << "  template docs NAME      - Generate documentation for a template\n"
+                      << "  template docsall        - Generate documentation for all templates\n"
+                      << "  template export PATH [format] - Export documentation to a file (formats: md, html, txt)\n"
                       << "  categories              - List template categories\n"
                       << "  category create NAME    - Create a new template category\n";
         } else if (line == "clear") {
@@ -678,6 +681,67 @@ void run_cli() {
                 }
             } catch (const std::exception& e) {
                 Logger::getInstance().log(LogLevel::ERROR, "Error validating templates: ", e.what());
+            }
+        } else if (line.substr(0, 14) == "template docs ") {
+            // generate documentation for a specific template
+            std::string template_name = line.substr(14);
+            try {
+                // generate the documentation
+                std::string docs = template_manager.generate_template_documentation(template_name);
+                
+                // display the documentation
+                std::cout << "\n===== Template Documentation =====\n\n";
+                std::cout << docs << std::endl;
+                std::cout << "\n==================================" << std::endl;
+                
+                Logger::getInstance().log(LogLevel::INFO, "generated documentation for template: ", template_name);
+            } catch (const std::exception& e) {
+                Logger::getInstance().log(LogLevel::ERROR, "error generating template documentation: ", e.what());
+            }
+        } else if (line == "template docsall") {
+            // generate documentation for all templates
+            try {
+                // generate the documentation
+                std::string docs = template_manager.generate_all_template_documentation();
+                
+                // display the documentation
+                std::cout << "\n===== Template Documentation =====\n\n";
+                std::cout << "this is a preview of the documentation. use 'template export' to save to a file." << std::endl;
+                std::cout << "\n" << docs.substr(0, 1000) << "..." << std::endl;
+                std::cout << "\n(documentation truncated for display. use 'template export' to view full documentation)" << std::endl;
+                std::cout << "\n==================================" << std::endl;
+                
+                Logger::getInstance().log(LogLevel::INFO, "generated documentation for all templates");
+            } catch (const std::exception& e) {
+                Logger::getInstance().log(LogLevel::ERROR, "error generating template documentation: ", e.what());
+            }
+        } else if (line.substr(0, 16) == "template export ") {
+            // export documentation to a file
+            std::string params = line.substr(16);
+            std::string output_path;
+            std::string format = "markdown"; // default format
+            
+            // check if format is specified
+            size_t space_pos = params.find(' ');
+            if (space_pos != std::string::npos) {
+                output_path = params.substr(0, space_pos);
+                format = params.substr(space_pos + 1);
+            } else {
+                output_path = params;
+            }
+            
+            try {
+                // export the documentation
+                bool success = template_manager.export_documentation(output_path, format);
+                
+                if (success) {
+                    Logger::getInstance().log(LogLevel::INFO, 
+                        "template documentation exported to ", output_path, " in ", format, " format");
+                } else {
+                    Logger::getInstance().log(LogLevel::ERROR, "failed to export template documentation");
+                }
+            } catch (const std::exception& e) {
+                Logger::getInstance().log(LogLevel::ERROR, "error exporting template documentation: ", e.what());
             }
         } else {
             // Add line to the current query

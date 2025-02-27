@@ -34,7 +34,11 @@ int main(int argc, char* argv[]) {
                           << "  --template NAME, -T     Use a specific template\n"
                           << "  --template NAME --force Use template even with validation errors\n"
                           << "  --validate NAME         Validate a specific template\n"
-                          << "  --validate-all          Validate all templates\n\n"
+                          << "  --validate-all          Validate all templates\n"
+                          << "  --docs NAME             Generate documentation for a template\n"
+                          << "  --docs-all              Generate documentation for all templates\n"
+                          << "  --export PATH [format]  Export template documentation to a file\n"
+                          << "                          (formats: md, html, txt; default: md)\n\n"
                           << "If INPUT_FILE is provided, it will be processed as a CQL query.\n"
                           << "If OUTPUT_FILE is also provided, the compiled query will be written to it.\n";
             } else if (arg1 == "--test" || arg1 == "-t") {
@@ -323,6 +327,78 @@ int main(int argc, char* argv[]) {
                     }
                 } catch (const std::exception& e) {
                     std::cerr << "Error validating templates: " << e.what() << std::endl;
+                    return 1;
+                }
+            } else if (arg1 == "--docs") {
+                // generate documentation for a specific template
+                if (argc < 3) {
+                    std::cerr << "error: template name required" << std::endl;
+                    std::cerr << "usage: cql --docs TEMPLATE_NAME" << std::endl;
+                    return 1;
+                }
+                
+                std::string template_name = argv[2];
+                
+                try {
+                    // create template manager
+                    cql::TemplateManager manager;
+                    
+                    // generate the documentation
+                    std::string docs = manager.generate_template_documentation(template_name);
+                    
+                    // display the documentation
+                    std::cout << docs << std::endl;
+                } catch (const std::exception& e) {
+                    std::cerr << "error generating template documentation: " << e.what() << std::endl;
+                    return 1;
+                }
+            } else if (arg1 == "--docs-all") {
+                // generate documentation for all templates
+                try {
+                    // create template manager
+                    cql::TemplateManager manager;
+                    
+                    // generate the documentation
+                    std::string docs = manager.generate_all_template_documentation();
+                    
+                    // display the documentation
+                    std::cout << docs << std::endl;
+                } catch (const std::exception& e) {
+                    std::cerr << "error generating template documentation: " << e.what() << std::endl;
+                    return 1;
+                }
+            } else if (arg1 == "--export") {
+                // export documentation to a file
+                if (argc < 3) {
+                    std::cerr << "error: output path required" << std::endl;
+                    std::cerr << "usage: cql --export OUTPUT_PATH [FORMAT]" << std::endl;
+                    return 1;
+                }
+                
+                std::string output_path = argv[2];
+                std::string format = "markdown"; // default format
+                
+                // check if format is specified
+                if (argc > 3) {
+                    format = argv[3];
+                }
+                
+                try {
+                    // create template manager
+                    cql::TemplateManager manager;
+                    
+                    // export the documentation
+                    bool success = manager.export_documentation(output_path, format);
+                    
+                    if (success) {
+                        std::cout << "template documentation exported to " << output_path 
+                                  << " in " << format << " format" << std::endl;
+                    } else {
+                        std::cerr << "failed to export template documentation" << std::endl;
+                        return 1;
+                    }
+                } catch (const std::exception& e) {
+                    std::cerr << "error exporting template documentation: " << e.what() << std::endl;
                     return 1;
                 }
             } else {

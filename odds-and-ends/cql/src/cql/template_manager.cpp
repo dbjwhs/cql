@@ -803,4 +803,418 @@ std::string TemplateManager::merge_template_content(const std::string& parent_co
     return variables_section + "\n" + parent_without_vars + "\n" + child_without_vars;
 }
 
+// extract example usage from template content
+std::string TemplateManager::extract_example(const std::string& content) {
+    // look for @example directive in the content
+    std::regex example_regex("@example\\s+\"([^\"]*)\"");
+    std::smatch match;
+    
+    if (std::regex_search(content, match, example_regex) && match.size() > 1) {
+        return match[1].str();
+    }
+    
+    // if no explicit example is found, try to extract the first query in the content
+    std::regex query_regex("(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|WITH)[^;]+;");
+    if (std::regex_search(content, match, query_regex) && match.size() > 0) {
+        return match[0].str();
+    }
+    
+    return "No example available";
+}
+
+// generate documentation for a template
+std::string TemplateManager::generate_template_documentation(const std::string& name) {
+    try {
+        // get the template metadata
+        TemplateMetadata metadata = get_template_metadata(name);
+        
+        // load the template content
+        std::string content = load_template(name);
+        
+        // extract example
+        std::string example = extract_example(content);
+        
+        // format the documentation
+        std::stringstream doc;
+        
+        // template name as title
+        doc << "# " << metadata.name << "\n\n";
+        
+        // description
+        doc << "## Description\n\n" << metadata.description << "\n\n";
+        
+        // last modified date
+        doc << "**Last Modified:** " << metadata.last_modified << "\n\n";
+        
+        // parent template if any
+        if (metadata.parent.has_value() && !metadata.parent.value().empty()) {
+            doc << "**Inherits From:** " << metadata.parent.value() << "\n\n";
+        }
+        
+        // variables section
+        doc << "## Variables\n\n";
+        if (metadata.variables.empty()) {
+            doc << "This template has no variables.\n\n";
+        } else {
+            doc << "| Name | Description |\n";
+            doc << "|------|-------------|\n";
+            
+            // extract variable descriptions from content if available
+            std::regex var_desc_regex("@variable_description\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"");
+            std::map<std::string, std::string> var_descriptions;
+            
+            std::string::const_iterator search_start(content.cbegin());
+            std::smatch var_match;
+            
+            while (std::regex_search(search_start, content.cend(), var_match, var_desc_regex)) {
+                if (var_match.size() > 2) {
+                    var_descriptions[var_match[1].str()] = var_match[2].str();
+                }
+                search_start = var_match.suffix().first;
+            }
+            
+            for (const auto& var : metadata.variables) {
+                std::string desc = var_descriptions.count(var) > 0 ? 
+                                  var_descriptions[var] : "No description available";
+                doc << "| " << var << " | " << desc << " |\n";
+            }
+            doc << "\n";
+        }
+        
+        // example usage
+        doc << "## Example\n\n";
+        doc << "```sql\n" << example << "\n```\n\n";
+        
+        // inheritance chain if applicable
+        if (metadata.parent.has_value() && !metadata.parent.value().empty()) {
+            try {
+                auto chain = get_inheritance_chain(name);
+                if (chain.size() > 1) {  // more than just the current template
+                    doc << "## Inheritance Chain\n\n";
+                    for (size_t i = 0; i < chain.size(); ++i) {
+                        doc << (i + 1) << ". " << chain[i] << "\n";
+                    }
+                    doc << "\n";
+                }
+            } catch (const std::exception& e) {
+                doc << "**Note:** Error retrieving inheritance chain: " << e.what() << "\n\n";
+            }
+        }
+        
+        // location info
+        doc << "## File Location\n\n";
+        doc << "```\n" << get_template_path(name) << "\n```\n";
+        
+        return doc.str();
+    } catch (const std::exception& e) {
+        return "Error generating documentation: " + std::string(e.what());
+    }
+}
+
+// generate documentation for all templates
+std::string TemplateManager::generate_all_template_documentation() {
+    try {
+        // get all templates
+        std::vector<std::string> templates = list_templates();
+        
+        if (templates.empty()) {
+            return "# CQL Template Documentation\n\nNo templates found.";
+        }
+        
+        // organize templates by category
+        std::map<std::string, std::vector<std::string>> templates_by_category;
+        
+        for (const auto& templ : templates) {
+            std::string category = "uncategorized";
+            
+            // check if template has a category in its name
+            if (templ.find('/') != std::string::npos) {
+                category = templ.substr(0, templ.find('/'));
+            }
+            
+            templates_by_category[category].push_back(templ);
+        }
+        
+        // generate documentation
+        std::stringstream doc;
+        
+        // title and index
+        doc << "# CQL Template Documentation\n\n";
+        doc << "## Overview\n\n";
+        
+        doc << "Total templates: " << templates.size() << "\n\n";
+        
+        doc << "### Categories\n\n";
+        for (const auto& [category, templ_list] : templates_by_category) {
+            doc << "- [" << category << " (" << templ_list.size() << ")](#" << category << ")\n";
+        }
+        doc << "\n";
+        
+        // templates table of contents
+        doc << "### Templates Index\n\n";
+        for (const auto& templ : templates) {
+            // create anchor for template name - replace slashes with dashes for anchors
+            std::string anchor = templ;
+            std::replace(anchor.begin(), anchor.end(), '/', '-');
+            
+            // if template has .cql extension, remove it for display
+            std::string display_name = templ;
+            if (display_name.length() > 4 && display_name.substr(display_name.length() - 4) == ".cql") {
+                display_name = display_name.substr(0, display_name.length() - 4);
+            }
+            
+            doc << "- [" << display_name << "](#" << anchor << ")\n";
+        }
+        doc << "\n";
+        
+        // documentation for each category and its templates
+        for (const auto& [category, templ_list] : templates_by_category) {
+            doc << "## " << category << "\n\n";
+            
+            // info about templates in this category
+            for (const auto& templ : templ_list) {
+                try {
+                    // get template metadata
+                    TemplateMetadata metadata = get_template_metadata(templ);
+                    
+                    // add a separator before each template
+                    doc << "<a id=\"" << templ << "\"></a>\n\n";
+                    doc << "---\n\n";
+                    
+                    // add template documentation
+                    doc << generate_template_documentation(templ) << "\n\n";
+                } catch (const std::exception& e) {
+                    doc << "### " << templ << "\n\n";
+                    doc << "Error generating documentation: " << e.what() << "\n\n";
+                }
+            }
+        }
+        
+        // generation timestamp
+        auto now = std::chrono::system_clock::now();
+        auto time_t_now = std::chrono::system_clock::to_time_t(now);
+        std::stringstream timestamp;
+        timestamp << std::put_time(std::localtime(&time_t_now), "%Y-%m-%d %H:%M:%S");
+        
+        doc << "---\n\n";
+        doc << "Documentation generated on " << timestamp.str() << "\n";
+        
+        return doc.str();
+    } catch (const std::exception& e) {
+        return "Error generating documentation: " + std::string(e.what());
+    }
+}
+
+// export documentation to a file
+bool TemplateManager::export_documentation(const std::string& output_path, const std::string& format) {
+    try {
+        // generate the documentation
+        std::string doc_content = generate_all_template_documentation();
+        
+        // convert to requested format if not markdown
+        std::string final_content;
+        std::string extension;
+        
+        if (format == "markdown" || format == "md") {
+            // no conversion needed
+            final_content = doc_content;
+            extension = ".md";
+        } else if (format == "html") {
+            // simple markdown to html conversion
+            std::stringstream html;
+            
+            // html header
+            html << "<!DOCTYPE html>\n"
+                 << "<html>\n"
+                 << "<head>\n"
+                 << "    <meta charset=\"UTF-8\">\n"
+                 << "    <title>CQL Template Documentation</title>\n"
+                 << "    <style>\n"
+                 << "        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }\n"
+                 << "        h1 { color: #333366; }\n"
+                 << "        h2 { color: #336699; margin-top: 30px; }\n"
+                 << "        h3 { color: #0099cc; }\n"
+                 << "        pre { background-color: #f5f5f5; padding: 10px; border-radius: 5px; }\n"
+                 << "        code { font-family: monospace; }\n"
+                 << "        table { border-collapse: collapse; width: 100%; }\n"
+                 << "        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }\n"
+                 << "        th { background-color: #f2f2f2; }\n"
+                 << "    </style>\n"
+                 << "</head>\n"
+                 << "<body>\n";
+            
+            // simple markdown to html conversion for common elements
+            std::string line;
+            std::istringstream doc_stream(doc_content);
+            bool in_code_block = false;
+            bool in_table = false;
+            
+            while (std::getline(doc_stream, line)) {
+                // code blocks
+                if (line.find("```") == 0) {
+                    if (in_code_block) {
+                        html << "</code></pre>\n";
+                        in_code_block = false;
+                    } else {
+                        html << "<pre><code>";
+                        in_code_block = true;
+                    }
+                    continue;
+                }
+                
+                if (in_code_block) {
+                    // escape html in code blocks
+                    std::string escaped = line;
+                    escaped = std::regex_replace(escaped, std::regex("&"), "&amp;");
+                    escaped = std::regex_replace(escaped, std::regex("<"), "&lt;");
+                    escaped = std::regex_replace(escaped, std::regex(">"), "&gt;");
+                    html << escaped << "\n";
+                    continue;
+                }
+                
+                // headings
+                if (line.find("# ") == 0) {
+                    html << "<h1>" << line.substr(2) << "</h1>\n";
+                } else if (line.find("## ") == 0) {
+                    html << "<h2>" << line.substr(3) << "</h2>\n";
+                } else if (line.find("### ") == 0) {
+                    html << "<h3>" << line.substr(4) << "</h3>\n";
+                } 
+                // tables
+                else if (line.find("|") == 0) {
+                    if (!in_table) {
+                        html << "<table>\n";
+                        in_table = true;
+                    }
+                    
+                    // convert markdown table row to html
+                    html << "  <tr>\n";
+                    
+                    // split by pipe and process each cell
+                    size_t pos = 0;
+                    size_t start = 1; // skip first pipe
+                    std::string cell;
+                    
+                    while ((pos = line.find("|", start)) != std::string::npos) {
+                        cell = line.substr(start, pos - start);
+                        
+                        // skip separator rows (---|---)
+                        if (cell.find_first_not_of("- ") == std::string::npos) {
+                            break;
+                        }
+                        
+                        // determine if it's a header row
+                        std::string tag = (line.find("---") != std::string::npos) ? "th" : "td";
+                        html << "    <" << tag << ">" << cell << "</" << tag << ">\n";
+                        
+                        start = pos + 1;
+                    }
+                    
+                    // get the last cell
+                    if (start < line.length() - 1) {
+                        cell = line.substr(start, line.length() - start - 1);
+                        std::string tag = (line.find("---") != std::string::npos) ? "th" : "td";
+                        html << "    <" << tag << ">" << cell << "</" << tag << ">\n";
+                    }
+                    
+                    html << "  </tr>\n";
+                    
+                    // if this is a separator row, skip it
+                    if (line.find("---") != std::string::npos) {
+                        continue;
+                    }
+                } else if (in_table && line.empty()) {
+                    html << "</table>\n";
+                    in_table = false;
+                }
+                // links
+                else if (line.find("[") != std::string::npos && line.find("](") != std::string::npos) {
+                    std::string processed = line;
+                    std::regex link_regex("\\[([^\\]]*)\\]\\(([^\\)]*)\\)");
+                    processed = std::regex_replace(processed, link_regex, "<a href=\"$2\">$1</a>");
+                    html << "<p>" << processed << "</p>\n";
+                }
+                // horizontal rule
+                else if (line == "---") {
+                    html << "<hr>\n";
+                }
+                // paragraph
+                else {
+                    if (!line.empty()) {
+                        // check for bold/italic text
+                        std::string processed = line;
+                        processed = std::regex_replace(processed, std::regex("\\*\\*([^\\*]*)\\*\\*"), "<strong>$1</strong>");
+                        processed = std::regex_replace(processed, std::regex("\\*([^\\*]*)\\*"), "<em>$1</em>");
+                        
+                        html << "<p>" << processed << "</p>\n";
+                    } else {
+                        html << "<br>\n";
+                    }
+                }
+            }
+            
+            // close any open elements
+            if (in_code_block) {
+                html << "</code></pre>\n";
+            }
+            if (in_table) {
+                html << "</table>\n";
+            }
+            
+            // html footer
+            html << "</body>\n</html>";
+            
+            final_content = html.str();
+            extension = ".html";
+        } else if (format == "text" || format == "txt") {
+            // simple markdown to plain text conversion
+            std::string processed = doc_content;
+            
+            // remove markdown formatting
+            processed = std::regex_replace(processed, std::regex("#+\\s+"), ""); // headers
+            processed = std::regex_replace(processed, std::regex("\\*\\*([^\\*]*)\\*\\*"), "$1"); // bold
+            processed = std::regex_replace(processed, std::regex("\\*([^\\*]*)\\*"), "$1"); // italic
+            processed = std::regex_replace(processed, std::regex("```[^`]*```"), ""); // code blocks
+            processed = std::regex_replace(processed, std::regex("\\[([^\\]]*)\\]\\([^\\)]*\\)"), "$1"); // links
+            
+            final_content = processed;
+            extension = ".txt";
+        } else {
+            // unsupported format, default to markdown
+            Logger::getInstance().log(LogLevel::ERROR, 
+                "unsupported documentation format '", format, "', defaulting to markdown");
+            final_content = doc_content;
+            extension = ".md";
+        }
+        
+        // ensure the output file has the correct extension
+        std::string final_path = output_path;
+        if (fs::path(output_path).extension().empty()) {
+            final_path += extension;
+        }
+        
+        // create the directory if it doesn't exist
+        fs::path output_dir = fs::path(final_path).parent_path();
+        if (!output_dir.empty() && !fs::exists(output_dir)) {
+            fs::create_directories(output_dir);
+        }
+        
+        // write to the file
+        std::ofstream outfile(final_path);
+        if (!outfile.is_open()) {
+            throw std::runtime_error("Failed to open output file: " + final_path);
+        }
+        
+        outfile << final_content;
+        outfile.close();
+        
+        Logger::getInstance().log(LogLevel::INFO, 
+            "Documentation exported to ", final_path, " in ", format, " format");
+        return true;
+    } catch (const std::exception& e) {
+        Logger::getInstance().log(LogLevel::ERROR, "Failed to export documentation: ", e.what());
+        return false;
+    }
+}
+
 } // namespace cql
