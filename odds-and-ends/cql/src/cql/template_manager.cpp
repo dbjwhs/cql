@@ -18,7 +18,7 @@ namespace fs = std::filesystem;
 namespace cql {
 
 TemplateManager::TemplateManager() {
-    // Default templates directory is in the user's home directory
+    // default templates directory is in the user's home directory
     const char* home_dir = getenv("HOME");
     if (home_dir) {
         m_templates_dir = std::string(home_dir) + "/.cql/templates";
@@ -34,16 +34,16 @@ TemplateManager::TemplateManager(const std::string& template_dir)
 }
 
 void TemplateManager::save_template(const std::string& name, const std::string& content) {
-    // Ensure the template has a valid name
+    // ensure the template has a valid name
     if (name.empty()) {
         throw std::runtime_error("Template name cannot be empty");
     }
     
-    // Get the full path
+    // get the full path
     std::string template_path = get_template_path(name);
     
     try {
-        // Write the content to the file
+        // write the content to the file
         util::write_file(template_path, content);
         Logger::getInstance().log(LogLevel::INFO, "Template saved: ", name);
     } catch (const std::exception& e) {
@@ -52,16 +52,16 @@ void TemplateManager::save_template(const std::string& name, const std::string& 
 }
 
 std::string TemplateManager::load_template(const std::string& name) {
-    // Get the full path
+    // get the full path
     std::string template_path = get_template_path(name);
     
-    // Check if the template exists
+    // check if the template exists
     if (!fs::exists(template_path)) {
         throw std::runtime_error("Template not found: " + name);
     }
     
     try {
-        // Read the template content
+        // read the template content
         std::string content = util::read_file(template_path);
         Logger::getInstance().log(LogLevel::INFO, "Template loaded: ", name);
         return content;
@@ -71,27 +71,28 @@ std::string TemplateManager::load_template(const std::string& name) {
 }
 
 TemplateManager::TemplateMetadata TemplateManager::get_template_metadata(const std::string& name) {
-    // Get the full path
+    // get the full path
     std::string template_path = get_template_path(name);
     
-    // Check if the template exists
+    // check if the template exists
     if (!fs::exists(template_path)) {
         throw std::runtime_error("Template not found: " + name);
     }
     
     try {
-        // Read the template content
+        // read the template content
         std::string content = util::read_file(template_path);
         
-        // Get the file's last modification time
+        // get the file's last modification time
         auto last_write_time = fs::last_write_time(template_path);
+        auto sys_time = std::chrono::file_clock::to_sys(last_write_time);
         auto last_write_time_t = std::chrono::system_clock::to_time_t(
-            std::chrono::file_clock::to_sys(last_write_time));
+            std::chrono::time_point_cast<std::chrono::system_clock::duration>(sys_time));
         
         std::stringstream ss;
         ss << std::put_time(std::localtime(&last_write_time_t), "%Y-%m-%d %H:%M:%S");
         
-        // Create and return the metadata
+        // create and return the metadata
         TemplateMetadata metadata{
             .name = name,
             .description = extract_description(content),
@@ -109,37 +110,37 @@ std::vector<std::string> TemplateManager::list_templates() {
     std::vector<std::string> templates;
     
     try {
-        // Iterate through all files in the templates directory
+        // iterate through all files in the templates directory
         for (const auto& entry : fs::recursive_directory_iterator(m_templates_dir)) {
             if (entry.is_regular_file() && entry.path().extension() == ".cql") {
-                // Get the relative path from the templates directory
+                // get the relative path from the templates directory
                 std::string rel_path = entry.path().lexically_relative(m_templates_dir).string();
                 templates.push_back(rel_path);
             }
         }
         
-        // Sort the templates alphabetically
+        // sort the templates alphabetically
         std::sort(templates.begin(), templates.end());
         
         return templates;
     } catch (const std::exception& e) {
         Logger::getInstance().log(LogLevel::ERROR, "Failed to list templates: ", e.what());
-        return templates; // Return empty list on error
+        return templates; // return empty list on error
     }
 }
 
 bool TemplateManager::delete_template(const std::string& name) {
-    // Get the full path
+    // get the full path
     std::string template_path = get_template_path(name);
     
-    // Check if the template exists
+    // check if the template exists
     if (!fs::exists(template_path)) {
         Logger::getInstance().log(LogLevel::ERROR, "Template not found: ", name);
         return false;
     }
     
     try {
-        // Delete the file
+        // delete the file
         fs::remove(template_path);
         Logger::getInstance().log(LogLevel::INFO, "Template deleted: ", name);
         return true;
@@ -153,16 +154,16 @@ std::string TemplateManager::instantiate_template(
     const std::string& name, 
     const std::map<std::string, std::string>& variables
 ) {
-    // Load the template content
+    // load the template content
     std::string content = load_template(name);
     
-    // Create variable declarations at the top of the template
+    // create variable declarations at the top of the template
     std::string variables_section;
     for (const auto& [var_name, var_value] : variables) {
         variables_section += "@variable \"" + var_name + "\" \"" + var_value + "\"\n";
     }
     
-    // Prepend the variables to the template content
+    // prepend the variables to the template content
     if (!variables_section.empty()) {
         content = variables_section + "\n" + content;
     }
@@ -180,7 +181,7 @@ void TemplateManager::set_templates_directory(const std::string& dir) {
 }
 
 bool TemplateManager::create_category(const std::string& category) {
-    // Create a directory for the category
+    // create a directory for the category
     std::string category_path = m_templates_dir + "/" + category;
     
     try {
@@ -197,37 +198,37 @@ std::vector<std::string> TemplateManager::list_categories() {
     std::vector<std::string> categories;
     
     try {
-        // Iterate through all directories in the templates directory
+        // iterate through all directories in the templates directory
         for (const auto& entry : fs::directory_iterator(m_templates_dir)) {
             if (entry.is_directory()) {
                 categories.push_back(entry.path().filename().string());
             }
         }
         
-        // Sort the categories alphabetically
+        // sort the categories alphabetically
         std::sort(categories.begin(), categories.end());
         
         return categories;
     } catch (const std::exception& e) {
         Logger::getInstance().log(LogLevel::ERROR, "Failed to list categories: ", e.what());
-        return categories; // Return empty list on error
+        return categories; // return empty list on error
     }
 }
 
 std::string TemplateManager::get_template_path(const std::string& name) const {
-    // Check if the name already has a .cql extension
+    // check if the name already has a .cql extension
     std::string filename = name;
     if (filename.length() < 4 || filename.substr(filename.length() - 4) != ".cql") {
         filename += ".cql";
     }
     
-    // Combine the templates directory with the filename
+    // combine the templates directory with the filename
     return m_templates_dir + "/" + filename;
 }
 
 void TemplateManager::ensure_templates_directory() {
     try {
-        // Create the templates directory if it doesn't exist
+        // create the templates directory if it doesn't exist
         if (!fs::exists(m_templates_dir)) {
             fs::create_directories(m_templates_dir);
             Logger::getInstance().log(LogLevel::INFO, "Created templates directory: ", m_templates_dir);
@@ -239,12 +240,12 @@ void TemplateManager::ensure_templates_directory() {
 
 std::vector<std::string> TemplateManager::extract_variables(const std::string& content) {
     std::vector<std::string> variables;
-    std::regex variable_regex(R"(@variable\s+"([^"]+)"\s+"[^"]+")");
+    std::regex variable_regex("@variable\\s+\"([^\"]+)\"\\s+\"[^\"]*\"");
     
     std::string::const_iterator search_start(content.cbegin());
     std::smatch match;
     
-    // Find all variable declarations
+    // find all variable declarations
     while (std::regex_search(search_start, content.cend(), match, variable_regex)) {
         if (match.size() > 1) {
             variables.push_back(match[1].str());
@@ -252,8 +253,8 @@ std::vector<std::string> TemplateManager::extract_variables(const std::string& c
         search_start = match.suffix().first;
     }
     
-    // Also look for variable references
-    std::regex reference_regex(R"(\${([^}]+)})");
+    // also look for variable references
+    std::regex reference_regex("\\$\\{([^}]+)\\}");
     search_start = content.cbegin();
     
     while (std::regex_search(search_start, content.cend(), match, reference_regex)) {
@@ -270,15 +271,15 @@ std::vector<std::string> TemplateManager::extract_variables(const std::string& c
 }
 
 std::string TemplateManager::extract_description(const std::string& content) {
-    // Try to extract a description from @description directive
-    std::regex desc_regex(R"(@description\s+"([^"]+)")");
+    // try to extract a description from @description directive
+    std::regex desc_regex("@description\\s+\"([^\"]*)\"");
     std::smatch match;
     
     if (std::regex_search(content, match, desc_regex) && match.size() > 1) {
         return match[1].str();
     }
     
-    // If no description directive found, return the first line as a fallback
+    // if no description directive found, return the first line as a fallback
     size_t eol = content.find('\n');
     if (eol != std::string::npos) {
         return content.substr(0, eol);

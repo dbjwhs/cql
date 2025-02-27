@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <sstream>
+#include <regex>
 #include "../../include/cql/cql.hpp"
 #include "../../include/cql/template_manager.hpp"
 #include "../../../headers/project_utils.hpp"
