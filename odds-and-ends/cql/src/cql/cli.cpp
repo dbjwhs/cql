@@ -137,6 +137,31 @@ void run_cli() {
                     continue;
                 }
 
+                // Validate the template before saving
+                auto validation_result = template_validator.validate_content(current_query);
+                
+                // Check for validation errors
+                if (validation_result.has_issues(TemplateValidationLevel::ERROR)) {
+                    Logger::getInstance().log(LogLevel::ERROR, "Template validation failed with errors:");
+                    for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::ERROR)) {
+                        std::cout << "  - " << issue.to_string() << std::endl;
+                    }
+                    
+                    std::cout << "Do you want to save the template anyway? (y/n): ";
+                    std::string response;
+                    std::getline(std::cin, response);
+                    
+                    if (response != "y" && response != "Y") {
+                        Logger::getInstance().log(LogLevel::INFO, "Template save cancelled");
+                        continue;
+                    }
+                } else if (validation_result.has_issues(TemplateValidationLevel::WARNING)) {
+                    Logger::getInstance().log(LogLevel::NORMAL, "Template has validation warnings:");
+                    for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::WARNING)) {
+                        std::cout << "  - " << issue.to_string() << std::endl;
+                    }
+                }
+
                 template_manager.save_template(name, current_query);
                 Logger::getInstance().log(LogLevel::INFO, "Query saved as template: ", name);
             } catch (const std::exception& e) {
@@ -245,6 +270,31 @@ void run_cli() {
         } else if (line.substr(0, 13) == "template use ") {
             std::string name = line.substr(13);
             try {
+                // First validate the template
+                auto validation_result = template_validator.validate_template(name);
+                
+                // Check for critical errors
+                if (validation_result.has_issues(TemplateValidationLevel::ERROR)) {
+                    Logger::getInstance().log(LogLevel::ERROR, "Template validation failed with errors:");
+                    for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::ERROR)) {
+                        std::cout << "  - " << issue.to_string() << std::endl;
+                    }
+                    
+                    std::cout << "Do you want to use this template anyway? (y/n): ";
+                    std::string response;
+                    std::getline(std::cin, response);
+                    
+                    if (response != "y" && response != "Y") {
+                        Logger::getInstance().log(LogLevel::INFO, "Template use cancelled");
+                        continue;
+                    }
+                } else if (validation_result.has_issues(TemplateValidationLevel::WARNING)) {
+                    Logger::getInstance().log(LogLevel::NORMAL, "Template has validation warnings:");
+                    for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::WARNING)) {
+                        std::cout << "  - " << issue.to_string() << std::endl;
+                    }
+                }
+
                 // Extract variables from the current query
                 std::map<std::string, std::string> variables;
                 std::istringstream iss(current_query);
@@ -263,6 +313,38 @@ void run_cli() {
                 std::map<std::string, std::string> combined_variables = current_variables;
                 for (const auto& [name, value] : variables) {
                     combined_variables[name] = value;
+                }
+                
+                // Check for missing variables
+                std::string template_content = template_manager.load_template(name);
+                auto template_vars = template_manager.collect_variables(template_content);
+                
+                // Get all variables used in the template from validation result
+                auto referenced_vars = validation_result.get_issues(TemplateValidationLevel::INFO);
+                std::vector<std::string> missing_vars;
+                
+                // Check for variables that are referenced but not declared
+                for (const auto& issue : referenced_vars) {
+                    // If the issue is about a variable, check if it's available
+                    if (issue.get_variable_name().has_value()) {
+                        std::string var_name = issue.get_variable_name().value();
+                        if (combined_variables.find(var_name) == combined_variables.end() && 
+                            template_vars.find(var_name) == template_vars.end()) {
+                            missing_vars.push_back(var_name);
+                        }
+                    }
+                }
+                
+                // If there are missing variables, prompt the user to enter them
+                if (!missing_vars.empty()) {
+                    Logger::getInstance().log(LogLevel::INFO, "Template is missing values for these variables:");
+                    
+                    for (const auto& var : missing_vars) {
+                        std::cout << "  Enter value for '" << var << "': ";
+                        std::string value;
+                        std::getline(std::cin, value);
+                        combined_variables[var] = value;
+                    }
                 }
                 
                 // Instantiate the template with the variables
@@ -394,6 +476,60 @@ void run_cli() {
                 if (current_query.empty()) {
                     Logger::getInstance().log(LogLevel::ERROR, "Cannot create inherited template with empty content");
                     continue;
+                }
+                
+                // Add inherit directive if not already present
+                std::regex inherit_regex("@inherit\\s+\"([^\"]*)\"");
+                if (!std::regex_search(current_query, inherit_regex)) {
+                    // Add @inherit directive at the beginning of the content
+                    current_query = "@inherit \"" + parent_name + "\"\n" + current_query;
+                }
+                
+                // Validate the template before saving
+                auto validation_result = template_validator.validate_content(current_query);
+                
+                // Check for inheritance errors
+                bool has_inheritance_error = false;
+                for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::ERROR)) {
+                    if (issue.to_string().find("inherit") != std::string::npos || 
+                        issue.to_string().find("circular") != std::string::npos) {
+                        has_inheritance_error = true;
+                        break;
+                    }
+                }
+                
+                // If there are inheritance errors, don't allow override
+                if (has_inheritance_error) {
+                    Logger::getInstance().log(LogLevel::ERROR, "Template inheritance validation failed:");
+                    for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::ERROR)) {
+                        if (issue.to_string().find("inherit") != std::string::npos || 
+                            issue.to_string().find("circular") != std::string::npos) {
+                            std::cout << "  - " << issue.to_string() << std::endl;
+                        }
+                    }
+                    continue;
+                }
+                
+                // For other validation errors, prompt for confirmation
+                if (validation_result.has_issues(TemplateValidationLevel::ERROR)) {
+                    Logger::getInstance().log(LogLevel::ERROR, "Template validation failed with errors:");
+                    for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::ERROR)) {
+                        std::cout << "  - " << issue.to_string() << std::endl;
+                    }
+                    
+                    std::cout << "Do you want to save the template anyway? (y/n): ";
+                    std::string response;
+                    std::getline(std::cin, response);
+                    
+                    if (response != "y" && response != "Y") {
+                        Logger::getInstance().log(LogLevel::INFO, "Template save cancelled");
+                        continue;
+                    }
+                } else if (validation_result.has_issues(TemplateValidationLevel::WARNING)) {
+                    Logger::getInstance().log(LogLevel::NORMAL, "Template has validation warnings:");
+                    for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::WARNING)) {
+                        std::cout << "  - " << issue.to_string() << std::endl;
+                    }
                 }
                 
                 template_manager.create_inherited_template(child_name, parent_name, current_query);

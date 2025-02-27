@@ -32,6 +32,7 @@ int main(int argc, char* argv[]) {
                           << "  --copyright             Show copyright example\n"
                           << "  --templates, -l         List all available templates\n"
                           << "  --template NAME, -T     Use a specific template\n"
+                          << "  --template NAME --force Use template even with validation errors\n"
                           << "  --validate NAME         Validate a specific template\n"
                           << "  --validate-all          Validate all templates\n\n"
                           << "If INPUT_FILE is provided, it will be processed as a CQL query.\n"
@@ -101,6 +102,75 @@ int main(int argc, char* argv[]) {
                 
                 try {
                     cql::TemplateManager manager;
+                    
+                    // Create a validator to check the template
+                    cql::TemplateValidator validator(manager);
+                    auto schema = cql::TemplateValidatorSchema::create_default_schema();
+                    for (const auto& [name, rule] : schema.get_validation_rules()) {
+                        validator.add_validation_rule(rule);
+                    }
+                    
+                    // Validate the template before using it
+                    auto validation_result = validator.validate_template(template_name);
+                    bool has_errors = validation_result.has_issues(cql::TemplateValidationLevel::ERROR);
+                    
+                    // Show validation issues
+                    if (has_errors) {
+                        std::cerr << "Warning: Template has validation errors:" << std::endl;
+                        for (const auto& issue : validation_result.get_issues(cql::TemplateValidationLevel::ERROR)) {
+                            std::cerr << "  - " << issue.to_string() << std::endl;
+                        }
+                        
+                        // In non-interactive mode, if --force is not specified, fail on errors
+                        bool force = false;
+                        for (int i = 3; i < argc; i++) {
+                            std::string arg = argv[i];
+                            if (arg == "--force" || arg == "-f") {
+                                force = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!force) {
+                            std::cerr << "Validation failed. Use --force to ignore errors." << std::endl;
+                            return 1;
+                        } else {
+                            std::cerr << "Proceeding despite validation errors (--force specified)." << std::endl;
+                        }
+                    } else if (validation_result.has_issues(cql::TemplateValidationLevel::WARNING)) {
+                        std::cerr << "Template has validation warnings:" << std::endl;
+                        for (const auto& issue : validation_result.get_issues(cql::TemplateValidationLevel::WARNING)) {
+                            std::cerr << "  - " << issue.to_string() << std::endl;
+                        }
+                    }
+                    
+                    // Check for missing variables
+                    std::string template_content = manager.load_template(template_name);
+                    auto template_vars = manager.collect_variables(template_content);
+                    std::vector<std::string> missing_vars;
+                    
+                    // Extract variables from validation issues
+                    auto var_issues = validation_result.get_issues(cql::TemplateValidationLevel::WARNING);
+                    for (const auto& issue : var_issues) {
+                        if (issue.get_variable_name().has_value() && 
+                            issue.to_string().find("not declared") != std::string::npos) {
+                            std::string var_name = issue.get_variable_name().value();
+                            if (variables.find(var_name) == variables.end() && 
+                                template_vars.find(var_name) == template_vars.end()) {
+                                missing_vars.push_back(var_name);
+                            }
+                        }
+                    }
+                    
+                    // Warn about missing variables but don't fail (let them appear as ${var} in the output)
+                    if (!missing_vars.empty()) {
+                        std::cerr << "Warning: The following variables are referenced but not provided:" << std::endl;
+                        for (const auto& var : missing_vars) {
+                            std::cerr << "  - " << var << std::endl;
+                        }
+                        std::cerr << "These will appear as '${" << missing_vars[0] << "}' in the output." << std::endl;
+                    }
+                    
                     std::string instantiated = manager.instantiate_template(template_name, variables);
                     std::string compiled = cql::QueryProcessor::compile(instantiated);
                     

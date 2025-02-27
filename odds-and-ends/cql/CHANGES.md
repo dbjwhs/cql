@@ -2,6 +2,19 @@
 
 ## Phase 3: Template Management System
 
+### Template Validation System (2025-02-27)
+- Added TemplateValidator class for validating templates
+- Implemented validation rules schema system
+- Added CLI commands for validation
+  - `template validate NAME` - Validate a specific template
+  - `template validateall` - Validate all templates
+  - `--validate NAME` - Command-line option to validate a template
+  - `--validate-all` - Command-line option to validate all templates
+- Added automatic validation during template operations
+  - Template saving with validation warnings and prompts
+  - Template inheritance with validation checks
+  - Template usage with missing variable detection
+
 ### Template Inheritance Support (2025-02-26)
 - Added template inheritance with `@inherit` directive
 - Implemented inheritance chain management
