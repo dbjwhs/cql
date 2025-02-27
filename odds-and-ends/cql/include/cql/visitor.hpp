@@ -13,6 +13,14 @@ class TestNode;
 class DependencyNode;
 class PerformanceNode;
 class CopyrightNode;
+class ArchitectureNode;
+class ConstraintNode;
+class ExampleNode;
+class SecurityNode;
+class ComplexityNode;
+class ModelNode;
+class FormatNode;
+class VariableNode;
 
 /**
  * Visitor pattern interface for traversing the AST nodes
@@ -28,6 +36,16 @@ public:
     virtual void visit(const DependencyNode& node) = 0;
     virtual void visit(const PerformanceNode& node) = 0;
     virtual void visit(const CopyrightNode& node) = 0;
+    
+    // Phase 2 directive support
+    virtual void visit(const ArchitectureNode& node) = 0;
+    virtual void visit(const ConstraintNode& node) = 0;
+    virtual void visit(const ExampleNode& node) = 0;
+    virtual void visit(const SecurityNode& node) = 0;
+    virtual void visit(const ComplexityNode& node) = 0;
+    virtual void visit(const ModelNode& node) = 0;
+    virtual void visit(const FormatNode& node) = 0;
+    virtual void visit(const VariableNode& node) = 0;
 };
 
 } // namespace cql

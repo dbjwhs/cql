@@ -1,0 +1,6 @@
+@language "C++"
+@description "Simple hello world program for testing JSON output"
+@context "Minimal example"
+@model "claude-3-sonnet"
+@format "json"
+@test "Verify output"

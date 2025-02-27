@@ -23,6 +23,14 @@ enum class TokenType {
     DEPENDENCY,     // @dependency
     PERFORMANCE,    // @performance
     COPYRIGHT,      // @copyright
+    ARCHITECTURE,   // @architecture
+    CONSTRAINT,     // @constraint
+    EXAMPLE,        // @example
+    SECURITY,       // @security
+    COMPLEXITY,     // @complexity
+    MODEL,          // @model
+    FORMAT,         // @format
+    VARIABLE,       // @variable
     IDENTIFIER,     // any text
     STRING,         // "quoted text"
     NEWLINE,        // \n

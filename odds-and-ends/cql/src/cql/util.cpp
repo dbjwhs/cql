@@ -4,6 +4,7 @@
 #include <fstream>
 #include <stdexcept>
 #include "../../include/cql/cql.hpp"
+#include "../../../headers/project_utils.hpp"
 
 namespace cql::util {
 
@@ -34,9 +35,41 @@ namespace cql {
 
 // QueryProcessor implementation
 std::string QueryProcessor::compile(const std::string_view query_str) {
+    // Parse the query string
     Parser parser(query_str);
     auto nodes = parser.parse();
     
+    // Validate the query structure
+    QueryValidator validator;
+    auto issues = validator.validate(nodes);
+    
+    // Report validation issues
+    for (const auto& issue : issues) {
+        std::string level;
+        switch (issue.severity) {
+            case ValidationSeverity::INFO:
+                level = "INFO";
+                break;
+            case ValidationSeverity::WARNING:
+                level = "WARNING";
+                break;
+            case ValidationSeverity::ERROR:
+                level = "ERROR";
+                break;
+        }
+        
+        Logger::getInstance().log(
+            issue.severity == ValidationSeverity::ERROR ? LogLevel::ERROR : LogLevel::NORMAL,
+            "Validation ", level, ": ", issue.message
+        );
+        
+        // For errors, throw an exception
+        if (issue.severity == ValidationSeverity::ERROR) {
+            throw std::runtime_error("Validation error: " + issue.message);
+        }
+    }
+    
+    // Compile the query
     QueryCompiler compiler;
     for (const auto& node : nodes) {
         node->accept(compiler);

@@ -36,7 +36,16 @@ std::vector<std::unique_ptr<QueryNode>> Parser::parse() {
             m_current_token->m_type != TokenType::TEST &&
             m_current_token->m_type != TokenType::DEPENDENCY &&
             m_current_token->m_type != TokenType::PERFORMANCE &&
-            m_current_token->m_type != TokenType::COPYRIGHT) {
+            m_current_token->m_type != TokenType::COPYRIGHT &&
+            // Phase 2 directives
+            m_current_token->m_type != TokenType::ARCHITECTURE &&
+            m_current_token->m_type != TokenType::CONSTRAINT &&
+            m_current_token->m_type != TokenType::EXAMPLE &&
+            m_current_token->m_type != TokenType::SECURITY &&
+            m_current_token->m_type != TokenType::COMPLEXITY &&
+            m_current_token->m_type != TokenType::MODEL &&
+            m_current_token->m_type != TokenType::FORMAT &&
+            m_current_token->m_type != TokenType::VARIABLE) {
             
             if (!m_current_token) {
                 throw ParserError("Expected keyword but reached end of input", 
@@ -66,6 +75,31 @@ std::vector<std::unique_ptr<QueryNode>> Parser::parse() {
                 break;
             case TokenType::COPYRIGHT:
                 nodes.push_back(parse_copyright());
+                break;
+            // Phase 2 directives
+            case TokenType::ARCHITECTURE:
+                nodes.push_back(parse_architecture());
+                break;
+            case TokenType::CONSTRAINT:
+                nodes.push_back(parse_constraint());
+                break;
+            case TokenType::EXAMPLE:
+                nodes.push_back(parse_example());
+                break;
+            case TokenType::SECURITY:
+                nodes.push_back(parse_security());
+                break;
+            case TokenType::COMPLEXITY:
+                nodes.push_back(parse_complexity());
+                break;
+            case TokenType::MODEL:
+                nodes.push_back(parse_model());
+                break;
+            case TokenType::FORMAT:
+                nodes.push_back(parse_format());
+                break;
+            case TokenType::VARIABLE:
+                nodes.push_back(parse_variable());
                 break;
             default:
                 throw ParserError("Unexpected token type", 
@@ -166,6 +200,56 @@ std::unique_ptr<QueryNode> Parser::parse_copyright() {
     std::string license = parse_string();
     std::string owner = parse_string();
     return std::make_unique<CopyrightNode>(license, owner);
+}
+
+std::unique_ptr<QueryNode> Parser::parse_architecture() {
+    advance(); // Skip @architecture
+    std::string architecture = parse_string();
+    return std::make_unique<ArchitectureNode>(architecture);
+}
+
+std::unique_ptr<QueryNode> Parser::parse_constraint() {
+    advance(); // Skip @constraint
+    std::string constraint = parse_string();
+    return std::make_unique<ConstraintNode>(constraint);
+}
+
+std::unique_ptr<QueryNode> Parser::parse_example() {
+    advance(); // Skip @example
+    std::string label = parse_string();
+    std::string code = parse_string();
+    return std::make_unique<ExampleNode>(label, code);
+}
+
+std::unique_ptr<QueryNode> Parser::parse_security() {
+    advance(); // Skip @security
+    std::string requirement = parse_string();
+    return std::make_unique<SecurityNode>(requirement);
+}
+
+std::unique_ptr<QueryNode> Parser::parse_complexity() {
+    advance(); // Skip @complexity
+    std::string complexity = parse_string();
+    return std::make_unique<ComplexityNode>(complexity);
+}
+
+std::unique_ptr<QueryNode> Parser::parse_model() {
+    advance(); // Skip @model
+    std::string model_name = parse_string();
+    return std::make_unique<ModelNode>(model_name);
+}
+
+std::unique_ptr<QueryNode> Parser::parse_format() {
+    advance(); // Skip @format
+    std::string format_type = parse_string();
+    return std::make_unique<FormatNode>(format_type);
+}
+
+std::unique_ptr<QueryNode> Parser::parse_variable() {
+    advance(); // Skip @variable
+    std::string name = parse_string();
+    std::string value = parse_string();
+    return std::make_unique<VariableNode>(name, value);
 }
 
 } // namespace cql

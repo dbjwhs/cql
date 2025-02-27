@@ -200,6 +200,86 @@ void test_compiler() {
 
         Logger::getInstance().log(LogLevel::DEBUG, "Compiled query: ", result);
     }
+    
+    // Test new Phase 2 directives
+    {
+        std::string input = R"(
+            @language "C++"
+            @description "implement a sorting algorithm"
+            @context "For educational purposes"
+            
+            @architecture "Standalone module"
+            @constraint "Must work with custom comparators"
+            @complexity "O(n log n) average case complexity"
+            @security "Input validation to prevent integer overflow"
+            
+            @variable "algorithm_name" "QuickSort"
+            
+            @example "Basic Usage" "
+            std::vector<int> data = {5, 2, 9, 1, 5, 6};
+            ${algorithm_name}(data.begin(), data.end());
+            // data is now sorted
+            "
+            
+            @test "Basic sorting test"
+            @test "Empty collection test"
+            @test "Already-sorted collection test"
+        )";
+
+        Parser parser(input);
+        auto nodes = parser.parse();
+
+        QueryCompiler compiler;
+        for (const auto& node : nodes) {
+            node->accept(compiler);
+        }
+
+        std::string result = compiler.get_compiled_query();
+
+        // Verify the compiled query contains expected new sections
+        assert(util::contains(result, "Architecture Requirements:"));
+        assert(util::contains(result, "Standalone module"));
+        assert(util::contains(result, "Constraints:"));
+        assert(util::contains(result, "Must work with custom comparators"));
+        assert(util::contains(result, "Algorithmic Complexity Requirements:"));
+        assert(util::contains(result, "O(n log n) average case complexity"));
+        assert(util::contains(result, "Security Requirements:"));
+        assert(util::contains(result, "Input validation to prevent integer overflow"));
+        
+        // Check example section
+        assert(util::contains(result, "Example - Basic Usage:"));
+        
+        // Check variable interpolation
+        assert(util::contains(result, "QuickSort(data.begin(), data.end());"));
+        
+        Logger::getInstance().log(LogLevel::DEBUG, "Compiled Phase 2 query: ", result);
+    }
+    
+    // Test format directives
+    {
+        std::string input = R"(
+            @language "C++"
+            @description "simple hello world"
+            @model "claude-3-sonnet"
+            @format "json"
+        )";
+
+        Parser parser(input);
+        auto nodes = parser.parse();
+
+        QueryCompiler compiler;
+        for (const auto& node : nodes) {
+            node->accept(compiler);
+        }
+
+        std::string result = compiler.get_compiled_query();
+
+        // Verify JSON output format
+        assert(util::contains(result, "\"model\": \"claude-3-sonnet\""));
+        assert(util::contains(result, "\"format\": \"json\""));
+        
+        Logger::getInstance().log(LogLevel::DEBUG, "JSON formatted query: ", result);
+    }
 
     // Test extended compilation with new node types
     {
@@ -346,6 +426,142 @@ void query_examples() {
 }
 
 // Run all tests
+// Test suite for the validator
+void test_validator() {
+    Logger::getInstance().log(LogLevel::INFO, "Running validator tests...");
+    
+    // Test missing required directives
+    {
+        std::string input = 
+            "@context \"Should fail because language and description are missing\"\n";
+        
+        Parser parser(input);
+        auto nodes = parser.parse();
+        
+        QueryValidator validator;
+        auto issues = validator.validate(nodes);
+        
+        // Should have two errors for missing @language and @description
+        assert(issues.size() >= 2);
+        assert(std::any_of(issues.begin(), issues.end(), [](const ValidationIssue& issue) {
+            return issue.severity == ValidationSeverity::ERROR && 
+                   issue.message.find("@LANGUAGE") != std::string::npos;
+        }));
+        assert(std::any_of(issues.begin(), issues.end(), [](const ValidationIssue& issue) {
+            return issue.severity == ValidationSeverity::ERROR && 
+                   issue.message.find("@DESCRIPTION") != std::string::npos;
+        }));
+        
+        Logger::getInstance().log(LogLevel::DEBUG, "Validation correctly detected missing required directives");
+    }
+    
+    // Test dependency rule
+    {
+        std::string input = 
+            "@language \"C++\"\n"
+            "@description \"Test dependency rule\"\n"
+            "@architecture \"Microservices\"\n";
+        
+        Parser parser(input);
+        auto nodes = parser.parse();
+        
+        QueryValidator validator;
+        auto issues = validator.validate(nodes);
+        
+        // Should have a warning about architecture being used without context
+        assert(std::any_of(issues.begin(), issues.end(), [](const ValidationIssue& issue) {
+            return issue.severity == ValidationSeverity::WARNING && 
+                   issue.message.find("@ARCHITECTURE") != std::string::npos &&
+                   issue.message.find("@CONTEXT") != std::string::npos;
+        }));
+        
+        Logger::getInstance().log(LogLevel::DEBUG, "Validation correctly detected dependency rule violation");
+    }
+    
+    // Test custom rule for missing tests
+    {
+        std::string input = 
+            "@language \"C++\"\n"
+            "@description \"Should warn about missing tests\"\n";
+        
+        Parser parser(input);
+        auto nodes = parser.parse();
+        
+        QueryValidator validator;
+        auto issues = validator.validate(nodes);
+        
+        // Should have a warning about missing tests
+        assert(std::any_of(issues.begin(), issues.end(), [](const ValidationIssue& issue) {
+            return issue.severity == ValidationSeverity::WARNING && 
+                   issue.message.find("test") != std::string::npos;
+        }));
+        
+        Logger::getInstance().log(LogLevel::DEBUG, "Validation correctly detected missing tests");
+    }
+    
+    // Test valid query
+    {
+        std::string input = 
+            "@language \"C++\"\n"
+            "@description \"Valid query with all required elements\"\n"
+            "@context \"Development environment\"\n"
+            "@test \"Basic functionality\"\n";
+        
+        std::cout << "Input query for validation test:" << std::endl << input << std::endl;
+        
+        Parser parser(input);
+        auto nodes = parser.parse();
+        
+        std::cout << "Parsed " << nodes.size() << " nodes:" << std::endl;
+        for (const auto& node : nodes) {
+            if (dynamic_cast<const CodeRequestNode*>(node.get())) {
+                auto* code_node = dynamic_cast<const CodeRequestNode*>(node.get());
+                std::cout << "  CodeRequestNode: language=" << code_node->language() 
+                          << ", description=" << code_node->description() << std::endl;
+            } else if (dynamic_cast<const ContextNode*>(node.get())) {
+                auto* ctx_node = dynamic_cast<const ContextNode*>(node.get());
+                std::cout << "  ContextNode: " << ctx_node->context() << std::endl;
+            } else if (dynamic_cast<const TestNode*>(node.get())) {
+                auto* test_node = dynamic_cast<const TestNode*>(node.get());
+                std::cout << "  TestNode: " << test_node->test_cases()[0] << std::endl;
+            } else {
+                std::cout << "  Other node type" << std::endl;
+            }
+        }
+        
+        QueryValidator validator;
+        auto issues = validator.validate(nodes);
+        
+        // Print the issues for debugging
+        for (const auto& issue : issues) {
+            std::string severity_str;
+            switch (issue.severity) {
+                case ValidationSeverity::INFO: severity_str = "INFO"; break;
+                case ValidationSeverity::WARNING: severity_str = "WARNING"; break;
+                case ValidationSeverity::ERROR: severity_str = "ERROR"; break;
+            }
+            
+            std::cout << "Validation " << severity_str << ": " << issue.message << std::endl;
+        }
+        
+        // Should have no errors (maybe warnings, but no errors)
+        bool has_errors = std::any_of(issues.begin(), issues.end(), [](const ValidationIssue& issue) {
+            return issue.severity == ValidationSeverity::ERROR;
+        });
+        
+        if (has_errors) {
+            std::cout << "ERROR: Valid query was flagged with errors" << std::endl;
+        } else {
+            Logger::getInstance().log(LogLevel::DEBUG, "Validation correctly approved valid query");
+        }
+        
+        // Allow warnings, but no errors
+        assert(!has_errors);
+    }
+    
+    Logger::getInstance().log(LogLevel::INFO, "Validator tests passed!");
+}
+
 void run_tests() {
     std::cout << "Starting CQL test suite" << std::endl;
     Logger::getInstance().log(LogLevel::INFO, "Starting CQL test suite");
@@ -357,6 +573,8 @@ void run_tests() {
         test_parser();
         std::cout << "Running compiler tests..." << std::endl;
         test_compiler();
+        std::cout << "Running validator tests..." << std::endl;
+        test_validator();
 
         std::cout << "All tests passed!" << std::endl;
         Logger::getInstance().log(LogLevel::INFO, "All tests passed!");

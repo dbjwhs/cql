@@ -28,6 +28,7 @@ across teams and integrated into development workflows.
 
 ## Features
 
+### Core Features (Phase 1)
 - **Simple @directive syntax** for specifying different aspects of the query
 - **Customizable output formatting** for different LLM preferences
 - **Copyright and license specification** for generated code
@@ -38,6 +39,17 @@ across teams and integrated into development workflows.
 - **Interactive CLI mode** for iterative query development
 - **File import/export** for saving and loading queries
 - **Robust error handling** with detailed diagnostics
+
+### Advanced Features (Phase 2)
+- **Advanced directives** for architecture, constraints, examples, and more
+- **Template variables** with string interpolation
+- **Query validation** to enforce structure and best practices
+- **Multiple output formats** including markdown and JSON
+- **Model targeting** to specify appropriate Claude model
+- **Security requirements** for code generation
+- **Algorithmic complexity** specifications
+
+See [PHASE2_FEATURES.md](PHASE2_FEATURES.md) for detailed information on the new features.
 
 ## Template Storage and Reusability
 

@@ -86,4 +86,108 @@ const std::string& CopyrightNode::owner() const {
     return m_owner; 
 }
 
+// ArchitectureNode implementation
+ArchitectureNode::ArchitectureNode(std::string architecture)
+    : m_architecture(std::move(architecture)) {}
+
+void ArchitectureNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& ArchitectureNode::architecture() const { 
+    return m_architecture; 
+}
+
+// ConstraintNode implementation
+ConstraintNode::ConstraintNode(std::string constraint)
+    : m_constraint(std::move(constraint)) {}
+
+void ConstraintNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& ConstraintNode::constraint() const { 
+    return m_constraint; 
+}
+
+// ExampleNode implementation
+ExampleNode::ExampleNode(std::string label, std::string code)
+    : m_label(std::move(label)), m_code(std::move(code)) {}
+
+void ExampleNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& ExampleNode::label() const { 
+    return m_label; 
+}
+
+const std::string& ExampleNode::code() const { 
+    return m_code; 
+}
+
+// SecurityNode implementation
+SecurityNode::SecurityNode(std::string requirement)
+    : m_requirement(std::move(requirement)) {}
+
+void SecurityNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& SecurityNode::requirement() const { 
+    return m_requirement; 
+}
+
+// ComplexityNode implementation
+ComplexityNode::ComplexityNode(std::string complexity)
+    : m_complexity(std::move(complexity)) {}
+
+void ComplexityNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& ComplexityNode::complexity() const { 
+    return m_complexity; 
+}
+
+// ModelNode implementation
+ModelNode::ModelNode(std::string model_name)
+    : m_model_name(std::move(model_name)) {}
+
+void ModelNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& ModelNode::model_name() const { 
+    return m_model_name; 
+}
+
+// FormatNode implementation
+FormatNode::FormatNode(std::string format_type)
+    : m_format_type(std::move(format_type)) {}
+
+void FormatNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& FormatNode::format_type() const { 
+    return m_format_type; 
+}
+
+// VariableNode implementation
+VariableNode::VariableNode(std::string name, std::string value)
+    : m_name(std::move(name)), m_value(std::move(value)) {}
+
+void VariableNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& VariableNode::name() const { 
+    return m_name; 
+}
+
+const std::string& VariableNode::value() const { 
+    return m_value; 
+}
+
 } // namespace cql

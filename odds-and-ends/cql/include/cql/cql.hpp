@@ -27,6 +27,7 @@
 #include "lexer.hpp"
 #include "parser.hpp"
 #include "compiler.hpp"
+#include "validator.hpp"
 
 namespace cql {
 

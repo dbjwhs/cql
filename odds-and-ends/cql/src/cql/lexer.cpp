@@ -16,6 +16,14 @@ std::string token_type_to_string(TokenType type) {
         case TokenType::DEPENDENCY: return "DEPENDENCY";
         case TokenType::PERFORMANCE: return "PERFORMANCE";
         case TokenType::COPYRIGHT: return "COPYRIGHT";
+        case TokenType::ARCHITECTURE: return "ARCHITECTURE";
+        case TokenType::CONSTRAINT: return "CONSTRAINT";
+        case TokenType::EXAMPLE: return "EXAMPLE";
+        case TokenType::SECURITY: return "SECURITY";
+        case TokenType::COMPLEXITY: return "COMPLEXITY";
+        case TokenType::MODEL: return "MODEL";
+        case TokenType::FORMAT: return "FORMAT";
+        case TokenType::VARIABLE: return "VARIABLE";
         case TokenType::IDENTIFIER: return "IDENTIFIER";
         case TokenType::STRING: return "STRING";
         case TokenType::NEWLINE: return "NEWLINE";
@@ -97,6 +105,15 @@ std::optional<Token> Lexer::lex_keyword() {
     else if (keyword == "dependency") type = TokenType::DEPENDENCY;
     else if (keyword == "performance") type = TokenType::PERFORMANCE;
     else if (keyword == "copyright") type = TokenType::COPYRIGHT;
+    // New directive types for Phase 2
+    else if (keyword == "architecture") type = TokenType::ARCHITECTURE;
+    else if (keyword == "constraint") type = TokenType::CONSTRAINT;
+    else if (keyword == "example") type = TokenType::EXAMPLE;
+    else if (keyword == "security") type = TokenType::SECURITY;
+    else if (keyword == "complexity") type = TokenType::COMPLEXITY;
+    else if (keyword == "model") type = TokenType::MODEL;
+    else if (keyword == "format") type = TokenType::FORMAT;
+    else if (keyword == "variable") type = TokenType::VARIABLE;
     else {
         throw LexerError("Unknown keyword: @" + keyword, m_line, start_column - 1);
     }

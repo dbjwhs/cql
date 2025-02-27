@@ -88,19 +88,24 @@ void run_cli() {
 bool process_file(const std::string& input_file, const std::string& output_file) {
     try {
         Logger::getInstance().log(LogLevel::INFO, "Processing file: ", input_file);
+        std::cout << "Processing file: " << input_file << std::endl;
 
         std::string result = QueryProcessor::compile_file(input_file);
 
         if (output_file.empty()) {
+            std::cout << "\n=== Compiled Query ===\n\n" 
+                     << result << "\n===================" << std::endl;
             Logger::getInstance().log(LogLevel::INFO, "\n=== Compiled Query ===\n\n", 
                                      result, "\n===================");
         } else {
             util::write_file(output_file, result);
+            std::cout << "Compiled query written to " << output_file << std::endl;
             Logger::getInstance().log(LogLevel::INFO, "Compiled query written to ", output_file);
         }
 
         return true;
     } catch (const std::exception& e) {
+        std::cerr << "Error processing file: " << e.what() << std::endl;
         Logger::getInstance().log(LogLevel::ERROR, "Error processing file: ", e.what());
         return false;
     }

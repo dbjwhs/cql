@@ -71,11 +71,22 @@ int main(int argc, char* argv[]) {
             std::cout << "Running query examples..." << std::endl;
             cql::test::query_examples();
 
-            // Example query - note the careful spacing and newlines
+            // Example query with Phase 2 features
             std::string query =
+                "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
                 "@language \"C++\"\n"
                 "@description \"implement a thread-safe queue with a maximum size\"\n"
                 "@context \"Using C++20 features and RAII principles\"\n"
+                "@architecture \"Producer-consumer pattern with monitoring\"\n"
+                "@constraint \"Thread-safe for concurrent access\"\n"
+                "@security \"Prevent data races and deadlocks\"\n"
+                "@complexity \"O(1) for push and pop operations\"\n"
+                "@variable \"max_size\" \"1000\"\n"
+                "@example \"Basic Usage\" \"\n"
+                "ThreadSafeQueue<int> queue(${max_size});\n"
+                "queue.push(42);\n"
+                "auto value = queue.pop();\n"
+                "\"\n"
                 "@test \"Test concurrent push operations\"\n"
                 "@test \"Test concurrent pop operations\"\n"
                 "@test \"Test boundary conditions\"\n";
