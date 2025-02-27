@@ -20,6 +20,9 @@ void run_cli() {
     std::string line;
     std::string current_query;
     TemplateManager template_manager;
+    
+    // store variables in memory for template instantiation
+    std::map<std::string, std::string> current_variables;
 
     while (true) {
         std::cout << "> ";
@@ -43,7 +46,11 @@ void run_cli() {
                       << "  template load NAME      - Load a template\n"
                       << "  template info NAME      - Show info about a template\n"
                       << "  template delete NAME    - Delete a template\n"
+                      << "  template vars NAME      - List variables in a template\n"
                       << "  template setvar NAME=VAL - Set a template variable\n"
+                      << "  template setvars        - Enter multiple variables interactively\n"
+                      << "  template vars           - Show current variables in memory\n"
+                      << "  template clearvars      - Clear all current variables\n"
                       << "  template use NAME       - Use a template with current variables\n"
                       << "  template dir [PATH]     - Show or set templates directory\n"
                       << "  categories              - List template categories\n"
@@ -170,13 +177,18 @@ void run_cli() {
             std::string name = var_def.substr(0, equals_pos);
             std::string value = var_def.substr(equals_pos + 1);
             
-            // Add/update the variable declaration in the current query
+            // Add/update the variable in both current query and memory
+            // First update in memory for future template usage
+            current_variables[name] = value;
+            
+            // Then update in the current query if it exists
             std::stringstream new_query;
             bool variable_updated = false;
             
             // If the query is empty, just add the variable
             if (current_query.empty()) {
                 new_query << "@variable \"" << name << "\" \"" << value << "\"";
+                current_query = new_query.str();
                 variable_updated = true;
             } else {
                 // Check if variable already exists in the query
@@ -226,8 +238,15 @@ void run_cli() {
                     }
                 }
                 
+                // Combine current variables with template variables
+                // Template variables will override memory variables if there are duplicates
+                std::map<std::string, std::string> combined_variables = current_variables;
+                for (const auto& [name, value] : variables) {
+                    combined_variables[name] = value;
+                }
+                
                 // Instantiate the template with the variables
-                current_query = template_manager.instantiate_template(name, variables);
+                current_query = template_manager.instantiate_template(name, combined_variables);
                 Logger::getInstance().log(LogLevel::INFO, "Template instantiated: ", name);
             } catch (const std::exception& e) {
                 Logger::getInstance().log(LogLevel::ERROR, "Failed to use template: ", e.what());
@@ -272,6 +291,72 @@ void run_cli() {
             } catch (const std::exception& e) {
                 Logger::getInstance().log(LogLevel::ERROR, "Error creating category: ", e.what());
             }
+        } else if (line == "template vars") {
+            // Show current variables in memory
+            if (current_variables.empty()) {
+                Logger::getInstance().log(LogLevel::INFO, "No variables currently defined");
+            } else {
+                Logger::getInstance().log(LogLevel::INFO, "Current variables:");
+                for (const auto& [name, value] : current_variables) {
+                    std::cout << "  " << name << " = \"" << value << "\"" << std::endl;
+                }
+            }
+        } else if (line == "template clearvars") {
+            // Clear all current variables
+            current_variables.clear();
+            Logger::getInstance().log(LogLevel::INFO, "All variables cleared");
+        } else if (line.substr(0, 14) == "template vars ") {
+            // List variables in a specific template
+            std::string template_name = line.substr(14);
+            try {
+                auto metadata = template_manager.get_template_metadata(template_name);
+                
+                if (metadata.variables.empty()) {
+                    Logger::getInstance().log(LogLevel::INFO, "No variables found in template: ", template_name);
+                } else {
+                    Logger::getInstance().log(LogLevel::INFO, "Variables in template: ", template_name);
+                    
+                    // Get template content to extract default values if available
+                    std::string content = template_manager.load_template(template_name);
+                    auto variables_with_values = template_manager.collect_variables(content);
+                    
+                    for (const auto& var_name : metadata.variables) {
+                        std::string default_value = variables_with_values.count(var_name) > 0 ? 
+                                                   variables_with_values[var_name] : "(no default)";
+                        std::cout << "  " << var_name << " = \"" << default_value << "\"" << std::endl;
+                    }
+                }
+            } catch (const std::exception& e) {
+                Logger::getInstance().log(LogLevel::ERROR, "Error listing template variables: ", e.what());
+            }
+        } else if (line == "template setvars") {
+            // Interactive mode for setting multiple variables
+            Logger::getInstance().log(LogLevel::INFO, "Enter variables in NAME=VALUE format (empty line to finish):");
+            
+            while (true) {
+                std::string var_line;
+                std::cout << "var> ";
+                std::getline(std::cin, var_line);
+                
+                if (var_line.empty()) {
+                    break;
+                }
+                
+                size_t equals_pos = var_line.find('=');
+                if (equals_pos == std::string::npos) {
+                    Logger::getInstance().log(LogLevel::ERROR, "Invalid format. Use NAME=VALUE");
+                    continue;
+                }
+                
+                std::string name = var_line.substr(0, equals_pos);
+                std::string value = var_line.substr(equals_pos + 1);
+                
+                // Add to current variables
+                current_variables[name] = value;
+                Logger::getInstance().log(LogLevel::INFO, "Variable set: ", name, "=", value);
+            }
+            
+            Logger::getInstance().log(LogLevel::INFO, "Finished setting variables");
         } else {
             // Add line to the current query
             if (!current_query.empty()) {

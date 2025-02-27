@@ -76,7 +76,8 @@ private:
     // replace variable references with their values
     std::string replace_variables(const std::string& content, 
                                   const std::map<std::string, std::string>& variables);
-    
+
+public: // make public to allow direct access from CLI
     // extract and combine all variables from template content and declared variables
     std::map<std::string, std::string> collect_variables(const std::string& content);
 };
