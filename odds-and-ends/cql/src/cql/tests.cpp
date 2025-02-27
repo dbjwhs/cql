@@ -584,8 +584,15 @@ void test_template_manager() {
         
         // Test listing templates
         auto templates = manager.list_templates();
-        assert(!templates.empty());
-        assert(templates[0] == "test_template.cql");
+        // Template will now be in user/test_template.cql
+        bool found_template = false;
+        for (const auto& tmpl : templates) {
+            if (tmpl.find("test_template.cql") != std::string::npos) {
+                found_template = true;
+                break;
+            }
+        }
+        assert(found_template);
         
         // Test loading a template
         std::string loaded_template = manager.load_template("test_template");
@@ -614,7 +621,14 @@ void test_template_manager() {
         assert(created);
         auto categories = manager.list_categories();
         assert(!categories.empty());
-        assert(categories[0] == "test_category");
+        bool found_category = false;
+        for (const auto& cat : categories) {
+            if (cat == "test_category") {
+                found_category = true;
+                break;
+            }
+        }
+        assert(found_category);
         
         // Clean up
         std::filesystem::remove_all(temp_dir);

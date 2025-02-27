@@ -64,8 +64,17 @@ private:
     // get the full path for a template
     std::string get_template_path(const std::string& name) const;
     
-    // create templates directory if it doesn't exist
+    // create templates directory if it doesn't exist and validate structure
     void ensure_templates_directory();
+    
+    // validate the template directory structure and permissions
+    bool validate_template_directory() const;
+    
+    // initialize standard directory structure
+    void initialize_template_structure();
+    
+    // repair template directory if needed
+    bool repair_template_directory();
     
     // extract variables from a template
     std::vector<std::string> extract_variables(const std::string& content);

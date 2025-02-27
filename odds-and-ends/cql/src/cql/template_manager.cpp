@@ -12,6 +12,7 @@
 #include <chrono>
 #include <iomanip>
 #include <sstream>
+#include <set>
 
 namespace fs = std::filesystem;
 
@@ -39,10 +40,50 @@ void TemplateManager::save_template(const std::string& name, const std::string& 
         throw std::runtime_error("Template name cannot be empty");
     }
     
-    // get the full path
-    std::string template_path = get_template_path(name);
+    // ensure templates directory structure is valid
+    if (!validate_template_directory()) {
+        if (!repair_template_directory()) {
+            throw std::runtime_error("Template directory structure is invalid and could not be repaired");
+        }
+    }
+    
+    std::string template_path;
+    
+    // check if the name contains a category specification with category/template format
+    if (name.find('/') != std::string::npos) {
+        // split the name into category and template name
+        std::string category = name.substr(0, name.find('/'));
+        
+        // ensure the category directory exists
+        fs::path category_path = fs::path(m_templates_dir) / category;
+        if (!fs::exists(category_path)) {
+            try {
+                fs::create_directory(category_path);
+                Logger::getInstance().log(LogLevel::INFO, "Created category directory: ", category);
+            } catch (const std::exception& e) {
+                throw std::runtime_error("Failed to create category directory: " + std::string(e.what()));
+            }
+        }
+        
+        // get the template path including the category
+        template_path = get_template_path(name);
+    } else {
+        // if no category specified, save to the user directory by default
+        std::string filename = name;
+        if (filename.length() < 4 || filename.substr(filename.length() - 4) != ".cql") {
+            filename += ".cql";
+        }
+        
+        template_path = m_templates_dir + "/user/" + filename;
+    }
     
     try {
+        // ensure parent directory exists (for nested categories)
+        fs::path parent_dir = fs::path(template_path).parent_path();
+        if (!fs::exists(parent_dir)) {
+            fs::create_directories(parent_dir);
+        }
+        
         // write the content to the file
         util::write_file(template_path, content);
         Logger::getInstance().log(LogLevel::INFO, "Template saved: ", name);
@@ -109,18 +150,101 @@ TemplateManager::TemplateMetadata TemplateManager::get_template_metadata(const s
 std::vector<std::string> TemplateManager::list_templates() {
     std::vector<std::string> templates;
     
+    // ensure templates directory is valid
+    if (!validate_template_directory()) {
+        if (!repair_template_directory()) {
+            Logger::getInstance().log(LogLevel::ERROR, 
+                "Failed to list templates: template directory structure is invalid");
+            return templates;
+        }
+    }
+    
     try {
-        // iterate through all files in the templates directory
-        for (const auto& entry : fs::recursive_directory_iterator(m_templates_dir)) {
+        // create a set to keep track of added templates
+        std::set<std::string> added_templates;
+        
+        // first get all templates from the common directory
+        if (fs::exists(fs::path(m_templates_dir) / "common")) {
+            for (const auto& entry : fs::recursive_directory_iterator(fs::path(m_templates_dir) / "common")) {
+                if (entry.is_regular_file() && entry.path().extension() == ".cql") {
+                    // format path as common/template
+                    fs::path rel_path = entry.path().lexically_relative(m_templates_dir);
+                    std::string template_name = rel_path.string();
+                    templates.push_back(template_name);
+                    added_templates.insert(template_name);
+                }
+            }
+        }
+        
+        // next get all templates from the user directory
+        if (fs::exists(fs::path(m_templates_dir) / "user")) {
+            for (const auto& entry : fs::recursive_directory_iterator(fs::path(m_templates_dir) / "user")) {
+                if (entry.is_regular_file() && entry.path().extension() == ".cql") {
+                    // format path as user/template
+                    fs::path rel_path = entry.path().lexically_relative(m_templates_dir);
+                    std::string template_name = rel_path.string();
+                    templates.push_back(template_name);
+                    added_templates.insert(template_name);
+                }
+            }
+        }
+        
+        // finally get templates from any other directories (legacy support)
+        for (const auto& entry : fs::directory_iterator(m_templates_dir)) {
             if (entry.is_regular_file() && entry.path().extension() == ".cql") {
-                // get the relative path from the templates directory
-                std::string rel_path = entry.path().lexically_relative(m_templates_dir).string();
-                templates.push_back(rel_path);
+                // add only if not an internal file
+                if (entry.path().filename().string() != "README.txt" && 
+                    entry.path().filename().string()[0] != '.') {
+                    std::string template_name = entry.path().filename().string();
+                    
+                    // add only if we haven't encountered this template yet
+                    if (added_templates.find(template_name) == added_templates.end()) {
+                        templates.push_back(template_name);
+                        added_templates.insert(template_name);
+                    }
+                }
+            } else if (entry.is_directory() && 
+                      entry.path().filename() != "common" && 
+                      entry.path().filename() != "user") {
+                // handle custom categories (not common or user)
+                for (const auto& sub_entry : fs::recursive_directory_iterator(entry.path())) {
+                    if (sub_entry.is_regular_file() && sub_entry.path().extension() == ".cql") {
+                        // format path as category/template
+                        fs::path rel_path = sub_entry.path().lexically_relative(m_templates_dir);
+                        std::string template_name = rel_path.string();
+                        
+                        // add only if we haven't encountered this template yet
+                        if (added_templates.find(template_name) == added_templates.end()) {
+                            templates.push_back(template_name);
+                            added_templates.insert(template_name);
+                        }
+                    }
+                }
             }
         }
         
         // sort the templates alphabetically
-        std::sort(templates.begin(), templates.end());
+        std::sort(templates.begin(), templates.end(), [](const std::string& a, const std::string& b) {
+            // First sort by category, then by template name
+            std::string a_category = a.find('/') != std::string::npos ? a.substr(0, a.find('/')) : "";
+            std::string b_category = b.find('/') != std::string::npos ? b.substr(0, b.find('/')) : "";
+            
+            // Put common category first, then user, then others alphabetically
+            if (a_category == "common" && b_category != "common") return true;
+            if (a_category != "common" && b_category == "common") return false;
+            if (a_category == "user" && b_category != "user" && b_category != "common") return true;
+            if (a_category != "user" && a_category != "common" && b_category == "user") return false;
+            
+            // If categories are the same, sort by template name
+            if (a_category == b_category) {
+                std::string a_name = a.find('/') != std::string::npos ? a.substr(a.find('/') + 1) : a;
+                std::string b_name = b.find('/') != std::string::npos ? b.substr(b.find('/') + 1) : b;
+                return a_name < b_name;
+            }
+            
+            // Otherwise sort by category
+            return a_category < b_category;
+        });
         
         return templates;
     } catch (const std::exception& e) {
@@ -225,8 +349,32 @@ std::string TemplateManager::get_template_path(const std::string& name) const {
         filename += ".cql";
     }
     
-    // combine the templates directory with the filename
-    return m_templates_dir + "/" + filename;
+    // check if the name includes a category using category/template format
+    if (filename.find('/') != std::string::npos) {
+        // combine the templates directory with the category/template path
+        return m_templates_dir + "/" + filename;
+    }
+    
+    // first check in user directory (most common case)
+    std::string user_path = m_templates_dir + "/user/" + filename;
+    if (fs::exists(user_path)) {
+        return user_path;
+    }
+    
+    // then check in common directory
+    std::string common_path = m_templates_dir + "/common/" + filename;
+    if (fs::exists(common_path)) {
+        return common_path;
+    }
+    
+    // check if it exists directly under the templates directory (legacy support)
+    std::string root_path = m_templates_dir + "/" + filename;
+    if (fs::exists(root_path)) {
+        return root_path;
+    }
+    
+    // if not found, default to user directory
+    return m_templates_dir + "/user/" + filename;
 }
 
 void TemplateManager::ensure_templates_directory() {
@@ -235,9 +383,144 @@ void TemplateManager::ensure_templates_directory() {
         if (!fs::exists(m_templates_dir)) {
             fs::create_directories(m_templates_dir);
             Logger::getInstance().log(LogLevel::INFO, "Created templates directory: ", m_templates_dir);
+            
+            // initialize the directory with standard structure
+            initialize_template_structure();
+        } else {
+            // validate existing directory structure
+            if (!validate_template_directory()) {
+                Logger::getInstance().log(LogLevel::ERROR, 
+                    "Template directory has issues. Attempting repair...");
+                
+                if (!repair_template_directory()) {
+                    Logger::getInstance().log(LogLevel::ERROR, 
+                        "Failed to repair template directory: ", m_templates_dir);
+                }
+            }
         }
     } catch (const std::exception& e) {
         throw std::runtime_error("Failed to create templates directory: " + std::string(e.what()));
+    }
+}
+
+bool TemplateManager::validate_template_directory() const {
+    bool valid = true;
+    
+    try {
+        // check if directory exists
+        if (!fs::exists(m_templates_dir)) {
+            Logger::getInstance().log(LogLevel::ERROR, "Template directory does not exist: ", m_templates_dir);
+            return false;
+        }
+        
+        // check if it's actually a directory
+        if (!fs::is_directory(m_templates_dir)) {
+            Logger::getInstance().log(LogLevel::ERROR, "Template path is not a directory: ", m_templates_dir);
+            return false;
+        }
+        
+        // check if it's writable
+        fs::path test_file = fs::path(m_templates_dir) / ".write_test";
+        try {
+            std::ofstream test(test_file);
+            if (!test.is_open()) {
+                Logger::getInstance().log(LogLevel::ERROR, "Template directory is not writable: ", m_templates_dir);
+                valid = false;
+            } else {
+                test.close();
+                fs::remove(test_file);
+            }
+        } catch (...) {
+            Logger::getInstance().log(LogLevel::ERROR, "Failed to write to template directory: ", m_templates_dir);
+            valid = false;
+        }
+        
+        // check for required directories
+        if (!fs::exists(fs::path(m_templates_dir) / "common") || 
+            !fs::is_directory(fs::path(m_templates_dir) / "common")) {
+            Logger::getInstance().log(LogLevel::ERROR, "Missing 'common' category in template directory");
+            valid = false;
+        }
+        
+        if (!fs::exists(fs::path(m_templates_dir) / "user") || 
+            !fs::is_directory(fs::path(m_templates_dir) / "user")) {
+            Logger::getInstance().log(LogLevel::ERROR, "Missing 'user' category in template directory");
+            valid = false;
+        }
+        
+        return valid;
+    } catch (const std::exception& e) {
+        Logger::getInstance().log(LogLevel::ERROR, "Error validating template directory: ", e.what());
+        return false;
+    }
+}
+
+void TemplateManager::initialize_template_structure() {
+    try {
+        // create standard subdirectories
+        fs::create_directory(fs::path(m_templates_dir) / "common");
+        fs::create_directory(fs::path(m_templates_dir) / "user");
+        
+        // create a README file explaining the structure
+        std::string readme_path = (fs::path(m_templates_dir) / "README.txt").string();
+        std::ofstream readme(readme_path);
+        if (readme.is_open()) {
+            readme << "CQL Template Directory Structure\n";
+            readme << "===============================\n\n";
+            readme << "This directory contains CQL templates organized as follows:\n\n";
+            readme << "- common/ : Standard templates that ship with CQL\n";
+            readme << "- user/   : User-created templates\n\n";
+            readme << "You can also create your own categories as subdirectories.\n";
+            readme << "Each template should be a .cql file.\n";
+            readme.close();
+            
+            Logger::getInstance().log(LogLevel::INFO, "Created template directory structure");
+        }
+    } catch (const std::exception& e) {
+        Logger::getInstance().log(LogLevel::ERROR, "Failed to initialize template structure: ", e.what());
+    }
+}
+
+bool TemplateManager::repair_template_directory() {
+    try {
+        // ensure main directory exists
+        if (!fs::exists(m_templates_dir)) {
+            fs::create_directories(m_templates_dir);
+        }
+        
+        // ensure common subdirectory exists
+        if (!fs::exists(fs::path(m_templates_dir) / "common") || 
+            !fs::is_directory(fs::path(m_templates_dir) / "common")) {
+            fs::create_directory(fs::path(m_templates_dir) / "common");
+        }
+        
+        // ensure user subdirectory exists
+        if (!fs::exists(fs::path(m_templates_dir) / "user") || 
+            !fs::is_directory(fs::path(m_templates_dir) / "user")) {
+            fs::create_directory(fs::path(m_templates_dir) / "user");
+        }
+        
+        // recreate README if missing
+        std::string readme_path = (fs::path(m_templates_dir) / "README.txt").string();
+        if (!fs::exists(readme_path)) {
+            std::ofstream readme(readme_path);
+            if (readme.is_open()) {
+                readme << "CQL Template Directory Structure\n";
+                readme << "===============================\n\n";
+                readme << "This directory contains CQL templates organized as follows:\n\n";
+                readme << "- common/ : Standard templates that ship with CQL\n";
+                readme << "- user/   : User-created templates\n\n";
+                readme << "You can also create your own categories as subdirectories.\n";
+                readme << "Each template should be a .cql file.\n";
+                readme.close();
+            }
+        }
+        
+        Logger::getInstance().log(LogLevel::INFO, "Repaired template directory structure");
+        return validate_template_directory();
+    } catch (const std::exception& e) {
+        Logger::getInstance().log(LogLevel::ERROR, "Failed to repair template directory: ", e.what());
+        return false;
     }
 }
 
