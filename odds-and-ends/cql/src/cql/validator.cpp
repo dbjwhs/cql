@@ -176,31 +176,59 @@ std::vector<ValidationIssue> QueryValidator::run_custom_rules(const std::vector<
     return issues;
 }
 
+/**
+ * Validate the query structure and content
+ * 
+ * This method performs comprehensive validation of the query nodes,
+ * checking for required directives, exclusive directives, dependencies,
+ * incompatibilities, and custom validation rules.
+ * 
+ * If any ERROR-level issues are found, it will throw a ValidationException.
+ * Otherwise, it returns a list of all validation issues for reporting.
+ * 
+ * @param nodes The query nodes to validate
+ * @return Vector of validation issues (warnings and infos)
+ * @throws ValidationException if any ERROR-level issues are found
+ */
 std::vector<ValidationIssue> QueryValidator::validate(const std::vector<std::unique_ptr<QueryNode>>& nodes) {
     std::vector<ValidationIssue> issues;
     
-    // count directive occurrences
+    // Count directive occurrences - this handles empty nodes gracefully
     std::map<TokenType, int> counts = count_directives(nodes);
     
-    // run all validation checks
+    // Run all validation checks
     auto required_issues = check_required(counts);
     auto exclusive_issues = check_exclusive(counts);
     auto dependency_issues = check_dependencies(counts);
     auto incompatibility_issues = check_incompatibilities(counts);
     auto custom_issues = run_custom_rules(nodes);
     
-    // combine all issues
+    // Combine all issues, prioritizing required directive issues first
     issues.insert(issues.end(), required_issues.begin(), required_issues.end());
     issues.insert(issues.end(), exclusive_issues.begin(), exclusive_issues.end());
     issues.insert(issues.end(), dependency_issues.begin(), dependency_issues.end());
     issues.insert(issues.end(), incompatibility_issues.begin(), incompatibility_issues.end());
     issues.insert(issues.end(), custom_issues.begin(), custom_issues.end());
     
-    // throw ValidationException if there are any ERROR issues
+    // Throw ValidationException if there are any ERROR issues
+    // We collect all errors first instead of throwing on the first one
+    std::vector<std::string> error_messages;
     for (const auto& issue : issues) {
         if (issue.severity == ValidationSeverity::ERROR) {
-            throw ValidationException(issue.message);
+            error_messages.push_back(issue.message);
         }
+    }
+    
+    if (!error_messages.empty()) {
+        // Join all error messages into a single error message
+        std::string combined_message;
+        for (size_t ndx = 0; ndx < error_messages.size(); ++ndx) {
+            if (ndx > 0) {
+                combined_message += "; ";
+            }
+            combined_message += error_messages[ndx];
+        }
+        throw ValidationException(combined_message);
     }
     
     return issues;

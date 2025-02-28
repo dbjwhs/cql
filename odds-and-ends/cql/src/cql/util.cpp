@@ -90,7 +90,19 @@ std::set<std::string> extract_regex_group_values(
 
 namespace cql {
 
-// queryprocessor implementation
+/**
+ * Enhanced query processor implementation that separates parsing and validation phases.
+ * 
+ * This implementation follows these steps:
+ * 1. Parse the query, capturing any parser errors but allowing partial parsing
+ * 2. Validate the parsed nodes, even if parsing was incomplete
+ * 3. Report validation issues first, as they're often more important than syntax errors
+ * 4. Report parser errors if validation passed
+ * 5. Compile the validated nodes into a query
+ *
+ * This separation allows us to provide more meaningful error messages to users,
+ * focusing on content issues rather than just syntax problems.
+ */
 std::string QueryProcessor::compile(const std::string_view query_str) {
     // Store parser errors to report them after validation
     std::optional<std::string> parser_error;
@@ -108,7 +120,7 @@ std::string QueryProcessor::compile(const std::string_view query_str) {
         throw;
     }
     
-    // If we have no nodes at all, we can't validate, so just report the parser error
+    // If no nodes were parsed at all, we can't validate, so just report the parser error
     if (nodes.empty() && parser_error) {
         throw std::runtime_error(*parser_error);
     }
@@ -116,7 +128,7 @@ std::string QueryProcessor::compile(const std::string_view query_str) {
     // Always attempt validation, even if parsing had errors
     std::vector<ValidationIssue> validation_issues;
     try {
-        // validate the query structure
+        // validate the query structure with whatever nodes we have
         QueryValidator validator;
         validation_issues = validator.validate(nodes);
     } catch (const ValidationException& e) {
@@ -144,7 +156,7 @@ std::string QueryProcessor::compile(const std::string_view query_str) {
             "Validation ", level, ": ", issue.message
         );
         
-        // For errors, throw an exception
+        // For errors, throw an exception - validation errors take precedence
         if (issue.severity == ValidationSeverity::ERROR) {
             throw std::runtime_error("Validation error: " + issue.message);
         }

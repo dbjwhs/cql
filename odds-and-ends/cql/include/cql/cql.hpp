@@ -66,21 +66,50 @@ namespace util {
 }
 
 /**
- * main cql processor class
- * provides a simplified interface for compiling cql queries
+ * Main CQL processor class
+ * Provides a simplified interface for compiling CQL queries
+ * 
+ * The compilation process involves:
+ * 1. Parsing the query text into an AST
+ * 2. Validating the AST structure and content
+ * 3. Compiling the validated AST into a formatted query
+ * 
+ * The improved implementation prioritizes validation over syntax,
+ * ensuring that users receive the most relevant error messages first.
  */
 class QueryProcessor {
 public:
-    // compile a cql string to a structured query
+    /**
+     * Compile a CQL string to a structured query
+     * @param query_str The CQL query string to compile
+     * @return The compiled query as a string
+     * @throws std::runtime_error for validation or parsing errors
+     */
     static std::string compile(const std::string_view query_str);
     
-    // compile a cql file to a structured query
+    /**
+     * Compile a CQL file to a structured query
+     * @param filepath Path to the CQL file
+     * @return The compiled query as a string
+     * @throws std::runtime_error for file I/O, validation, or parsing errors
+     */
     static std::string compile_file(const std::string& filepath);
     
-    // save a compiled query to a file
+    /**
+     * Save a compiled query to a file
+     * @param query_str The CQL query string to compile
+     * @param filepath Path to save the compiled output
+     * @throws std::runtime_error for file I/O, validation, or parsing errors
+     */
     static void save_compiled(const std::string_view query_str, const std::string& filepath);
     
-    // compile a template with variable substitutions
+    /**
+     * Compile a template with variable substitutions
+     * @param template_name Name of the template to compile
+     * @param variables Map of variable names to values for substitution
+     * @return The compiled query as a string
+     * @throws std::runtime_error for template loading, validation, or parsing errors
+     */
     static std::string compile_template(const std::string& template_name, 
                                      const std::map<std::string, std::string>& variables);
 };
