@@ -11,6 +11,7 @@ Welcome to the Claude Query Language (CQL) documentation. CQL is a powerful lang
 
 - [API Documentation](api_documentation.md) - Developer reference for the CQL API
 - [Template Documentation](template_documentation.md) - Guide to working with templates
+- [Architecture Patterns](architecture_patterns.md) - Guide to using the architecture pattern system
 
 ## Visual Guides
 
