@@ -181,8 +181,8 @@ int main(int argc, char* argv[]) {
                         if (issue.get_variable_name().has_value() && 
                             issue.to_string().find("not declared") != std::string::npos) {
                             std::string var_name = issue.get_variable_name().value();
-                            if (variables.find(var_name) == variables.end() && 
-                                template_vars.find(var_name) == template_vars.end()) {
+                            if (!variables.contains(var_name) &&
+                                !template_vars.contains(var_name)) {
                                 missing_vars.push_back(var_name);
                             }
                         }
@@ -281,7 +281,7 @@ int main(int argc, char* argv[]) {
                         validator.add_validation_rule(rule);
                     }
                     
-                    // get list of templates
+                    // get a list of templates
                     auto templates = manager.list_templates();
                     
                     if (templates.empty()) {
@@ -400,7 +400,7 @@ int main(int argc, char* argv[]) {
                 std::string output_path = argv[2];
                 std::string format = "markdown"; // default format
                 
-                // check if format is specified
+                // check if a format is specified
                 if (argc > 3) {
                     format = argv[3];
                 }
