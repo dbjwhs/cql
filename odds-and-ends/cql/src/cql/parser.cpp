@@ -6,10 +6,16 @@
 namespace cql {
 
 // parsererror implementation
-ParserError::ParserError(const std::string& message, size_t line, size_t column)
+ParserError::ParserError(
+    const std::string& message, 
+    size_t line, 
+    size_t column,
+    const std::string& error_code)
     : std::runtime_error("Parser error at line " + std::to_string(line) + 
                          ", column " + std::to_string(column) + ": " + message),
-      m_line(line), m_column(column) {}
+      m_line(line), 
+      m_column(column),
+      m_error_code(error_code) {}
 
 // parser implementation
 Parser::Parser(const std::string_view input) : m_lexer(input) {

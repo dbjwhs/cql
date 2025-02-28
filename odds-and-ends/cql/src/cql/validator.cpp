@@ -228,7 +228,26 @@ std::vector<ValidationIssue> QueryValidator::validate(const std::vector<std::uni
             }
             combined_message += error_messages[ndx];
         }
-        throw ValidationException(combined_message);
+        
+        // Determine the appropriate error code
+        std::string error_code = validation_errors::GENERAL_ERROR;
+        
+        // Use the MULTIPLE_ERRORS code if there are multiple errors
+        if (error_messages.size() > 1) {
+            error_code = validation_errors::MULTIPLE_ERRORS;
+        }
+        // Otherwise, use a specific code based on the directive that's missing
+        else if (combined_message.find("Required directive @LANGUAGE") != std::string::npos) {
+            error_code = validation_errors::MISSING_LANGUAGE;
+        }
+        else if (combined_message.find("Required directive @DESCRIPTION") != std::string::npos) {
+            error_code = validation_errors::MISSING_DESCRIPTION;
+        }
+        else if (combined_message.find("Required directive @COPYRIGHT") != std::string::npos) {
+            error_code = validation_errors::MISSING_COPYRIGHT;
+        }
+        
+        throw ValidationException(combined_message, error_code);
     }
     
     return issues;

@@ -132,8 +132,8 @@ std::string QueryProcessor::compile(const std::string_view query_str) {
         QueryValidator validator;
         validation_issues = validator.validate(nodes);
     } catch (const ValidationException& e) {
-        // Transform validation exceptions to runtime errors
-        throw std::runtime_error("Validation error: " + std::string(e.what()));
+        // For validation errors, use the formatted message which includes the error code
+        throw std::runtime_error(e.formatted_message());
     }
     
     // Report validation issues
@@ -158,7 +158,21 @@ std::string QueryProcessor::compile(const std::string_view query_str) {
         
         // For errors, throw an exception - validation errors take precedence
         if (issue.severity == ValidationSeverity::ERROR) {
-            throw std::runtime_error("Validation error: " + issue.message);
+            // Create a ValidationException with a specific error code based on the message
+            std::string error_code = validation_errors::GENERAL_ERROR;
+            
+            if (issue.message.find("Required directive @LANGUAGE") != std::string::npos) {
+                error_code = validation_errors::MISSING_LANGUAGE;
+            }
+            else if (issue.message.find("Required directive @DESCRIPTION") != std::string::npos) {
+                error_code = validation_errors::MISSING_DESCRIPTION;
+            }
+            else if (issue.message.find("Required directive @COPYRIGHT") != std::string::npos) {
+                error_code = validation_errors::MISSING_COPYRIGHT;
+            }
+            
+            ValidationException validation_error(issue.message, error_code, issue.severity);
+            throw std::runtime_error(validation_error.formatted_message());
         }
     }
     
