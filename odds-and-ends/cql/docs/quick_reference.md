@@ -12,7 +12,7 @@
 | `@test` | Test cases to be supported | `@test "Test concurrent push operations"` |
 | `@variable` | Define template variables | `@variable "max_size" "1000"` |
 | `@inherit` | Inherit from another template | `@inherit "base_template"` |
-| `@architecture` | Specifies architectural pattern | `@architecture "Producer-consumer pattern"` |
+| `@architecture` | Specifies architectural pattern | `@architecture component "factory_method" "options"` |
 | `@constraint` | Defines implementation constraints | `@constraint "Thread-safe for concurrent access"` |
 | `@security` | Security requirements | `@security "Prevent data races and deadlocks"` |
 | `@complexity` | Performance complexity goals | `@complexity "O(1) for push and pop operations"` |

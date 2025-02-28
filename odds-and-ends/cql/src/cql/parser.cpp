@@ -2,6 +2,7 @@
 // Copyright (c) 2025 dbjwhs
 
 #include "../../include/cql/parser.hpp"
+#include <algorithm> // For std::transform
 
 namespace cql {
 
@@ -210,6 +211,56 @@ std::unique_ptr<QueryNode> Parser::parse_copyright() {
 
 std::unique_ptr<QueryNode> Parser::parse_architecture() {
     advance(); // skip @architecture
+    
+    // Check for layered format - first token should be the layer type
+    std::string first_token;
+    if (m_current_token && m_current_token->m_type == TokenType::IDENTIFIER) {
+        first_token = m_current_token->m_value;
+        advance(); // consume the layer identifier
+        
+        // Convert to lowercase for consistent checking
+        std::string lowercase_layer = first_token;
+        std::transform(lowercase_layer.begin(), lowercase_layer.end(), lowercase_layer.begin(),
+                      [](unsigned char c) { return std::tolower(c); });
+        
+        // Check if this is a valid layer
+        if (lowercase_layer == "foundation" || lowercase_layer == "component" || lowercase_layer == "interaction") {
+            // This is the layered format
+            PatternLayer layer = string_to_pattern_layer(lowercase_layer);
+            
+            // Next token should be the pattern name
+            std::string pattern_name = parse_string();
+            
+            // Check if we have parameters
+            std::string parameters;
+            if (m_current_token && m_current_token->m_type == TokenType::STRING) {
+                parameters = parse_string();
+            }
+            
+            return std::make_unique<ArchitectureNode>(layer, pattern_name, parameters);
+        }
+        
+        // If we got here, it wasn't a valid layer, so go back and parse as regular string
+        // We need to rewind one token
+        // Since we don't have a real "unget" in the lexer, we'll re-parse the entire query
+        // This is inefficient but simpler than adding unget support
+        size_t current_pos = m_current - first_token.length();
+        if (current_pos > 0) current_pos--;  // Account for any whitespace
+        m_current = current_pos;
+        m_lexer = Lexer(m_input);
+        advance();
+        
+        // Skip to just after @architecture
+        while (m_current_token && 
+               (m_current_token->m_type != TokenType::ARCHITECTURE || m_current_token->m_line != m_line)) {
+            advance();
+        }
+        if (m_current_token && m_current_token->m_type == TokenType::ARCHITECTURE) {
+            advance(); // Skip @architecture
+        }
+    }
+    
+    // Old format - just a single string
     std::string architecture = parse_string();
     return std::make_unique<ArchitectureNode>(architecture);
 }

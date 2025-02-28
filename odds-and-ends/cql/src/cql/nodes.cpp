@@ -86,9 +86,48 @@ const std::string& CopyrightNode::owner() const {
     return m_owner; 
 }
 
+// Pattern layer conversions
+std::string pattern_layer_to_string(PatternLayer layer) {
+    switch (layer) {
+        case PatternLayer::FOUNDATION: return "foundation";
+        case PatternLayer::COMPONENT: return "component";
+        case PatternLayer::INTERACTION: return "interaction";
+        default: return "unknown";
+    }
+}
+
+PatternLayer string_to_pattern_layer(const std::string& layer_str) {
+    // Convert to lowercase for consistent comparison
+    std::string lowercase_layer = layer_str;
+    std::transform(lowercase_layer.begin(), lowercase_layer.end(), lowercase_layer.begin(),
+                  [](unsigned char c) { return std::tolower(c); });
+    
+    if (lowercase_layer == "foundation") {
+        return PatternLayer::FOUNDATION;
+    } else if (lowercase_layer == "interaction") {
+        return PatternLayer::INTERACTION;
+    } else {
+        // Default to component for anything else
+        return PatternLayer::COMPONENT;
+    }
+}
+
 // architecturenode implementation
 ArchitectureNode::ArchitectureNode(std::string architecture)
-    : m_architecture(std::move(architecture)) {}
+    : m_architecture(std::move(architecture)), m_is_layered_format(false) {}
+
+ArchitectureNode::ArchitectureNode(PatternLayer layer, std::string pattern_name, std::string parameters)
+    : m_layer(layer), 
+      m_pattern_name(std::move(pattern_name)), 
+      m_parameters(std::move(parameters)),
+      m_is_layered_format(true) {
+    
+    // Also set the combined architecture string for backward compatibility
+    m_architecture = pattern_layer_to_string(m_layer) + " \"" + m_pattern_name + "\"";
+    if (!m_parameters.empty()) {
+        m_architecture += " \"" + m_parameters + "\"";
+    }
+}
 
 void ArchitectureNode::accept(QueryVisitor& visitor) const {
     visitor.visit(*this);
@@ -96,6 +135,22 @@ void ArchitectureNode::accept(QueryVisitor& visitor) const {
 
 const std::string& ArchitectureNode::architecture() const { 
     return m_architecture; 
+}
+
+PatternLayer ArchitectureNode::get_layer() const {
+    return m_layer;
+}
+
+const std::string& ArchitectureNode::get_pattern_name() const {
+    return m_pattern_name;
+}
+
+const std::string& ArchitectureNode::get_parameters() const {
+    return m_parameters;
+}
+
+bool ArchitectureNode::is_layered_format() const {
+    return m_is_layered_format;
 }
 
 // constraintnode implementation

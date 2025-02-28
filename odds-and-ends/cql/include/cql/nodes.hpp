@@ -111,17 +111,45 @@ private:
 };
 
 /**
+ * Represents an architecture pattern layer
+ */
+enum class PatternLayer {
+    FOUNDATION,   // Core architectural patterns (e.g., MVC, layered, microservices)
+    COMPONENT,    // Component-level patterns (e.g., Factory, Singleton)
+    INTERACTION   // Patterns governing component interactions (e.g., Observer, Visitor)
+};
+
+/**
+ * Converts a PatternLayer enum to string representation
+ */
+std::string pattern_layer_to_string(PatternLayer layer);
+
+/**
+ * Converts a string to PatternLayer enum
+ */
+PatternLayer string_to_pattern_layer(const std::string& layer_str);
+
+/**
  * node for specifying system architecture (@architecture directive)
  */
 class ArchitectureNode final : public QueryNode {
 public:
     explicit ArchitectureNode(std::string architecture);
+    explicit ArchitectureNode(PatternLayer layer, std::string pattern_name, std::string parameters);
     void accept(QueryVisitor& visitor) const override;
 
     [[nodiscard]] const std::string& architecture() const;
+    [[nodiscard]] PatternLayer get_layer() const;
+    [[nodiscard]] const std::string& get_pattern_name() const;
+    [[nodiscard]] const std::string& get_parameters() const;
+    [[nodiscard]] bool is_layered_format() const;
 
 private:
     std::string m_architecture;
+    PatternLayer m_layer{PatternLayer::COMPONENT}; // Default to component
+    std::string m_pattern_name;
+    std::string m_parameters;
+    bool m_is_layered_format{false};
 };
 
 /**

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "../../include/cql/validator.hpp"
 #include "../../include/cql/lexer.hpp"
+#include "../../include/cql/pattern_compatibility.hpp"
 
 namespace cql {
 
@@ -70,6 +71,42 @@ QueryValidator::QueryValidator() {
             return ValidationIssue(
                 ValidationSeverity::WARNING,
                 "No test cases specified. Consider adding tests with @test directive."
+            );
+        }
+        
+        return std::nullopt;
+    });
+    
+    // Add a custom rule to validate architecture pattern compatibility
+    add_custom_rule([](const std::vector<std::unique_ptr<QueryNode>>& nodes) -> std::optional<ValidationIssue> {
+        // Collect all architecture nodes
+        std::vector<const ArchitectureNode*> architecture_nodes;
+        for (const auto& node : nodes) {
+            if (auto* arch_node = dynamic_cast<const ArchitectureNode*>(node.get())) {
+                architecture_nodes.push_back(arch_node);
+            }
+        }
+        
+        // Skip validation if fewer than 2 architecture patterns
+        if (architecture_nodes.size() < 2) {
+            return std::nullopt;
+        }
+        
+        // Check pattern compatibility
+        PatternCompatibilityManager compatibility_manager;
+        auto issues = compatibility_manager.check_compatibility(architecture_nodes);
+        
+        // Return a validation issue if incompatibilities are found
+        if (!issues.empty()) {
+            std::string message = "Architecture pattern compatibility issues found: ";
+            for (size_t i = 0; i < issues.size(); ++i) {
+                if (i > 0) message += "; ";
+                message += issues[i].to_string();
+            }
+            
+            return ValidationIssue(
+                ValidationSeverity::WARNING, // Use WARNING to provide guidance but not prevent code generation
+                message
             );
         }
         

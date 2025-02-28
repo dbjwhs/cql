@@ -107,7 +107,8 @@ bool run_tests(bool fail_fast) {
         {"Template Inheritance", test_template_inheritance},
         {"Template Validator", test_template_validator},
         {"Query Examples", query_examples},
-        {"Phase 2 Example Compilation", test_phase2_example_compilation}
+        {"Phase 2 Example Compilation", test_phase2_example_compilation},
+        {"Architecture Patterns", test_architecture_patterns}
     };
     
     // run each test

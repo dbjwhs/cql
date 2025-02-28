@@ -257,6 +257,12 @@ namespace test {
      * @return testresult indicating pass/fail with error details
      */
     TestResult test_phase2_example_compilation();
+    
+    /**
+     * test architecture patterns functionality
+     * @return testresult indicating pass/fail with error details
+     */
+    TestResult test_architecture_patterns();
 }
 
 /**
