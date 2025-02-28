@@ -229,14 +229,27 @@ TestResult test_validation_requirements() {
                        "Error message should mention missing COPYRIGHT directive");
         }
         
-        // Test 2: Missing language directive - skipped for now
-        // NOTE: The parser throws a different error before the validator can run.
-        // This will be addressed in a future update when we improve the parser.
-        // For now, we skip this test to focus on the copyright validation.
+        // Test 2: Missing language directive
+        // We need to test the validation directly since the parser syntax errors
+        // would occur before validation
         {
-            // Temporarily skip this test and consider it passing
-            // We'll fix this in a future update
-            TEST_ASSERT(true, "Skipping language directive test for now");
+            // Create a copyright node and description node manually, but skip language
+            std::vector<std::unique_ptr<QueryNode>> nodes;
+            nodes.push_back(std::make_unique<CopyrightNode>("MIT License", "2025 dbjwhs"));
+            nodes.push_back(std::make_unique<CodeRequestNode>("", "test without language"));
+            
+            // Now test the validator directly with our manually constructed AST
+            QueryValidator validator;
+            try {
+                validator.validate(nodes);
+                return TestResult::fail("Missing language validation failed - validation should have failed", 
+                                       __FILE__, __LINE__);
+            } catch (const ValidationException& e) {
+                std::string error_message = e.what();
+                std::transform(error_message.begin(), error_message.end(), error_message.begin(), ::tolower);
+                TEST_ASSERT(error_message.find("language") != std::string::npos,
+                           "Error message should mention missing LANGUAGE directive");
+            }
         }
         
         // Test 3: Missing description directive

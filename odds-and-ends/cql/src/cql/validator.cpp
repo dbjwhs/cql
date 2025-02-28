@@ -83,7 +83,10 @@ std::map<TokenType, int> QueryValidator::count_directives(const std::vector<std:
     for (const auto& node : nodes) {
         // special handling for coderequestnode which contains both language and description
         if (auto* code_node = dynamic_cast<const CodeRequestNode*>(node.get())) {
-            counts[TokenType::LANGUAGE]++;
+            // Only count language if it's not empty
+            if (!code_node->language().empty()) {
+                counts[TokenType::LANGUAGE]++;
+            }
             counts[TokenType::DESCRIPTION]++;
         } else {
             TokenType type = get_node_type(node.get());
