@@ -10,7 +10,7 @@
 
 namespace cql::util {
 
-// File utility functions implementation
+// file utility functions implementation
 std::string read_file(const std::string& filepath) {
     std::ifstream file(filepath);
     if (!file.is_open()) {
@@ -31,7 +31,7 @@ bool contains(const std::string& str, const std::string& substr) {
     return str.find(substr) != std::string::npos;
 }
 
-// Extract regex matches from text using a pattern
+// extract regex matches from text using a pattern
 std::vector<std::vector<std::string>> extract_regex_matches(
     const std::string& content, 
     const std::string& pattern,
@@ -46,12 +46,12 @@ std::vector<std::vector<std::string>> extract_regex_matches(
     for (std::sregex_iterator it = begin; it != end; ++it) {
         std::smatch match = *it;
         
-        // Skip if we don't have the expected number of groups
+        // skip if we don't have the expected number of groups
         if (expected_groups > 0 && match.size() <= expected_groups) {
             continue;
         }
         
-        // Each match has multiple groups
+        // each match has multiple groups
         std::vector<std::string> groups;
         for (size_t i = 0; i < match.size(); ++i) {
             groups.push_back(match[i].str());
@@ -63,7 +63,7 @@ std::vector<std::vector<std::string>> extract_regex_matches(
     return results;
 }
 
-// Extract string values that match a specific regex group
+// extract string values that match a specific regex group
 std::set<std::string> extract_regex_group_values(
     const std::string& content, 
     const std::string& pattern,
@@ -89,17 +89,17 @@ std::set<std::string> extract_regex_group_values(
 
 namespace cql {
 
-// QueryProcessor implementation
+// queryprocessor implementation
 std::string QueryProcessor::compile(const std::string_view query_str) {
-    // Parse the query string
+    // parse the query string
     Parser parser(query_str);
     auto nodes = parser.parse();
     
-    // Validate the query structure
+    // validate the query structure
     QueryValidator validator;
     auto issues = validator.validate(nodes);
     
-    // Report validation issues
+    // report validation issues
     for (const auto& issue : issues) {
         std::string level;
         switch (issue.severity) {
@@ -119,13 +119,13 @@ std::string QueryProcessor::compile(const std::string_view query_str) {
             "Validation ", level, ": ", issue.message
         );
         
-        // For errors, throw an exception
+        // for errors, throw an exception
         if (issue.severity == ValidationSeverity::ERROR) {
             throw std::runtime_error("Validation error: " + issue.message);
         }
     }
     
-    // Compile the query
+    // compile the query
     QueryCompiler compiler;
     for (const auto& node : nodes) {
         node->accept(compiler);

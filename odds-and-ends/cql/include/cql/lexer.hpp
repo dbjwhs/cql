@@ -13,7 +13,7 @@
 namespace cql {
 
 /**
- * Token types for the DSL grammar
+ * token types for the dsl grammar
  */
 enum class TokenType {
     LANGUAGE,       // @language
@@ -38,13 +38,13 @@ enum class TokenType {
 };
 
 /**
- * Convert token type to string representation (for debugging)
+ * convert token type to string representation (for debugging)
  */
 std::string token_type_to_string(TokenType type);
 
 /**
- * Token structure for lexical analysis
- * Contains type, value, and source location information
+ * token structure for lexical analysis
+ * contains type, value, and source location information
  */
 struct Token {
     TokenType m_type;
@@ -58,20 +58,20 @@ struct Token {
 };
 
 /**
- * Lexical analyzer (lexer) for tokenizing input
- * Converts raw text into a stream of tokens for the parser
+ * lexical analyzer (lexer) for tokenizing input
+ * converts raw text into a stream of tokens for the parser
  */
 class Lexer {
 public:
     explicit Lexer(std::string_view input);
     
-    // Get the next token from the input
+    // get the next token from the input
     std::optional<Token> next_token();
     
-    // Get the current line number (for error reporting)
+    // get the current line number (for error reporting)
     [[nodiscard]] size_t current_line() const { return m_line; }
     
-    // Get the current column number (for error reporting)
+    // get the current column number (for error reporting)
     [[nodiscard]] size_t current_column() const { return m_column; }
 
 private:
@@ -80,24 +80,24 @@ private:
     size_t m_line;
     size_t m_column;
 
-    // Move to the next character in the input
+    // move to the next character in the input
     void advance();
     
-    // Skip whitespace characters (except newlines)
+    // skip whitespace characters (except newlines)
     void skip_whitespace();
     
-    // Parse a keyword token (starting with @)
+    // parse a keyword token (starting with @)
     std::optional<Token> lex_keyword();
     
-    // Parse a string token (enclosed in quotes)
+    // parse a string token (enclosed in quotes)
     std::optional<Token> lex_string();
     
-    // Parse an identifier token
+    // parse an identifier token
     std::optional<Token> lex_identifier();
 };
 
 /**
- * Custom exception class for lexer errors with location information
+ * custom exception class for lexer errors with location information
  */
 class LexerError : public std::runtime_error {
 public:
@@ -113,4 +113,4 @@ private:
 
 } // namespace cql
 
-#endif // CQL_LEXER_HPP
+#endif // cql_lexer_hpp

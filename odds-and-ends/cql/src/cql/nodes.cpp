@@ -6,7 +6,7 @@
 
 namespace cql {
 
-// CodeRequestNode implementation
+// coderequestnode implementation
 CodeRequestNode::CodeRequestNode(std::string language, std::string description)
     : m_language(std::move(language)), m_description(std::move(description)) {}
 
@@ -22,7 +22,7 @@ const std::string& CodeRequestNode::description() const {
     return m_description; 
 }
 
-// ContextNode implementation
+// contextnode implementation
 ContextNode::ContextNode(std::string context)
     : m_context(std::move(context)) {}
 
@@ -34,7 +34,7 @@ const std::string& ContextNode::context() const {
     return m_context; 
 }
 
-// TestNode implementation
+// testnode implementation
 TestNode::TestNode(std::vector<std::string> test_cases)
     : m_test_cases(std::move(test_cases)) {}
 
@@ -46,7 +46,7 @@ const std::vector<std::string>& TestNode::test_cases() const {
     return m_test_cases; 
 }
 
-// DependencyNode implementation
+// dependencynode implementation
 DependencyNode::DependencyNode(std::vector<std::string> dependencies)
     : m_dependencies(std::move(dependencies)) {}
 
@@ -58,7 +58,7 @@ const std::vector<std::string>& DependencyNode::dependencies() const {
     return m_dependencies; 
 }
 
-// PerformanceNode implementation
+// performancenode implementation
 PerformanceNode::PerformanceNode(std::string requirement)
     : m_requirement(std::move(requirement)) {}
 
@@ -70,7 +70,7 @@ const std::string& PerformanceNode::requirement() const {
     return m_requirement; 
 }
 
-// CopyrightNode implementation
+// copyrightnode implementation
 CopyrightNode::CopyrightNode(std::string license, std::string owner)
     : m_license(std::move(license)), m_owner(std::move(owner)) {}
 
@@ -86,7 +86,7 @@ const std::string& CopyrightNode::owner() const {
     return m_owner; 
 }
 
-// ArchitectureNode implementation
+// architecturenode implementation
 ArchitectureNode::ArchitectureNode(std::string architecture)
     : m_architecture(std::move(architecture)) {}
 
@@ -98,7 +98,7 @@ const std::string& ArchitectureNode::architecture() const {
     return m_architecture; 
 }
 
-// ConstraintNode implementation
+// constraintnode implementation
 ConstraintNode::ConstraintNode(std::string constraint)
     : m_constraint(std::move(constraint)) {}
 
@@ -110,7 +110,7 @@ const std::string& ConstraintNode::constraint() const {
     return m_constraint; 
 }
 
-// ExampleNode implementation
+// examplenode implementation
 ExampleNode::ExampleNode(std::string label, std::string code)
     : m_label(std::move(label)), m_code(std::move(code)) {}
 
@@ -126,7 +126,7 @@ const std::string& ExampleNode::code() const {
     return m_code; 
 }
 
-// SecurityNode implementation
+// securitynode implementation
 SecurityNode::SecurityNode(std::string requirement)
     : m_requirement(std::move(requirement)) {}
 
@@ -138,7 +138,7 @@ const std::string& SecurityNode::requirement() const {
     return m_requirement; 
 }
 
-// ComplexityNode implementation
+// complexitynode implementation
 ComplexityNode::ComplexityNode(std::string complexity)
     : m_complexity(std::move(complexity)) {}
 
@@ -150,7 +150,7 @@ const std::string& ComplexityNode::complexity() const {
     return m_complexity; 
 }
 
-// ModelNode implementation
+// modelnode implementation
 ModelNode::ModelNode(std::string model_name)
     : m_model_name(std::move(model_name)) {}
 
@@ -162,7 +162,7 @@ const std::string& ModelNode::model_name() const {
     return m_model_name; 
 }
 
-// FormatNode implementation
+// formatnode implementation
 FormatNode::FormatNode(std::string format_type)
     : m_format_type(std::move(format_type)) {}
 
@@ -174,7 +174,7 @@ const std::string& FormatNode::format_type() const {
     return m_format_type; 
 }
 
-// VariableNode implementation
+// variablenode implementation
 VariableNode::VariableNode(std::string name, std::string value)
     : m_name(std::move(name)), m_value(std::move(value)) {}
 

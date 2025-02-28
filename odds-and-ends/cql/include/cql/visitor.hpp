@@ -6,7 +6,7 @@
 
 namespace cql {
 
-// Forward declarations
+// forward declarations
 class CodeRequestNode;
 class ContextNode;
 class TestNode;
@@ -23,9 +23,9 @@ class FormatNode;
 class VariableNode;
 
 /**
- * Visitor pattern interface for traversing the AST nodes
- * Used to implement different operations on the query tree
- * without modifying the node classes (Open/Closed Principle)
+ * visitor pattern interface for traversing the ast nodes
+ * used to implement different operations on the query tree
+ * without modifying the node classes (open/closed principle)
  */
 class QueryVisitor {
 public:
@@ -37,7 +37,7 @@ public:
     virtual void visit(const PerformanceNode& node) = 0;
     virtual void visit(const CopyrightNode& node) = 0;
     
-    // Phase 2 directive support
+    // phase 2 directive support
     virtual void visit(const ArchitectureNode& node) = 0;
     virtual void visit(const ConstraintNode& node) = 0;
     virtual void visit(const ExampleNode& node) = 0;
@@ -50,4 +50,4 @@ public:
 
 } // namespace cql
 
-#endif // CQL_VISITOR_HPP
+#endif // cql_visitor_hpp

@@ -6,7 +6,7 @@
 
 namespace cql {
 
-// Visitor interface implementation
+// visitor interface implementation
 void QueryCompiler::visit(const CodeRequestNode& node) {
     m_result_sections["code"] = "Please generate " + node.language() + " code that:\n" +
                              node.description() + "\n\n";
@@ -20,7 +20,7 @@ void QueryCompiler::visit(const ContextNode& node) {
 }
 
 void QueryCompiler::visit(const TestNode& node) {
-    // Store the test cases, we'll format them when getting the final query
+    // store the test cases, we'll format them when getting the final query
     m_test_cases.insert(m_test_cases.end(),
                       node.test_cases().begin(),
                       node.test_cases().end());
@@ -95,30 +95,30 @@ void QueryCompiler::visit(const VariableNode& node) {
     m_variables[node.name()] = node.value();
 }
 
-// Process a string with variable interpolation (${var})
+// process a string with variable interpolation (${var})
 std::string QueryCompiler::interpolate_variables(const std::string& input) const {
     std::string result = input;
     size_t start_pos = 0;
     
-    // Find all occurrences of ${variable_name} and replace them
+    // find all occurrences of ${variable_name} and replace them
     while ((start_pos = result.find("${", start_pos)) != std::string::npos) {
         size_t end_pos = result.find("}", start_pos);
         if (end_pos == std::string::npos) {
-            break; // No closing bracket, stop processing
+            break; // no closing bracket, stop processing
         }
         
-        // Extract the variable name
+        // extract the variable name
         std::string var_name = result.substr(start_pos + 2, end_pos - start_pos - 2);
         
-        // Look up the variable value
+        // look up the variable value
         auto it = m_variables.find(var_name);
         if (it != m_variables.end()) {
-            // Replace the variable reference with its value
+            // replace the variable reference with its value
             result.replace(start_pos, end_pos - start_pos + 1, it->second);
-            // Move past the replacement
+            // move past the replacement
             start_pos += it->second.length();
         } else {
-            // Variable not found, leave it as is and move past it
+            // variable not found, leave it as is and move past it
             start_pos = end_pos + 1;
         }
     }
@@ -129,66 +129,66 @@ std::string QueryCompiler::interpolate_variables(const std::string& input) const
 std::string QueryCompiler::get_compiled_query() const {
     std::string query_string;
 
-    // Add model-specific preamble if not using the default model
+    // add model-specific preamble if not using the default model
     if (m_target_model != "claude-3-opus") {
         query_string += "Target Model: " + m_target_model + "\n\n";
     }
 
-    // Add a copyright section if it exists
+    // add a copyright section if it exists
     auto copyright_it = m_result_sections.find("copyright");
     if (copyright_it != m_result_sections.end()) {
         query_string += copyright_it->second;
     }
 
-    // Add a code section if it exists
+    // add a code section if it exists
     auto code_it = m_result_sections.find("code");
     if (code_it != m_result_sections.end()) {
         query_string += code_it->second;
     }
 
-    // Add a context section if it exists
+    // add a context section if it exists
     auto context_it = m_result_sections.find("context");
     if (context_it != m_result_sections.end()) {
         query_string += context_it->second + "\n";
     }
 
-    // Add an architecture section if it exists
+    // add an architecture section if it exists
     auto architecture_it = m_result_sections.find("architecture");
     if (architecture_it != m_result_sections.end()) {
         query_string += architecture_it->second + "\n";
     }
 
-    // Add a constraints section if it exists
+    // add a constraints section if it exists
     auto constraints_it = m_result_sections.find("constraints");
     if (constraints_it != m_result_sections.end()) {
         query_string += constraints_it->second + "\n";
     }
 
-    // Add a dependencies section if it exists
+    // add a dependencies section if it exists
     auto dependencies_it = m_result_sections.find("dependencies");
     if (dependencies_it != m_result_sections.end()) {
         query_string += dependencies_it->second + "\n";
     }
 
-    // Add a performance section if it exists
+    // add a performance section if it exists
     auto performance_it = m_result_sections.find("performance");
     if (performance_it != m_result_sections.end()) {
         query_string += performance_it->second + "\n";
     }
 
-    // Add a security section if it exists
+    // add a security section if it exists
     auto security_it = m_result_sections.find("security");
     if (security_it != m_result_sections.end()) {
         query_string += security_it->second + "\n";
     }
 
-    // Add a complexity section if it exists
+    // add a complexity section if it exists
     auto complexity_it = m_result_sections.find("complexity");
     if (complexity_it != m_result_sections.end()) {
         query_string += complexity_it->second + "\n";
     }
 
-    // Add code examples if we have any
+    // add code examples if we have any
     if (!m_examples.empty()) {
         query_string += "Please reference these examples:\n";
         for (const auto& [label, code] : m_examples) {
@@ -197,7 +197,7 @@ std::string QueryCompiler::get_compiled_query() const {
         }
     }
 
-    // Add test cases if we have any
+    // add test cases if we have any
     if (!m_test_cases.empty()) {
         query_string += "Please include tests for the following cases:\n";
         for (const auto& test_case : m_test_cases) {
@@ -206,16 +206,16 @@ std::string QueryCompiler::get_compiled_query() const {
         query_string += "\n";
     }
 
-    // Add a quality assurance section as a standard footer
+    // add a quality assurance section as a standard footer
     query_string += "Quality Assurance Requirements:\n";
     query_string += "- All code must be well-documented with comments\n";
     query_string += "- Follow modern C++ best practices\n";
     query_string += "- Ensure proper error handling\n";
     query_string += "- Optimize for readability and maintainability\n";
 
-    // Format the output appropriately
+    // format the output appropriately
     if (m_output_format == "json") {
-        // Convert to JSON format (simplified)
+        // convert to json format (simplified)
         std::string json_output = "{\n";
         json_output += "  \"query\": " + std::string(query_string.empty() ? "\"\"" : "\"" + query_string + "\"") + ",\n";
         json_output += "  \"model\": \"" + m_target_model + "\",\n";
@@ -224,7 +224,7 @@ std::string QueryCompiler::get_compiled_query() const {
         return json_output;
     }
     
-    // Process template variables
+    // process template variables
     if (!m_variables.empty()) {
         query_string = interpolate_variables(query_string);
     }

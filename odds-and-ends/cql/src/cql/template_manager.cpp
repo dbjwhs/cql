@@ -133,7 +133,7 @@ TemplateManager::TemplateMetadata TemplateManager::get_template_metadata(const s
         std::stringstream ss;
         ss << std::put_time(std::localtime(&last_write_time_t), "%Y-%m-%d %H:%M:%S");
         
-        // Extract parent template if any
+        // extract parent template if any
         auto parent = extract_parent_template(content);
         
         // create and return the metadata
@@ -229,24 +229,24 @@ std::vector<std::string> TemplateManager::list_templates() {
         
         // sort the templates alphabetically
         std::sort(templates.begin(), templates.end(), [](const std::string& a, const std::string& b) {
-            // First sort by category, then by template name
+            // first sort by category, then by template name
             std::string a_category = a.find('/') != std::string::npos ? a.substr(0, a.find('/')) : "";
             std::string b_category = b.find('/') != std::string::npos ? b.substr(0, b.find('/')) : "";
             
-            // Put common category first, then user, then others alphabetically
+            // put common category first, then user, then others alphabetically
             if (a_category == "common" && b_category != "common") return true;
             if (a_category != "common" && b_category == "common") return false;
             if (a_category == "user" && b_category != "user" && b_category != "common") return true;
             if (a_category != "user" && a_category != "common" && b_category == "user") return false;
             
-            // If categories are the same, sort by template name
+            // if categories are the same, sort by template name
             if (a_category == b_category) {
                 std::string a_name = a.find('/') != std::string::npos ? a.substr(a.find('/') + 1) : a;
                 std::string b_name = b.find('/') != std::string::npos ? b.substr(b.find('/') + 1) : b;
                 return a_name < b_name;
             }
             
-            // Otherwise sort by category
+            // otherwise sort by category
             return a_category < b_category;
         });
         
@@ -461,10 +461,10 @@ bool TemplateManager::validate_template_directory() const {
 
 void TemplateManager::initialize_template_structure() {
     try {
-        // Create standard directory structure
+        // create standard directory structure
         ensure_standard_directories();
         
-        // Create README file
+        // create readme file
         create_readme_file();
         Logger::getInstance().log(LogLevel::INFO, "Created template directory structure");
     } catch (const std::exception& e) {
@@ -474,15 +474,15 @@ void TemplateManager::initialize_template_structure() {
 
 bool TemplateManager::repair_template_directory() {
     try {
-        // Ensure main directory exists
+        // ensure main directory exists
         if (!fs::exists(m_templates_dir)) {
             fs::create_directories(m_templates_dir);
         }
         
-        // Ensure standard directory structure
+        // ensure standard directory structure
         ensure_standard_directories();
         
-        // Recreate README if missing
+        // recreate readme if missing
         std::string readme_path = (fs::path(m_templates_dir) / "README.txt").string();
         if (!fs::exists(readme_path)) {
             create_readme_file();
@@ -497,25 +497,25 @@ bool TemplateManager::repair_template_directory() {
 }
 
 std::vector<std::string> TemplateManager::extract_variables(const std::string& content) {
-    // Get all declared variables
+    // get all declared variables
     auto declared_vars = cql::util::extract_regex_group_values(
         content,
         "@variable\\s+\"([^\"]+)\"\\s+\"[^\"]*\"",
         1
     );
     
-    // Get all referenced variables
+    // get all referenced variables
     auto referenced_vars = cql::util::extract_regex_group_values(
         content,
         "\\$\\{([^}]+)\\}",
         1
     );
     
-    // Combine both sets into a vector
+    // combine both sets into a vector
     std::vector<std::string> variables;
     variables.insert(variables.end(), declared_vars.begin(), declared_vars.end());
     
-    // Add referenced variables that aren't already in the list
+    // add referenced variables that aren't already in the list
     for (const auto& var : referenced_vars) {
         if (declared_vars.find(var) == declared_vars.end()) {
             variables.push_back(var);
@@ -526,7 +526,7 @@ std::vector<std::string> TemplateManager::extract_variables(const std::string& c
 }
 
 std::string TemplateManager::extract_description(const std::string& content) {
-    // Try to extract a description from @description directive
+    // try to extract a description from @description directive
     auto descriptions = cql::util::extract_regex_group_values(
         content,
         "@description\\s+\"([^\"]*)\"",
@@ -537,7 +537,7 @@ std::string TemplateManager::extract_description(const std::string& content) {
         return *descriptions.begin();
     }
     
-    // If no description directive found, return the first line as a fallback
+    // if no description directive found, return the first line as a fallback
     size_t eol = content.find('\n');
     if (eol != std::string::npos) {
         return content.substr(0, eol);
@@ -604,7 +604,7 @@ std::string TemplateManager::replace_variables(
 std::map<std::string, std::string> TemplateManager::collect_variables(const std::string& content) {
     std::map<std::string, std::string> variables;
     
-    // Extract all @variable declarations with their values
+    // extract all @variable declarations with their values
     auto variable_matches = cql::util::extract_regex_matches(
         content,
         "@variable\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"",
@@ -623,7 +623,7 @@ std::map<std::string, std::string> TemplateManager::collect_variables(const std:
     return variables;
 }
 
-// Extract parent template name if this template inherits from another
+// extract parent template name if this template inherits from another
 std::optional<std::string> TemplateManager::extract_parent_template(const std::string& content) {
     auto parents = cql::util::extract_regex_group_values(
         content,
@@ -640,57 +640,57 @@ std::optional<std::string> TemplateManager::extract_parent_template(const std::s
     return std::nullopt;
 }
 
-// Create a new template that inherits from another
+// create a new template that inherits from another
 void TemplateManager::create_inherited_template(const std::string& name, 
                                                const std::string& parent_name, 
                                                const std::string& content) {
-    // Verify parent template exists
+    // verify parent template exists
     std::string parent_path = get_template_path(parent_name);
     if (!fs::exists(parent_path)) {
         throw std::runtime_error("Parent template not found: " + parent_name);
     }
     
-    // Add inheritance directive if not already present
+    // add inheritance directive if not already present
     std::regex inherit_regex("@inherit\\s+\"([^\"]*)\"");
     std::string modified_content = content;
     
     if (!std::regex_search(content, inherit_regex)) {
-        // Add @inherit directive at the beginning of the content
+        // add @inherit directive at the beginning of the content
         modified_content = "@inherit \"" + parent_name + "\"\n" + content;
     }
     
-    // Save the template
+    // save the template
     save_template(name, modified_content);
     Logger::getInstance().log(LogLevel::INFO, "Created template '", name, 
                               "' inheriting from '", parent_name, "'");
 }
 
-// Get a list of parent templates (inheritance chain)
+// get a list of parent templates (inheritance chain)
 std::vector<std::string> TemplateManager::get_inheritance_chain(const std::string& name) {
     std::vector<std::string> chain;
-    std::set<std::string> visited; // To detect circular inheritance
+    std::set<std::string> visited; // to detect circular inheritance
     
     std::string current = name;
     while (!current.empty()) {
-        // Add to chain
+        // add to chain
         chain.push_back(current);
         
-        // Mark as visited
+        // mark as visited
         visited.insert(current);
         
         try {
-            // Load the template content
+            // load the template content
             std::string content = load_template(current);
             
-            // Extract parent template name
+            // extract parent template name
             auto parent = extract_parent_template(content);
             if (!parent.has_value() || parent.value().empty()) {
-                break; // No parent, end of chain
+                break; // no parent, end of chain
             }
             
             current = parent.value();
             
-            // Check for circular inheritance
+            // check for circular inheritance
             if (visited.find(current) != visited.end()) {
                 std::string cycle = "Inheritance cycle: ";
                 for (const auto& templ : visited) {
@@ -708,37 +708,37 @@ std::vector<std::string> TemplateManager::get_inheritance_chain(const std::strin
         } catch (const std::exception& e) {
             Logger::getInstance().log(LogLevel::ERROR, 
                 "Error in inheritance chain for template '", name, "': ", e.what());
-            // Rethrow to propagate the error
+            // rethrow to propagate the error
             throw;
         }
     }
     
-    // Reverse to get base template first, followed by derived templates
+    // reverse to get base template first, followed by derived templates
     std::reverse(chain.begin(), chain.end());
     return chain;
 }
 
-// Load a template and merge in inherited content from parent templates
+// load a template and merge in inherited content from parent templates
 std::string TemplateManager::load_template_with_inheritance(const std::string& name) {
-    // Get the inheritance chain
+    // get the inheritance chain
     std::vector<std::string> chain = get_inheritance_chain(name);
     
     if (chain.empty()) {
         throw std::runtime_error("Failed to resolve inheritance chain for template: " + name);
     }
     
-    // Start with empty content
+    // start with empty content
     std::string merged_content;
     
-    // Process each template in the chain, starting from base class
+    // process each template in the chain, starting from base class
     for (const auto& template_name : chain) {
         std::string template_content = load_template(template_name);
         
         if (merged_content.empty()) {
-            // For the first template (base class), use its content directly
+            // for the first template (base class), use its content directly
             merged_content = template_content;
         } else {
-            // For derived templates, merge with existing content
+            // for derived templates, merge with existing content
             merged_content = merge_template_content(merged_content, template_content);
         }
     }
@@ -746,37 +746,37 @@ std::string TemplateManager::load_template_with_inheritance(const std::string& n
     return merged_content;
 }
 
-// Merge parent template content with child template content
+// merge parent template content with child template content
 std::string TemplateManager::merge_template_content(const std::string& parent_content, 
                                                   const std::string& child_content) {
-    // Strip @inherit directive from child content
+    // strip @inherit directive from child content
     std::regex inherit_regex("@inherit\\s+\"[^\"]*\"\\s*\n?");
     std::string stripped_child = std::regex_replace(child_content, inherit_regex, "");
     
-    // Collect variables from both templates
+    // collect variables from both templates
     auto parent_vars = collect_variables(parent_content);
     auto child_vars = collect_variables(child_content);
     
-    // Child variables override parent variables
+    // child variables override parent variables
     std::map<std::string, std::string> merged_vars = parent_vars;
     for (const auto& [name, value] : child_vars) {
         merged_vars[name] = value;
     }
     
-    // Create the variable declarations section
+    // create the variable declarations section
     std::string variables_section;
     for (const auto& [name, value] : merged_vars) {
         variables_section += "@variable \"" + name + "\" \"" + value + "\"\n";
     }
     
-    // Strip variable declarations from parent content
+    // strip variable declarations from parent content
     std::regex var_regex("@variable\\s+\"[^\"]*\"\\s+\"[^\"]*\"\\s*\n?");
     std::string parent_without_vars = std::regex_replace(parent_content, var_regex, "");
     
-    // Strip variable declarations from child content
+    // strip variable declarations from child content
     std::string child_without_vars = std::regex_replace(stripped_child, var_regex, "");
     
-    // Combine the content
+    // combine the content
     return variables_section + "\n" + parent_without_vars + "\n" + child_without_vars;
 }
 
@@ -1138,42 +1138,42 @@ void TemplateManager::create_readme_file() {
 }
 
 void TemplateManager::ensure_standard_directories() {
-    // Create common subdirectory if it doesn't exist
+    // create common subdirectory if it doesn't exist
     if (!fs::exists(fs::path(m_templates_dir) / "common") || 
         !fs::is_directory(fs::path(m_templates_dir) / "common")) {
         fs::create_directory(fs::path(m_templates_dir) / "common");
     }
     
-    // Create user subdirectory if it doesn't exist
+    // create user subdirectory if it doesn't exist
     if (!fs::exists(fs::path(m_templates_dir) / "user") || 
         !fs::is_directory(fs::path(m_templates_dir) / "user")) {
         fs::create_directory(fs::path(m_templates_dir) / "user");
     }
 }
 
-// Format template documentation as markdown
+// format template documentation as markdown
 std::string TemplateManager::format_template_markdown(const TemplateMetadata& metadata, const std::string& content) {
-    // Extract example
+    // extract example
     std::string example = extract_example(content);
     
-    // Format the documentation
+    // format the documentation
     std::stringstream doc;
     
-    // Template name as title
+    // template name as title
     doc << "# " << metadata.name << "\n\n";
     
-    // Description
+    // description
     doc << "## Description\n\n" << metadata.description << "\n\n";
     
-    // Last modified date
+    // last modified date
     doc << "**Last Modified:** " << metadata.last_modified << "\n\n";
     
-    // Parent template if any
+    // parent template if any
     if (metadata.parent.has_value() && !metadata.parent.value().empty()) {
         doc << "**Inherits From:** " << metadata.parent.value() << "\n\n";
     }
     
-    // Variables section
+    // variables section
     doc << "## Variables\n\n";
     if (metadata.variables.empty()) {
         doc << "This template has no variables.\n\n";
@@ -1181,7 +1181,7 @@ std::string TemplateManager::format_template_markdown(const TemplateMetadata& me
         doc << "| Name | Description |\n";
         doc << "|------|-------------|\n";
         
-        // Extract variable descriptions from content if available
+        // extract variable descriptions from content if available
         auto var_desc_matches = cql::util::extract_regex_matches(
             content,
             "@variable_description\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"",
@@ -1203,11 +1203,11 @@ std::string TemplateManager::format_template_markdown(const TemplateMetadata& me
         doc << "\n";
     }
     
-    // Example usage
+    // example usage
     doc << "## Example\n\n";
     doc << "```sql\n" << example << "\n```\n\n";
     
-    // Inheritance chain if applicable
+    // inheritance chain if applicable
     if (metadata.parent.has_value() && !metadata.parent.value().empty()) {
         try {
             auto chain = get_inheritance_chain(metadata.name);
@@ -1223,7 +1223,7 @@ std::string TemplateManager::format_template_markdown(const TemplateMetadata& me
         }
     }
     
-    // Location info
+    // location info
     doc << "## File Location\n\n";
     doc << "```\n" << get_template_path(metadata.name) << "\n```\n";
     

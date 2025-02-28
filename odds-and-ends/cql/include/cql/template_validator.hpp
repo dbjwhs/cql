@@ -16,16 +16,16 @@
 namespace cql {
 
 /**
- * Validation issue levels for template validation
+ * validation issue levels for template validation
  */
 enum class TemplateValidationLevel {
-    INFO,       // Informational message, no action needed
-    WARNING,    // Warning, template can be used but may have issues
-    ERROR       // Error, template may not work correctly
+    INFO,       // informational message, no action needed
+    WARNING,    // warning, template can be used but may have issues
+    ERROR       // error, template may not work correctly
 };
 
 /**
- * Class to represent a template validation issue
+ * class to represent a template validation issue
  */
 class TemplateValidationIssue {
 public:
@@ -39,13 +39,13 @@ public:
         m_variable_name(std::move(variable_name)),
         m_directive(std::move(directive)) {}
 
-    // Getters
+    // getters
     TemplateValidationLevel get_level() const { return m_level; }
     const std::string& get_message() const { return m_message; }
     const std::optional<std::string>& get_variable_name() const { return m_variable_name; }
     const std::optional<std::string>& get_directive() const { return m_directive; }
 
-    // Format the issue as a string
+    // format the issue as a string
     std::string to_string() const;
 
 private:
@@ -56,33 +56,33 @@ private:
 };
 
 /**
- * Container for template validation results
+ * container for template validation results
  */
 class TemplateValidationResult {
 public:
     TemplateValidationResult() = default;
 
-    // Add an issue to the results
+    // add an issue to the results
     void add_issue(TemplateValidationIssue issue);
     
-    // Get all issues
+    // get all issues
     const std::vector<TemplateValidationIssue>& get_issues() const { return m_issues; }
     
-    // Get issues filtered by level
+    // get issues filtered by level
     std::vector<TemplateValidationIssue> get_issues(TemplateValidationLevel level) const;
     
-    // Check if there are any issues of a specific level or higher
+    // check if there are any issues of a specific level or higher
     bool has_issues(TemplateValidationLevel min_level = TemplateValidationLevel::INFO) const;
     
-    // Get the highest severity level found
+    // get the highest severity level found
     TemplateValidationLevel get_highest_level() const;
     
-    // Count issues of each level
+    // count issues of each level
     size_t count_errors() const;
     size_t count_warnings() const;
     size_t count_infos() const;
     
-    // Return a formatted summary of issues
+    // return a formatted summary of issues
     std::string get_summary() const;
 
 private:
@@ -90,23 +90,23 @@ private:
 };
 
 /**
- * Class for validating CQL templates
+ * class for validating cql templates
  */
 class TemplateValidator {
 public:
     TemplateValidator() = default;
     explicit TemplateValidator(const TemplateManager& template_manager);
 
-    // Validate a template by name
+    // validate a template by name
     TemplateValidationResult validate_template(const std::string& template_name);
     
-    // Validate a template from content
+    // validate a template from content
     TemplateValidationResult validate_content(const std::string& content);
     
-    // Validate inheritance chain
+    // validate inheritance chain
     TemplateValidationResult validate_inheritance(const std::string& template_name);
     
-    // Add a custom validation rule
+    // add a custom validation rule
     using ValidationRule = std::function<std::vector<TemplateValidationIssue>(const std::string&)>;
     void add_validation_rule(ValidationRule rule);
 
@@ -114,12 +114,12 @@ private:
     TemplateManager m_template_manager;
     std::vector<ValidationRule> m_validation_rules;
     
-    // Core validation checks
+    // core validation checks
     std::vector<TemplateValidationIssue> check_variables(const std::string& content);
     std::vector<TemplateValidationIssue> check_directives(const std::string& content);
     std::vector<TemplateValidationIssue> check_inheritance_cycle(const std::string& template_name);
     
-    // Helper methods
+    // helper methods
     std::set<std::string> extract_declared_variables(const std::string& content);
     std::set<std::string> extract_referenced_variables(const std::string& content);
     std::set<std::string> extract_directives(const std::string& content);
@@ -127,4 +127,4 @@ private:
 
 } // namespace cql
 
-#endif // CQL_TEMPLATE_VALIDATOR_HPP
+#endif // cql_template_validator_hpp

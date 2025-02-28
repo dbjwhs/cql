@@ -5,14 +5,14 @@
 #define CQL_HPP
 
 /**
- * Claude Query Language (CQL) - Main Header
+ * claude query language (cql) - main header
  * 
- * The Claude Query Language was developed in 2025 as a domain-specific language to formalize
- * and standardize how developers craft queries for Large Language Models (LLMs), specifically
- * Anthropic's Claude. It follows the compiler pattern where a high-level representation (the CQL)
+ * the claude query language was developed in 2025 as a domain-specific language to formalize
+ * and standardize how developers craft queries for large language models (llms), specifically
+ * anthropic's claude. it follows the compiler pattern where a high-level representation (the cql)
  * is translated into a more detailed and structured query string.
  * 
- * This file provides the main public interface for the CQL library.
+ * this file provides the main public interface for the cql library.
  */
 
 #include <string>
@@ -36,28 +36,28 @@
 namespace cql {
 
 /**
- * File and string utility functions
+ * file and string utility functions
  */
 namespace util {
-    // Read the contents of a file
+    // read the contents of a file
     std::string read_file(const std::string& filepath);
     
-    // Write content to a file
+    // write content to a file
     void write_file(const std::string& filepath, const std::string& content);
     
-    // Check if a string contains a substring
+    // check if a string contains a substring
     bool contains(const std::string& str, const std::string& substr);
     
-    // Extract regex matches from text using a pattern
-    // Returns a vector of matched groups for each match
+    // extract regex matches from text using a pattern
+    // returns a vector of matched groups for each match
     std::vector<std::vector<std::string>> extract_regex_matches(
         const std::string& content, 
         const std::string& pattern,
         size_t expected_groups = 0
     );
     
-    // Extract string values that match a specific regex group
-    // Returns a set of unique matched values from the specified group
+    // extract string values that match a specific regex group
+    // returns a set of unique matched values from the specified group
     std::set<std::string> extract_regex_group_values(
         const std::string& content, 
         const std::string& pattern,
@@ -66,70 +66,70 @@ namespace util {
 }
 
 /**
- * Main CQL processor class
- * Provides a simplified interface for compiling CQL queries
+ * main cql processor class
+ * provides a simplified interface for compiling cql queries
  */
 class QueryProcessor {
 public:
-    // Compile a CQL string to a structured query
+    // compile a cql string to a structured query
     static std::string compile(const std::string_view query_str);
     
-    // Compile a CQL file to a structured query
+    // compile a cql file to a structured query
     static std::string compile_file(const std::string& filepath);
     
-    // Save a compiled query to a file
+    // save a compiled query to a file
     static void save_compiled(const std::string_view query_str, const std::string& filepath);
     
-    // Compile a template with variable substitutions
+    // compile a template with variable substitutions
     static std::string compile_template(const std::string& template_name, 
                                      const std::map<std::string, std::string>& variables);
 };
 
 /**
- * Test framework
+ * test framework
  */
 namespace test {
     /**
-     * Class to represent test results
+     * class to represent test results
      */
     class TestResult {
     public:
         /**
-         * Constructor for a passing test result
+         * constructor for a passing test result
          */
         static TestResult pass();
         
         /**
-         * Constructor for a failing test result
-         * @param error_message The error message describing the failure
-         * @param file_name The source file where the failure occurred
-         * @param line_number The line number where the failure occurred
+         * constructor for a failing test result
+         * @param error_message the error message describing the failure
+         * @param file_name the source file where the failure occurred
+         * @param line_number the line number where the failure occurred
          */
         static TestResult fail(const std::string& error_message, 
                                const std::string& file_name = "", 
                                int line_number = 0);
         
         /**
-         * Check if the test passed
+         * check if the test passed
          * @return true if the test passed, false otherwise
          */
         bool passed() const;
         
         /**
-         * Get the error message for a failing test
-         * @return The error message
+         * get the error message for a failing test
+         * @return the error message
          */
         const std::string& get_error_message() const;
         
         /**
-         * Get the source file where the failure occurred
-         * @return The source file name
+         * get the source file where the failure occurred
+         * @return the source file name
          */
         const std::string& get_file_name() const;
         
         /**
-         * Get the line number where the failure occurred
-         * @return The line number
+         * get the line number where the failure occurred
+         * @return the line number
          */
         int get_line_number() const;
         
@@ -139,96 +139,96 @@ namespace test {
         std::string m_file_name;
         int m_line_number;
         
-        // Private constructor used by static factory methods
+        // private constructor used by static factory methods
         TestResult(bool passed, const std::string& error_message = "",
                   const std::string& file_name = "", int line_number = 0);
     };
     
     /**
-     * Run all tests
-     * @param fail_fast If true, stop testing after the first failure
+     * run all tests
+     * @param fail_fast if true, stop testing after the first failure
      * @return true if all tests passed, false otherwise
      */
     bool run_tests(bool fail_fast = true);
     
     /**
-     * Test the lexer
-     * @return TestResult indicating pass/fail with error details
+     * test the lexer
+     * @return testresult indicating pass/fail with error details
      */
     TestResult test_lexer();
     
     /**
-     * Test the parser
-     * @return TestResult indicating pass/fail with error details
+     * test the parser
+     * @return testresult indicating pass/fail with error details
      */
     TestResult test_parser();
     
     /**
-     * Test the compiler
-     * @return TestResult indicating pass/fail with error details
+     * test the compiler
+     * @return testresult indicating pass/fail with error details
      */
     TestResult test_compiler();
     
     /**
-     * Test basic compilation
-     * @return TestResult indicating pass/fail with error details
+     * test basic compilation
+     * @return testresult indicating pass/fail with error details
      */
     TestResult test_basic_compilation();
     
     /**
-     * Test complex compilation
-     * @return TestResult indicating pass/fail with error details
+     * test complex compilation
+     * @return testresult indicating pass/fail with error details
      */
     TestResult test_complex_compilation();
     
     /**
-     * Test Phase 2 features
-     * @return TestResult indicating pass/fail with error details
+     * test phase 2 features
+     * @return testresult indicating pass/fail with error details
      */
     TestResult test_phase2_features();
     
     /**
-     * Test the template manager
-     * @return TestResult indicating pass/fail with error details
+     * test the template manager
+     * @return testresult indicating pass/fail with error details
      */
     TestResult test_template_manager();
     
     /**
-     * Test template management
-     * @return TestResult indicating pass/fail with error details
+     * test template management
+     * @return testresult indicating pass/fail with error details
      */
     TestResult test_template_management();
     
     /**
-     * Test template inheritance
-     * @return TestResult indicating pass/fail with error details
+     * test template inheritance
+     * @return testresult indicating pass/fail with error details
      */
     TestResult test_template_inheritance();
     
     /**
-     * Test template validator
-     * @return TestResult indicating pass/fail with error details
+     * test template validator
+     * @return testresult indicating pass/fail with error details
      */
     TestResult test_template_validator();
     
     /**
-     * Example queries
-     * @return TestResult indicating pass/fail with error details
+     * example queries
+     * @return testresult indicating pass/fail with error details
      */
     TestResult query_examples();
 }
 
 /**
- * Interactive CLI functions
+ * interactive cli functions
  */
 namespace cli {
-    // Run the interactive CLI
+    // run the interactive cli
     void run_cli();
     
-    // Process a query file
+    // process a query file
     bool process_file(const std::string& input_file, const std::string& output_file);
 }
 
 } // namespace cql
 
-#endif // CQL_HPP
+#endif // cql_hpp

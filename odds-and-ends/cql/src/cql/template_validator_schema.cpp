@@ -6,7 +6,7 @@
 
 namespace cql {
 
-// DirectiveSchema constructor
+// directiveschema constructor
 TemplateValidatorSchema::DirectiveSchema::DirectiveSchema(
     const std::string& name,
     bool required,
@@ -24,12 +24,12 @@ TemplateValidatorSchema::DirectiveSchema::DirectiveSchema(
     description(description) {
 }
 
-// Register a directive schema
+// register a directive schema
 void TemplateValidatorSchema::register_directive(const DirectiveSchema& schema) {
     m_directives[schema.name] = schema;
 }
 
-// Get directive schema by name
+// get directive schema by name
 std::optional<TemplateValidatorSchema::DirectiveSchema> 
 TemplateValidatorSchema::get_directive_schema(const std::string& name) const {
     auto it = m_directives.find(name);
@@ -39,13 +39,13 @@ TemplateValidatorSchema::get_directive_schema(const std::string& name) const {
     return std::nullopt;
 }
 
-// Get all registered directive schemas
+// get all registered directive schemas
 const std::map<std::string, TemplateValidatorSchema::DirectiveSchema>& 
 TemplateValidatorSchema::get_all_directives() const {
     return m_directives;
 }
 
-// Get all required directives
+// get all required directives
 std::vector<std::string> TemplateValidatorSchema::get_required_directives() const {
     std::vector<std::string> required_directives;
     
@@ -58,22 +58,22 @@ std::vector<std::string> TemplateValidatorSchema::get_required_directives() cons
     return required_directives;
 }
 
-// Add a custom validation rule
+// add a custom validation rule
 void TemplateValidatorSchema::add_validation_rule(const std::string& name, ValidationRule rule) {
     m_validation_rules[name] = std::move(rule);
 }
 
-// Get all validation rules
+// get all validation rules
 const std::map<std::string, TemplateValidatorSchema::ValidationRule>& 
 TemplateValidatorSchema::get_validation_rules() const {
     return m_validation_rules;
 }
 
-// Create a default schema with standard directives and rules
+// create a default schema with standard directives and rules
 TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
     TemplateValidatorSchema schema;
     
-    // Register directives
+    // register directives
     schema.register_directive(DirectiveSchema(
         "@description",
         true,  // required
@@ -214,9 +214,9 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         "Performance requirements or expectations"
     ));
     
-    // Add custom validation rules
+    // add custom validation rules
     
-    // Rule: Variable references should use alphanumeric and underscore only
+    // rule: variable references should use alphanumeric and underscore only
     schema.add_validation_rule("variable_naming", [](const std::string& content) {
         std::vector<TemplateValidationIssue> issues;
         std::regex var_ref_regex("\\$\\{([^}]+)\\}");
@@ -240,7 +240,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
             search_start = match.suffix().first;
         }
         
-        // Also check variable declarations
+        // also check variable declarations
         std::regex var_decl_regex("@variable\\s+\"([^\"]+)\"");
         search_start = content.begin();
         
@@ -261,7 +261,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         return issues;
     });
     
-    // Rule: Description should be at least 10 characters
+    // rule: description should be at least 10 characters
     schema.add_validation_rule("description_length", [](const std::string& content) {
         std::vector<TemplateValidationIssue> issues;
         std::regex desc_regex("@description\\s+\"([^\"]*)\"");
@@ -282,7 +282,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         return issues;
     });
     
-    // Rule: Check for deprecated directives
+    // rule: check for deprecated directives
     schema.add_validation_rule("deprecated_directives", [](const std::string& content) {
         std::vector<TemplateValidationIssue> issues;
         std::set<std::string> deprecated_directives = {
@@ -304,7 +304,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         return issues;
     });
     
-    // Rule: Check for unknown directives (malformed)
+    // rule: check for unknown directives (malformed)
     schema.add_validation_rule("unknown_directives", [](const std::string& content) {
         std::vector<TemplateValidationIssue> issues;
         std::regex directive_regex("^@([a-zA-Z0-9_]+)\\s+", std::regex::multiline);

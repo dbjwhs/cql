@@ -15,7 +15,7 @@ namespace fs = std::filesystem;
 
 namespace cql::test {
 
-// TestResult implementation
+// testresult implementation
 TestResult::TestResult(bool passed, const std::string& error_message,
                       const std::string& file_name, int line_number)
     : m_passed(passed), 
@@ -50,7 +50,7 @@ int TestResult::get_line_number() const {
     return m_line_number;
 }
 
-// Define helper macros for tests
+// define helper macros for tests
 #define TEST_ASSERT(condition, message) \
     do { \
         if (!(condition)) { \
@@ -67,7 +67,7 @@ int TestResult::get_line_number() const {
         } \
     } while (false)
 
-// Function to print a properly formatted test result
+// function to print a properly formatted test result
 void print_test_result(const std::string& test_name, const TestResult& result) {
     const int name_width = 40;
     
@@ -85,12 +85,12 @@ void print_test_result(const std::string& test_name, const TestResult& result) {
     }
 }
 
-// Run all tests
+// run all tests
 bool run_tests(bool fail_fast) {
     std::cout << "Running CQL Tests..." << std::endl;
     bool all_passed = true;
     
-    // Define the test functions with their names
+    // define the test functions with their names
     struct TestInfo {
         std::string name;
         std::function<TestResult()> test_func;
@@ -105,7 +105,7 @@ bool run_tests(bool fail_fast) {
         {"Template Validator", test_template_validator}
     };
     
-    // Run each test
+    // run each test
     for (const auto& test : tests) {
         try {
             TestResult result = test.test_func();
@@ -130,7 +130,7 @@ bool run_tests(bool fail_fast) {
         }
     }
     
-    // Print summary
+    // print summary
     if (all_passed) {
         std::cout << "\n\033[32mAll tests passed!\033[0m" << std::endl;
     } else {
@@ -140,7 +140,7 @@ bool run_tests(bool fail_fast) {
     return all_passed;
 }
 
-// Test basic query compilation
+// test basic query compilation
 TestResult test_basic_compilation() {
     std::cout << "Testing basic compilation..." << std::endl;
     
@@ -153,7 +153,7 @@ TestResult test_basic_compilation() {
                     "Result should contain 'MIT License'");
         TEST_ASSERT(result.find("Copyright (c) 2025 dbjwhs") != std::string::npos,
                    "Result should contain copyright information");
-        // No "Language: C++" string is produced in the output; 
+        // no "language: c++" string is produced in the output; 
         // the language is used in the code request but not directly output
         TEST_ASSERT(result.find("C++") != std::string::npos,
                    "Result should contain language information");
@@ -165,7 +165,7 @@ TestResult test_basic_compilation() {
     }
 }
 
-// Test more complex query compilation
+// test more complex query compilation
 TestResult test_complex_compilation() {
     std::cout << "Testing complex compilation..." << std::endl;
     
@@ -205,7 +205,7 @@ TestResult test_complex_compilation() {
     }
 }
 
-// Test the Phase 2 features
+// test the phase 2 features
 TestResult test_phase2_features() {
     std::cout << "Testing Phase 2 features..." << std::endl;
     
@@ -233,7 +233,7 @@ TestResult test_phase2_features() {
         
         TEST_ASSERT(!result.empty(), "Compilation result should not be empty");
         
-        // Check for presence of the content without the exact format string
+        // check for presence of the content without the exact format string
         TEST_ASSERT(result.find("Producer-consumer pattern") != std::string::npos,
                    "Result should contain architecture information");
         TEST_ASSERT(result.find("Thread-safe for concurrent access") != std::string::npos,
@@ -252,31 +252,31 @@ TestResult test_phase2_features() {
     }
 }
 
-// Test template management
+// test template management
 TestResult test_template_management() {
     std::cout << "Testing template management..." << std::endl;
     
-    // Create a temporary template directory for testing
+    // create a temporary template directory for testing
     std::string temp_dir = "./temp_templates";
     
     try {
-        // Suppress stderr for template directory issues
+        // suppress stderr for template directory issues
         Logger::StderrSuppressionGuard stderr_guard;
         
-        // Create a temporary template directory
+        // create a temporary template directory
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
         }
         fs::create_directory(temp_dir);
         
-        // Create required common and user subdirectories to avoid errors
+        // create required common and user subdirectories to avoid errors
         fs::create_directory(fs::path(temp_dir) / "common");
         fs::create_directory(fs::path(temp_dir) / "user");
         
-        // Create a template manager with the temp directory
+        // create a template manager with the temp directory
         TemplateManager manager(temp_dir);
         
-        // Test saving a template
+        // test saving a template
         std::string template_content = 
             "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
             "@description \"test template\"\n"
@@ -285,17 +285,17 @@ TestResult test_template_management() {
         
         manager.save_template("test_template", template_content);
         
-        // Test listing templates
+        // test listing templates
         auto templates = manager.list_templates();
         TEST_ASSERT(templates.size() == 1, "Should have exactly one template");
         TEST_ASSERT(templates[0].find("test_template") != std::string::npos,
                    "Template list should contain 'test_template'");
         
-        // Test loading a template
+        // test loading a template
         std::string loaded = manager.load_template("test_template");
         TEST_ASSERT(loaded == template_content, "Loaded template content should match original");
         
-        // Test getting template metadata
+        // test getting template metadata
         auto metadata = manager.get_template_metadata("test_template");
         TEST_ASSERT(metadata.name.find("test_template") != std::string::npos,
                    "Template metadata name should contain 'test_template'");
@@ -306,20 +306,20 @@ TestResult test_template_management() {
         TEST_ASSERT(metadata.variables[0] == "test_var",
                    "Template variable should be 'test_var'");
         
-        // Test template instantiation with variables
+        // test template instantiation with variables
         std::map<std::string, std::string> vars = {{"test_var", "C++"}};
         std::string instantiated = manager.instantiate_template("test_template", vars);
         TEST_ASSERT(instantiated.find("@language \"C++\"") != std::string::npos,
                    "Instantiated template should contain substituted variable");
         
-        // Test creating a category
+        // test creating a category
         bool category_created = manager.create_category("test_category");
         TEST_ASSERT(category_created, "Should be able to create a category");
         
-        // Test saving a template in a category
+        // test saving a template in a category
         manager.save_template("test_category/category_template", template_content);
         
-        // Test listing categories
+        // test listing categories
         auto categories = manager.list_categories();
         TEST_ASSERT(categories.size() >= 3, "Should have at least common, user, and test_category");
         
@@ -332,7 +332,7 @@ TestResult test_template_management() {
         }
         TEST_ASSERT(found_category, "Should find the test_category in the category list");
         
-        // Test deleting a template
+        // test deleting a template
         bool template_deleted = manager.delete_template("test_template");
         TEST_ASSERT(template_deleted, "Should be able to delete a template");
         
@@ -347,12 +347,12 @@ TestResult test_template_management() {
         }
         TEST_ASSERT(!template_found, "Deleted template should not be in the template list");
         
-        // Cleanup
+        // cleanup
         fs::remove_all(temp_dir);
         
         return TestResult::pass();
     } catch (const std::exception& e) {
-        // Ensure cleanup even if test fails
+        // ensure cleanup even if test fails
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
         }
@@ -361,31 +361,31 @@ TestResult test_template_management() {
     }
 }
 
-// Test template inheritance feature
+// test template inheritance feature
 TestResult test_template_inheritance() {
     std::cout << "Testing template inheritance..." << std::endl;
     
-    // Create a temporary template directory for testing
+    // create a temporary template directory for testing
     std::string temp_dir = "./temp_templates";
     
     try {
-        // Suppress stderr for template directory issues
+        // suppress stderr for template directory issues
         Logger::StderrSuppressionGuard stderr_guard;
         
-        // Create a temporary template directory
+        // create a temporary template directory
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
         }
         fs::create_directory(temp_dir);
         
-        // Create required common and user subdirectories to avoid errors
+        // create required common and user subdirectories to avoid errors
         fs::create_directory(fs::path(temp_dir) / "common");
         fs::create_directory(fs::path(temp_dir) / "user");
         
-        // Create a template manager with the temp directory
+        // create a template manager with the temp directory
         TemplateManager manager(temp_dir);
         
-        // Create a base template
+        // create a base template
         std::string base_template_content = 
             "@description \"base template\"\n"
             "@variable \"base_var\" \"base_value\"\n"
@@ -394,17 +394,17 @@ TestResult test_template_inheritance() {
         
         manager.save_template("base_template", base_template_content);
         
-        // Create a child template inheriting from base
+        // create a child template inheriting from base
         std::string child_template_content = 
             "@inherit \"base_template\"\n"
             "@description \"child template\"\n"
             "@variable \"child_var\" \"child_value\"\n"
-            "@variable \"shared_var\" \"child_shared_value\"\n" // Override shared_var
+            "@variable \"shared_var\" \"child_shared_value\"\n" // override shared_var
             "@test \"Child test\"\n";
         
         manager.save_template("child_template", child_template_content);
         
-        // Create a grandchild template inheriting from child
+        // create a grandchild template inheriting from child
         std::string grandchild_template_content = 
             "@inherit \"child_template\"\n"
             "@description \"grandchild template\"\n"
@@ -413,22 +413,22 @@ TestResult test_template_inheritance() {
         
         manager.save_template("grandchild_template", grandchild_template_content);
         
-        // Test inheritance chain
+        // test inheritance chain
         auto chain = manager.get_inheritance_chain("grandchild_template");
         TEST_ASSERT(chain.size() == 3, "Inheritance chain should have 3 templates");
         TEST_ASSERT(chain[0] == "base_template", "First template in chain should be base_template");
         TEST_ASSERT(chain[1] == "child_template", "Second template in chain should be child_template");
         TEST_ASSERT(chain[2] == "grandchild_template", "Third template in chain should be grandchild_template");
         
-        // Test metadata includes parent information
+        // test metadata includes parent information
         auto metadata = manager.get_template_metadata("child_template");
         TEST_ASSERT(metadata.parent.has_value(), "Child template should have parent metadata");
         TEST_ASSERT(metadata.parent.value() == "base_template", "Parent template should be base_template");
         
-        // Test template loading with inheritance
+        // test template loading with inheritance
         std::string loaded = manager.load_template_with_inheritance("grandchild_template");
         
-        // Verify variable merging and overriding
+        // verify variable merging and overriding
         TEST_ASSERT(loaded.find("\"base_var\" \"base_value\"") != std::string::npos, 
                    "Base var should be preserved in merged template");
         TEST_ASSERT(loaded.find("\"child_var\" \"child_value\"") != std::string::npos, 
@@ -440,7 +440,7 @@ TestResult test_template_inheritance() {
         TEST_ASSERT(loaded.find("\"shared_var\" \"base_shared_value\"") == std::string::npos, 
                    "Base's version of shared_var should be removed");
         
-        // Verify content merging
+        // verify content merging
         TEST_ASSERT(loaded.find("Base test") != std::string::npos, 
                    "Base test should be included in merged template");
         TEST_ASSERT(loaded.find("Child test") != std::string::npos, 
@@ -448,7 +448,7 @@ TestResult test_template_inheritance() {
         TEST_ASSERT(loaded.find("Grandchild test") != std::string::npos, 
                    "Grandchild test should be included in merged template");
         
-        // Test instantiation with inheritance
+        // test instantiation with inheritance
         std::map<std::string, std::string> vars = {
             {"base_var", "new_base_value"},
             {"child_var", "new_child_value"},
@@ -458,7 +458,7 @@ TestResult test_template_inheritance() {
         
         std::string instantiated = manager.instantiate_template("grandchild_template", vars);
         
-        // Verify variable replacement with overrides
+        // verify variable replacement with overrides
         TEST_ASSERT(instantiated.find("\"base_var\" \"new_base_value\"") != std::string::npos,
                    "base_var should be replaced with new value");
         TEST_ASSERT(instantiated.find("\"child_var\" \"new_child_value\"") != std::string::npos,
@@ -468,13 +468,13 @@ TestResult test_template_inheritance() {
         TEST_ASSERT(instantiated.find("\"shared_var\" \"new_shared_value\"") != std::string::npos,
                    "shared_var should be replaced with new value");
         
-        // Test circular inheritance detection with targeted logging suppression
-        // Create unique template names with timestamps to avoid collisions
+        // test circular inheritance detection with targeted logging suppression
+        // create unique template names with timestamps to avoid collisions
         std::string timestamp = std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
         std::string name1 = "circular_t1_" + timestamp;
         std::string name2 = "circular_t2_" + timestamp;
         
-        // Create templates that reference each other by their unique names
+        // create templates that reference each other by their unique names
         std::string circular1_content = 
             "@description \"circular template 1\"\n"
             "@inherit \"" + name2 + "\"\n";
@@ -483,33 +483,33 @@ TestResult test_template_inheritance() {
             "@description \"circular template 2\"\n"
             "@inherit \"" + name1 + "\"\n";
         
-        // Only use stderr suppression for the operations that will generate ERROR logs
+        // only use stderr suppression for the operations that will generate error logs
         {
             Logger::StderrSuppressionGuard stderr_guard;
             
-            // Save templates
+            // save templates
             manager.save_template(name1, circular1_content);
             manager.save_template(name2, circular2_content);
             
             try {
-                // This should throw an exception due to circular inheritance
+                // this should throw an exception due to circular inheritance
                 std::string circular_result = manager.load_template_with_inheritance(name1);
                 return TestResult::fail("Circular inheritance not detected - this should have thrown an exception", 
                                       __FILE__, __LINE__);
             } catch (const std::exception& e) {
-                // Exception is expected
+                // exception is expected
                 std::string error = e.what();
                 TEST_ASSERT(error.find("circular") != std::string::npos,
                            "Exception message should mention circular inheritance");
             }
         }
         
-        // Cleanup
+        // cleanup
         fs::remove_all(temp_dir);
         
         return TestResult::pass();
     } catch (const std::exception& e) {
-        // Ensure cleanup even if test fails
+        // ensure cleanup even if test fails
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
         }
@@ -518,11 +518,11 @@ TestResult test_template_inheritance() {
     }
 }
 
-// Show example queries for documentation
+// show example queries for documentation
 TestResult query_examples() {
     std::cout << "\nCQL Query Examples:" << std::endl;
     
-    // Define some example queries
+    // define some example queries
     std::vector<std::pair<std::string, std::string>> examples = {
         {"Basic Copyright and Language", 
          "@copyright \"MIT License\" \"2025 dbjwhs\"\n@language \"C++\"\n@description \"Basic example\""},
@@ -545,15 +545,15 @@ TestResult query_examples() {
          "@variable \"element_type\" \"int\"\n"
          "@test \"Test ${container_type} operations\"\n"},
          
-        // Uncomment this to test the failure detection
-        // This intentionally has variables before description which causes an error
+        // uncomment this to test the failure detection
+        // this intentionally has variables before description which causes an error
         /*
-        {"Broken Example",
+        {"broken example",
          "@variable \"container_type\" \"vector\"\n"
          "@variable \"element_type\" \"int\"\n"
          "@description \"implement a ${container_type}<${element_type}> class\"\n"
-         "@language \"C++\"\n"
-         "@test \"Test ${container_type} operations\"\n"}
+         "@language \"c++\"\n"
+         "@test \"test ${container_type} operations\"\n"}
         */
     };
     
@@ -561,7 +561,7 @@ TestResult query_examples() {
     std::string failed_example;
     std::string error_message;
     
-    // Process and display each example
+    // process and display each example
     for (const auto& [title, query] : examples) {
         std::cout << "\n=== " << title << " ===\n" << std::endl;
         std::cout << "Query:\n" << query << std::endl;
@@ -585,34 +585,34 @@ TestResult query_examples() {
     return TestResult::pass();
 }
 
-// Test template validator
+// test template validator
 TestResult test_template_validator() {
     std::cout << "Testing template validator..." << std::endl;
     
-    // Create a temporary template directory for testing
+    // create a temporary template directory for testing
     std::string temp_dir = "./temp_templates";
     
     try {
-        // Suppress stderr for template directory issues
+        // suppress stderr for template directory issues
         Logger::StderrSuppressionGuard stderr_guard;
         
-        // Create a temporary template directory
+        // create a temporary template directory
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
         }
         fs::create_directory(temp_dir);
         
-        // Create required common and user subdirectories to avoid errors
+        // create required common and user subdirectories to avoid errors
         fs::create_directory(fs::path(temp_dir) / "common");
         fs::create_directory(fs::path(temp_dir) / "user");
         
-        // Create a template manager with the temp directory
+        // create a template manager with the temp directory
         TemplateManager manager(temp_dir);
         
-        // Create a template validator
+        // create a template validator
         TemplateValidator validator(manager);
         
-        // Test 1: Template with all variables declared and used
+        // test 1: template with all variables declared and used
         std::string good_template = 
             "@description \"A good template with proper variables\"\n"
             "@variable \"var1\" \"value1\"\n"
@@ -628,7 +628,7 @@ TestResult test_template_validator() {
         TEST_ASSERT(!good_result.has_issues(TemplateValidationLevel::WARNING),
                    "Good template should not have WARNING level issues");
         
-        // Test 2: Template with undeclared variable (should generate warning)
+        // test 2: template with undeclared variable (should generate warning)
         std::string warning_template = 
             "@description \"A template with undeclared variable\"\n"
             "@variable \"var1\" \"value1\"\n"
@@ -645,7 +645,7 @@ TestResult test_template_validator() {
         TEST_ASSERT(warning_result.count_warnings() > 0,
                    "Warning template should have at least one warning");
         
-        // Test 3: Template with unused variable (should generate info)
+        // test 3: template with unused variable (should generate info)
         std::string info_template = 
             "@description \"A template with unused variable\"\n"
             "@variable \"var1\" \"value1\"\n"
@@ -657,23 +657,23 @@ TestResult test_template_validator() {
         auto info_result = validator.validate_template("info_template");
         TEST_ASSERT(!info_result.has_issues(TemplateValidationLevel::ERROR),
                    "Info template should not have ERROR level issues");
-        // We've upgraded INFO level issues to WARNING, so adjust the test accordingly
+        // we've upgraded info level issues to warning, so adjust the test accordingly
         TEST_ASSERT(info_result.has_issues(TemplateValidationLevel::WARNING),
                    "Info template should have WARNING level issues for unused variables");
         TEST_ASSERT(info_result.count_warnings() > 0,
                    "Info template should have at least one warning");
         
-        // Test 4: Template with circular inheritance (should generate error)
-        // Create unique names for this test run
+        // test 4: template with circular inheritance (should generate error)
+        // create unique names for this test run
         std::string circ_timestamp = std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
         std::string circular1_name = "circ1_" + circ_timestamp; 
         std::string circular2_name = "circ2_" + circ_timestamp;
         
-        // Construct templates with these unique names
+        // construct templates with these unique names
         std::string circular1 = "@description \"Template with circular inheritance\"\n@inherit \"" + circular2_name + "\"\n";
         std::string circular2 = "@description \"Another template in the circle\"\n@inherit \"" + circular1_name + "\"\n";
         
-        // Only suppress stderr during the actual operations that will generate error logs
+        // only suppress stderr during the actual operations that will generate error logs
         {
             Logger::StderrSuppressionGuard circular_stderr_guard;
             manager.save_template(circular1_name, circular1);
@@ -685,7 +685,7 @@ TestResult test_template_validator() {
                        "Circular inheritance should have at least one error");
         }
         
-        // Test 5: Template with proper inheritance
+        // test 5: template with proper inheritance
         std::string parent = 
             "@description \"Parent template\"\n"
             "@variable \"parent_var\" \"parent_value\"\n"
@@ -704,28 +704,28 @@ TestResult test_template_validator() {
         TEST_ASSERT(!inheritance_result.has_issues(TemplateValidationLevel::ERROR),
                    "Valid inheritance should not generate ERROR level issues");
         
-        // Test schema validation
+        // test schema validation
         auto schema = TemplateValidatorSchema::create_default_schema();
         
-        // Create validator with schema rules
+        // create validator with schema rules
         for (const auto& [name, rule] : schema.get_validation_rules()) {
             validator.add_validation_rule(rule);
         }
         
-        // Test schema rules with malformed template without logging
+        // test schema rules with malformed template without logging
         std::string malformed = 
-            "@description \"Too short\"\n"  // Description too short warning
-            "@variable \"bad-name\" \"bad\"\n"  // Invalid variable name (should be error)
+            "@description \"Too short\"\n"  // description too short warning
+            "@variable \"bad-name\" \"bad\"\n"  // invalid variable name (should be error)
             "@language \"${bad-name}\"\n"
-            "@invalidDirective \"something\"\n";  // Unknown directive (should be error)
+            "@invalidDirective \"something\"\n";  // unknown directive (should be error)
         
-        // Create a validator with stricter rules that treats invalid directives and 
+        // create a validator with stricter rules that treats invalid directives and 
         // variable names as errors instead of warnings
         TemplateValidator strict_validator(manager);
         strict_validator.add_validation_rule([](const std::string& content) {
             std::vector<TemplateValidationIssue> issues;
             
-            // Check for invalid directives (anything not starting with @ followed by a valid name)
+            // check for invalid directives (anything not starting with @ followed by a valid name)
             std::regex directive_regex("@([a-zA-Z_][a-zA-Z0-9_]*)");
             std::regex invalid_directive_regex("@([^a-zA-Z_]\\S*)");
             
@@ -741,7 +741,7 @@ TestResult test_template_validator() {
                 search_start = m.suffix().first;
             }
             
-            // Check for invalid variable names (should only contain letters, numbers, and underscores)
+            // check for invalid variable names (should only contain letters, numbers, and underscores)
             std::regex variable_decl_regex("@variable\\s+\"([^\"]+)\"");
             std::regex valid_var_name_regex("[a-zA-Z_][a-zA-Z0-9_]*");
             
@@ -761,10 +761,10 @@ TestResult test_template_validator() {
             return issues;
         });
         
-        // Create a unique filename for each test run to avoid collisions
+        // create a unique filename for each test run to avoid collisions
         std::string malformed_name = "malformed_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
         
-        // Only use the Logger suppression during the actual save and load operations
+        // only use the logger suppression during the actual save and load operations
         {
             Logger::StderrSuppressionGuard stderr_guard;
             manager.save_template(malformed_name, malformed);
@@ -777,12 +777,12 @@ TestResult test_template_validator() {
                        "Malformed template should have validation issues");
         }
         
-        // Cleanup
+        // cleanup
         fs::remove_all(temp_dir);
         
         return TestResult::pass();
     } catch (const std::exception& e) {
-        // Ensure cleanup even if test fails
+        // ensure cleanup even if test fails
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
         }

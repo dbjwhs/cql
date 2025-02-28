@@ -15,16 +15,16 @@
 namespace cql {
 
 /**
- * Severity levels for validation issues
+ * severity levels for validation issues
  */
 enum class ValidationSeverity {
-    INFO,       // Informational message
-    WARNING,    // Non-fatal warning
-    ERROR       // Fatal error
+    INFO,       // informational message
+    WARNING,    // non-fatal warning
+    ERROR       // fatal error
 };
 
 /**
- * Structure to hold validation issues
+ * structure to hold validation issues
  */
 struct ValidationIssue {
     ValidationSeverity severity;
@@ -35,47 +35,47 @@ struct ValidationIssue {
 };
 
 /**
- * Rule type for validation
+ * rule type for validation
  */
 enum class RuleType {
-    REQUIRED,       // Element must be present
-    EXCLUSIVE,      // Only one allowed
-    DEPENDENCY,     // If A exists, B must exist
-    INCOMPATIBLE,   // If A exists, B must not exist
-    FORMAT          // Content format validation
+    REQUIRED,       // element must be present
+    EXCLUSIVE,      // only one allowed
+    DEPENDENCY,     // if a exists, b must exist
+    INCOMPATIBLE,   // if a exists, b must not exist
+    FORMAT          // content format validation
 };
 
 /**
- * Validator class to check query structure and content
+ * validator class to check query structure and content
  */
 class QueryValidator {
 public:
     QueryValidator();
     
-    // Run validation on parsed nodes
+    // run validation on parsed nodes
     std::vector<ValidationIssue> validate(const std::vector<std::unique_ptr<QueryNode>>& nodes);
     
-    // Configure validation rules
+    // configure validation rules
     void configure_required(const std::vector<TokenType>& required_directives);
     void configure_exclusive(const std::vector<TokenType>& exclusive_directives);
     void configure_dependency(TokenType dependent, TokenType dependency);
     void configure_incompatible(TokenType a, TokenType b);
     
-    // Add custom validation rule
+    // add custom validation rule
     void add_custom_rule(std::function<std::optional<ValidationIssue>(const std::vector<std::unique_ptr<QueryNode>>&)> rule);
     
 private:
-    // Configuration storage
+    // configuration storage
     std::vector<TokenType> m_required_directives;
     std::vector<TokenType> m_exclusive_directives;
     std::vector<std::pair<TokenType, TokenType>> m_dependency_rules;
     std::vector<std::pair<TokenType, TokenType>> m_incompatibility_rules;
     std::vector<std::function<std::optional<ValidationIssue>(const std::vector<std::unique_ptr<QueryNode>>&)>> m_custom_rules;
     
-    // Count occurrences of directive types
+    // count occurrences of directive types
     std::map<TokenType, int> count_directives(const std::vector<std::unique_ptr<QueryNode>>& nodes);
     
-    // Helper methods for validation
+    // helper methods for validation
     std::vector<ValidationIssue> check_required(const std::map<TokenType, int>& counts);
     std::vector<ValidationIssue> check_exclusive(const std::map<TokenType, int>& counts);
     std::vector<ValidationIssue> check_dependencies(const std::map<TokenType, int>& counts);
@@ -85,4 +85,4 @@ private:
 
 } // namespace cql
 
-#endif // CQL_VALIDATOR_HPP
+#endif // cql_validator_hpp

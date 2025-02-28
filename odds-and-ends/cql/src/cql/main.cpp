@@ -8,20 +8,20 @@
 #include "../../../headers/project_utils.hpp"
 
 int main(int argc, char* argv[]) {
-    // Initialize logger
+    // initialize logger
     auto& logger = Logger::getInstance();
     std::cout << "Starting CQL Compiler v1.0..." << std::endl;
     logger.log(LogLevel::INFO, "Claude Query Language (CQL) Compiler v1.0");
 
     try {
         std::cout << "Parsing command line arguments..." << std::endl;
-        // Parse command line arguments
+        // parse command line arguments
         if (argc > 1) {
             std::string arg1 = argv[1];
             std::cout << "Received argument: " << arg1 << std::endl;
 
             if (arg1 == "--help" || arg1 == "-h") {
-                // Show help information
+                // show help information
                 std::cout << "Claude Query Language (CQL) Compiler v1.0\n"
                           << "Usage: cql [OPTIONS] [INPUT_FILE] [OUTPUT_FILE]\n\n"
                           << "Options:\n"
@@ -42,10 +42,10 @@ int main(int argc, char* argv[]) {
                           << "If INPUT_FILE is provided, it will be processed as a CQL query.\n"
                           << "If OUTPUT_FILE is also provided, the compiled query will be written to it.\n";
             } else if (arg1 == "--test" || arg1 == "-t") {
-                // Run the test suite
+                // run the test suite
                 bool fail_fast = true;
                 
-                // Check for --no-fail-fast flag
+                // check for --no-fail-fast flag
                 for (int ndx = 2; ndx < argc; ndx++) {
                     std::string option = argv[ndx];
                     if (option == "--no-fail-fast") {
@@ -53,22 +53,22 @@ int main(int argc, char* argv[]) {
                     }
                 }
                 
-                // Run tests and return appropriate exit code
+                // run tests and return appropriate exit code
                 if (!cql::test::run_tests(fail_fast)) {
                     return 1;
                 }
             } else if (arg1 == "--examples" || arg1 == "-e") {
-                // Show example queries
+                // show example queries
                 auto result = cql::test::query_examples();
                 if (!result.passed()) {
                     std::cerr << "\nError running examples: " << result.get_error_message() << std::endl;
                     return 1;
                 }
             } else if (arg1 == "--interactive" || arg1 == "-i") {
-                // Run in interactive mode
+                // run in interactive mode
                 cql::cli::run_cli();
             } else if (arg1 == "--copyright") {
-                // Show an example of copyright usage
+                // show an example of copyright usage
                 std::string copyright_example =
                     "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
                     "@language \"C++\"\n"
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
                 logger.log(LogLevel::INFO, "\n=== Compiled Query with Copyright ===\n\n", 
                           result, "\n===================");
             } else if (arg1 == "--templates" || arg1 == "-l") {
-                // List all templates
+                // list all templates
                 cql::TemplateManager manager;
                 auto templates = manager.list_templates();
                 
@@ -89,18 +89,18 @@ int main(int argc, char* argv[]) {
                 } else {
                     std::cout << "Available templates:" << std::endl;
                     for (const auto& tmpl : templates) {
-                        // Get template metadata for more info
+                        // get template metadata for more info
                         try {
                             auto metadata = manager.get_template_metadata(tmpl);
                             std::cout << "  " << tmpl << " - " << metadata.description << std::endl;
                         } catch (const std::exception&) {
-                            // If we can't get metadata, just show the name
+                            // if we can't get metadata, just show the name
                             std::cout << "  " << tmpl << std::endl;
                         }
                     }
                 }
             } else if (arg1 == "--template" || arg1 == "-T") {
-                // Use a specific template
+                // use a specific template
                 if (argc < 3) {
                     std::cerr << "Error: Template name required" << std::endl;
                     std::cerr << "Usage: cql --template TEMPLATE_NAME [VAR1=VALUE1 VAR2=VALUE2 ...]" << std::endl;
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
                 std::string template_name = argv[2];
                 std::map<std::string, std::string> variables;
                 
-                // Process variable assignments (VAR=VALUE format)
+                // process variable assignments (var=value format)
                 for (int ndx = 3; ndx < argc; ndx++) {
                     std::string arg = argv[ndx];
                     size_t pos = arg.find('=');
@@ -124,25 +124,25 @@ int main(int argc, char* argv[]) {
                 try {
                     cql::TemplateManager manager;
                     
-                    // Create a validator to check the template
+                    // create a validator to check the template
                     cql::TemplateValidator validator(manager);
                     auto schema = cql::TemplateValidatorSchema::create_default_schema();
                     for (const auto& [name, rule] : schema.get_validation_rules()) {
                         validator.add_validation_rule(rule);
                     }
                     
-                    // Validate the template before using it
+                    // validate the template before using it
                     auto validation_result = validator.validate_template(template_name);
                     bool has_errors = validation_result.has_issues(cql::TemplateValidationLevel::ERROR);
                     
-                    // Show validation issues
+                    // show validation issues
                     if (has_errors) {
                         std::cerr << "Warning: Template has validation errors:" << std::endl;
                         for (const auto& issue : validation_result.get_issues(cql::TemplateValidationLevel::ERROR)) {
                             std::cerr << "  - " << issue.to_string() << std::endl;
                         }
                         
-                        // In non-interactive mode, if --force is not specified, fail on errors
+                        // in non-interactive mode, if --force is not specified, fail on errors
                         bool force = false;
                         for (int ndx = 3; ndx < argc; ndx++) {
                             std::string arg = argv[ndx];
@@ -165,12 +165,12 @@ int main(int argc, char* argv[]) {
                         }
                     }
                     
-                    // Check for missing variables
+                    // check for missing variables
                     std::string template_content = manager.load_template(template_name);
                     auto template_vars = manager.collect_variables(template_content);
                     std::vector<std::string> missing_vars;
                     
-                    // Extract variables from validation issues
+                    // extract variables from validation issues
                     auto var_issues = validation_result.get_issues(cql::TemplateValidationLevel::WARNING);
                     for (const auto& issue : var_issues) {
                         if (issue.get_variable_name().has_value() && 
@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
                         }
                     }
                     
-                    // Warn about missing variables but don't fail (let them appear as ${var} in the output)
+                    // warn about missing variables but don't fail (let them appear as ${var} in the output)
                     if (!missing_vars.empty()) {
                         std::cerr << "Warning: The following variables are referenced but not provided:" << std::endl;
                         for (const auto& var : missing_vars) {
@@ -201,7 +201,7 @@ int main(int argc, char* argv[]) {
                     return 1;
                 }
             } else if (arg1 == "--validate") {
-                // Validate a specific template
+                // validate a specific template
                 if (argc < 3) {
                     std::cerr << "Error: Template name required" << std::endl;
                     std::cerr << "Usage: cql --validate TEMPLATE_NAME" << std::endl;
@@ -211,20 +211,20 @@ int main(int argc, char* argv[]) {
                 std::string template_name = argv[2];
                 
                 try {
-                    // Create template manager and validator
+                    // create template manager and validator
                     cql::TemplateManager manager;
                     cql::TemplateValidator validator(manager);
                     
-                    // Add schema validation rules
+                    // add schema validation rules
                     auto schema = cql::TemplateValidatorSchema::create_default_schema();
                     for (const auto& [name, rule] : schema.get_validation_rules()) {
                         validator.add_validation_rule(rule);
                     }
                     
-                    // Validate the template
+                    // validate the template
                     auto result = validator.validate_template(template_name);
                     
-                    // Output validation results
+                    // output validation results
                     std::cout << "Validation results for template '" << template_name << "':" << std::endl;
                     std::cout << "------------------------------------------" << std::endl;
                     
@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
                                   << result.count_warnings() << " warnings, "
                                   << result.count_infos() << " info messages." << std::endl;
                         
-                        // Print errors
+                        // print errors
                         if (result.count_errors() > 0) {
                             std::cout << "\nErrors:" << std::endl;
                             for (const auto& issue : result.get_issues(cql::TemplateValidationLevel::ERROR)) {
@@ -241,7 +241,7 @@ int main(int argc, char* argv[]) {
                             }
                         }
                         
-                        // Print warnings
+                        // print warnings
                         if (result.count_warnings() > 0) {
                             std::cout << "\nWarnings:" << std::endl;
                             for (const auto& issue : result.get_issues(cql::TemplateValidationLevel::WARNING)) {
@@ -249,7 +249,7 @@ int main(int argc, char* argv[]) {
                             }
                         }
                         
-                        // Print info messages (only if there are no errors or warnings)
+                        // print info messages (only if there are no errors or warnings)
                         if (result.count_infos() > 0 && result.count_errors() == 0 && result.count_warnings() == 0) {
                             std::cout << "\nInfo:" << std::endl;
                             for (const auto& issue : result.get_issues(cql::TemplateValidationLevel::INFO)) {
@@ -264,19 +264,19 @@ int main(int argc, char* argv[]) {
                     return 1;
                 }
             } else if (arg1 == "--validate-all") {
-                // Validate all templates
+                // validate all templates
                 try {
-                    // Create template manager and validator
+                    // create template manager and validator
                     cql::TemplateManager manager;
                     cql::TemplateValidator validator(manager);
                     
-                    // Add schema validation rules
+                    // add schema validation rules
                     auto schema = cql::TemplateValidatorSchema::create_default_schema();
                     for (const auto& [name, rule] : schema.get_validation_rules()) {
                         validator.add_validation_rule(rule);
                     }
                     
-                    // Get list of templates
+                    // get list of templates
                     auto templates = manager.list_templates();
                     
                     if (templates.empty()) {
@@ -289,19 +289,19 @@ int main(int argc, char* argv[]) {
                         int warning_count = 0;
                         int info_count = 0;
                         
-                        // Keep track of templates with issues
+                        // keep track of templates with issues
                         std::vector<std::string> templates_with_errors;
                         std::vector<std::string> templates_with_warnings;
                         
                         for (const auto& tmpl : templates) {
                             auto result = validator.validate_template(tmpl);
                             
-                            // Count issues
+                            // count issues
                             error_count += result.count_errors();
                             warning_count += result.count_warnings();
                             info_count += result.count_infos();
                             
-                            // Print progress
+                            // print progress
                             if (result.has_issues(cql::TemplateValidationLevel::ERROR)) {
                                 templates_with_errors.push_back(tmpl);
                                 std::cout << "❌ " << tmpl << ": " << result.count_errors() << " errors, "
@@ -314,7 +314,7 @@ int main(int argc, char* argv[]) {
                             }
                         }
                         
-                        // Print summary
+                        // print summary
                         std::cout << "\nValidation Summary:" << std::endl;
                         std::cout << "----------------------------" << std::endl;
                         std::cout << "Templates validated: " << templates.size() << std::endl;
@@ -323,7 +323,7 @@ int main(int argc, char* argv[]) {
                                   << warning_count << " warnings, " 
                                   << info_count << " info messages)" << std::endl;
                         
-                        // List templates with errors
+                        // list templates with errors
                         if (!templates_with_errors.empty()) {
                             std::cout << "\nTemplates with errors:" << std::endl;
                             for (const auto& tmpl : templates_with_errors) {
@@ -332,7 +332,7 @@ int main(int argc, char* argv[]) {
                             std::cout << "Run 'cql --validate <name>' for details" << std::endl;
                         }
                         
-                        // Print status message
+                        // print status message
                         if (error_count > 0) {
                             std::cerr << "Validation found errors." << std::endl;
                             return 1;
@@ -419,7 +419,7 @@ int main(int argc, char* argv[]) {
                     return 1;
                 }
             } else {
-                // Assume it's an input file
+                // assume it's an input file
                 std::string output_file;
                 if (argc > 2) {
                     output_file = argv[2];
@@ -430,17 +430,17 @@ int main(int argc, char* argv[]) {
                 }
             }
         } else {
-            // No arguments, run comprehensive tests and examples
+            // no arguments, run comprehensive tests and examples
             std::cout << "Running in default mode - tests and examples" << std::endl;
             logger.log(LogLevel::INFO, "Running in default mode - tests and examples");
             
-            // Run tests with fail-fast enabled
+            // run tests with fail-fast enabled
             std::cout << "Running tests..." << std::endl;
             if (!cql::test::run_tests(true)) {
                 return 1;
             }
             
-            // Run examples
+            // run examples
             std::cout << "Running query examples..." << std::endl;
             auto example_result = cql::test::query_examples();
             if (!example_result.passed()) {
@@ -448,7 +448,7 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
 
-            // Example query with Phase 2 features
+            // example query with phase 2 features
             std::string query =
                 "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
                 "@language \"C++\"\n"

@@ -99,7 +99,7 @@ private:
     // repair template directory if needed
     bool repair_template_directory();
     
-    // create README file with standard content
+    // create readme file with standard content
     void create_readme_file();
     
     // ensure standard directory structure (common/ and user/ directories)
@@ -128,11 +128,11 @@ private:
     // extract example usage from template content
     std::string extract_example(const std::string& content);
 
-public: // make public to allow direct access from CLI
+public: // make public to allow direct access from cli
     // extract and combine all variables from template content and declared variables
     std::map<std::string, std::string> collect_variables(const std::string& content);
 };
 
 } // namespace cql
 
-#endif // CQL_TEMPLATE_MANAGER_HPP
+#endif // cql_template_manager_hpp

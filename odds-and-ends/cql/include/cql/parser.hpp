@@ -15,27 +15,27 @@
 namespace cql {
 
 /**
- * Parser for building the abstract syntax tree (AST)
- * Converts tokens from the lexer into a tree of QueryNode objects
+ * parser for building the abstract syntax tree (ast)
+ * converts tokens from the lexer into a tree of querynode objects
  */
 class Parser {
 public:
     explicit Parser(const std::string_view input);
     
-    // Parse the input and build the AST
+    // parse the input and build the ast
     std::vector<std::unique_ptr<QueryNode>> parse();
 
 private:
     Lexer m_lexer;
     std::optional<Token> m_current_token;
 
-    // Move to the next token in the input
+    // move to the next token in the input
     void advance();
     
-    // Parse a string token
+    // parse a string token
     std::string parse_string();
     
-    // Parse node types
+    // parse node types
     std::unique_ptr<QueryNode> parse_code_request();
     std::unique_ptr<QueryNode> parse_context();
     std::unique_ptr<QueryNode> parse_test();
@@ -43,7 +43,7 @@ private:
     std::unique_ptr<QueryNode> parse_performance();
     std::unique_ptr<QueryNode> parse_copyright();
     
-    // Phase 2 directive parsers
+    // phase 2 directive parsers
     std::unique_ptr<QueryNode> parse_architecture();
     std::unique_ptr<QueryNode> parse_constraint();
     std::unique_ptr<QueryNode> parse_example();
@@ -55,7 +55,7 @@ private:
 };
 
 /**
- * Custom exception class for parser errors with location information
+ * custom exception class for parser errors with location information
  */
 class ParserError : public std::runtime_error {
 public:
@@ -71,4 +71,4 @@ private:
 
 } // namespace cql
 
-#endif // CQL_PARSER_HPP
+#endif // cql_parser_hpp

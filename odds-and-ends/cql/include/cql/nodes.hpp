@@ -10,11 +10,11 @@
 
 namespace cql {
 
-// Forward declarations
+// forward declarations
 class QueryVisitor;
 
 /**
- * Base class for all query nodes in the Abstract Syntax Tree (AST)
+ * base class for all query nodes in the abstract syntax tree (ast)
  */
 class QueryNode {
 public:
@@ -23,7 +23,7 @@ public:
 };
 
 /**
- * Node for code generation requests (@language and @description directives)
+ * node for code generation requests (@language and @description directives)
  */
 class CodeRequestNode final : public QueryNode {
 public:
@@ -39,7 +39,7 @@ private:
 };
 
 /**
- * Node for providing context about the code (@context directive)
+ * node for providing context about the code (@context directive)
  */
 class ContextNode final : public QueryNode {
 public:
@@ -53,7 +53,7 @@ private:
 };
 
 /**
- * Node for specifying test requirements (@test directive)
+ * node for specifying test requirements (@test directive)
  */
 class TestNode final : public QueryNode {
 public:
@@ -67,7 +67,7 @@ private:
 };
 
 /**
- * Node for specifying dependencies (@dependency directive)
+ * node for specifying dependencies (@dependency directive)
  */
 class DependencyNode final : public QueryNode {
 public:
@@ -81,7 +81,7 @@ private:
 };
 
 /**
- * Node for specifying performance requirements (@performance directive)
+ * node for specifying performance requirements (@performance directive)
  */
 class PerformanceNode final : public QueryNode {
 public:
@@ -95,7 +95,7 @@ private:
 };
 
 /**
- * Node for specifying copyright and license (@copyright directive)
+ * node for specifying copyright and license (@copyright directive)
  */
 class CopyrightNode final : public QueryNode {
 public:
@@ -111,7 +111,7 @@ private:
 };
 
 /**
- * Node for specifying system architecture (@architecture directive)
+ * node for specifying system architecture (@architecture directive)
  */
 class ArchitectureNode final : public QueryNode {
 public:
@@ -125,7 +125,7 @@ private:
 };
 
 /**
- * Node for specifying constraints (@constraint directive)
+ * node for specifying constraints (@constraint directive)
  */
 class ConstraintNode final : public QueryNode {
 public:
@@ -139,7 +139,7 @@ private:
 };
 
 /**
- * Node for providing code examples (@example directive)
+ * node for providing code examples (@example directive)
  */
 class ExampleNode final : public QueryNode {
 public:
@@ -155,7 +155,7 @@ private:
 };
 
 /**
- * Node for specifying security requirements (@security directive)
+ * node for specifying security requirements (@security directive)
  */
 class SecurityNode final : public QueryNode {
 public:
@@ -169,7 +169,7 @@ private:
 };
 
 /**
- * Node for specifying algorithm complexity requirements (@complexity directive)
+ * node for specifying algorithm complexity requirements (@complexity directive)
  */
 class ComplexityNode final : public QueryNode {
 public:
@@ -183,7 +183,7 @@ private:
 };
 
 /**
- * Node for specifying target LLM model (@model directive)
+ * node for specifying target llm model (@model directive)
  */
 class ModelNode final : public QueryNode {
 public:
@@ -197,7 +197,7 @@ private:
 };
 
 /**
- * Node for specifying output format (@format directive)
+ * node for specifying output format (@format directive)
  */
 class FormatNode final : public QueryNode {
 public:
@@ -211,7 +211,7 @@ private:
 };
 
 /**
- * Node for declaring template variables (@variable directive)
+ * node for declaring template variables (@variable directive)
  */
 class VariableNode final : public QueryNode {
 public:
@@ -228,4 +228,4 @@ private:
 
 } // namespace cql
 
-#endif // CQL_NODES_HPP
+#endif // cql_nodes_hpp

@@ -6,7 +6,7 @@
 
 namespace cql {
 
-// Convert token type to string (for debugging)
+// convert token type to string (for debugging)
 std::string token_type_to_string(TokenType type) {
     switch (type) {
         case TokenType::LANGUAGE: return "LANGUAGE";
@@ -32,7 +32,7 @@ std::string token_type_to_string(TokenType type) {
     }
 }
 
-// Token implementation
+// token implementation
 Token::Token(TokenType t, std::string v, size_t l, size_t c)
     : m_type(t), m_value(std::move(v)), m_line(l), m_column(c) {}
 
@@ -45,7 +45,7 @@ std::string Token::to_string() const {
     return oss.str();
 }
 
-// Lexer implementation
+// lexer implementation
 Lexer::Lexer(std::string_view input)
     : m_input(input), m_current(0), m_line(1), m_column(1) {}
 

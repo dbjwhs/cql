@@ -9,15 +9,15 @@
 #include <sstream>
 #include <algorithm>
 #include <unordered_set>
-#include "../../include/cql/cql.hpp" // For util namespace
+#include "../../include/cql/cql.hpp" // for util namespace
 
 namespace cql {
 
-// TemplateValidationIssue implementation
+// templatevalidationissue implementation
 std::string TemplateValidationIssue::to_string() const {
     std::stringstream ss;
     
-    // Add level prefix
+    // add level prefix
     switch (m_level) {
         case TemplateValidationLevel::ERROR:
             ss << "ERROR: ";
@@ -30,15 +30,15 @@ std::string TemplateValidationIssue::to_string() const {
             break;
     }
     
-    // Add main message
+    // add main message
     ss << m_message;
     
-    // Add variable name if available
+    // add variable name if available
     if (m_variable_name.has_value()) {
         ss << " [Variable: " << *m_variable_name << "]";
     }
     
-    // Add directive if available
+    // add directive if available
     if (m_directive.has_value()) {
         ss << " [Directive: " << *m_directive << "]";
     }
@@ -46,7 +46,7 @@ std::string TemplateValidationIssue::to_string() const {
     return ss.str();
 }
 
-// TemplateValidationResult implementation
+// templatevalidationresult implementation
 void TemplateValidationResult::add_issue(TemplateValidationIssue issue) {
     m_issues.push_back(std::move(issue));
 }
@@ -108,7 +108,7 @@ std::string TemplateValidationResult::get_summary() const {
     
     ss << error_count << " error(s), " << warning_count << " warning(s), " << info_count << " info message(s)";
     
-    // Use a structure to iterate through all issue levels with their counts
+    // use a structure to iterate through all issue levels with their counts
     const struct {
         TemplateValidationLevel level;
         size_t count;
@@ -131,20 +131,20 @@ std::string TemplateValidationResult::get_summary() const {
     return ss.str();
 }
 
-// TemplateValidator implementation
+// templatevalidator implementation
 TemplateValidator::TemplateValidator(const TemplateManager& template_manager)
     : m_template_manager(template_manager) {
 }
 
 TemplateValidationResult TemplateValidator::validate_template(const std::string& template_name) {
     try {
-        // Load template content
+        // load template content
         std::string content = m_template_manager.load_template(template_name);
         
-        // Start with content validation
+        // start with content validation
         TemplateValidationResult result = validate_content(content);
         
-        // Add inheritance validation if applicable
+        // add inheritance validation if applicable
         auto inheritance_result = validate_inheritance(template_name);
         for (const auto& issue : inheritance_result.get_issues()) {
             result.add_issue(issue);
@@ -164,17 +164,17 @@ TemplateValidationResult TemplateValidator::validate_template(const std::string&
 TemplateValidationResult TemplateValidator::validate_content(const std::string& content) {
     TemplateValidationResult result;
     
-    // Check variables
+    // check variables
     for (const auto& issue : check_variables(content)) {
         result.add_issue(issue);
     }
     
-    // Check directives
+    // check directives
     for (const auto& issue : check_directives(content)) {
         result.add_issue(issue);
     }
     
-    // Run custom validation rules
+    // run custom validation rules
     for (const auto& rule : m_validation_rules) {
         for (const auto& issue : rule(content)) {
             result.add_issue(issue);
@@ -187,18 +187,18 @@ TemplateValidationResult TemplateValidator::validate_content(const std::string& 
 TemplateValidationResult TemplateValidator::validate_inheritance(const std::string& template_name) {
     TemplateValidationResult result;
     
-    // Check for inheritance cycles
+    // check for inheritance cycles
     for (const auto& issue : check_inheritance_cycle(template_name)) {
         result.add_issue(issue);
     }
     
-    // Get inheritance chain
+    // get inheritance chain
     try {
         auto chain = m_template_manager.get_inheritance_chain(template_name);
         
-        // Validate each template in the chain
+        // validate each template in the chain
         if (chain.size() > 1) {
-            // Add info about inheritance chain
+            // add info about inheritance chain
             std::stringstream chain_info;
             chain_info << "Template inherits from " << (chain.size() - 1) << " parent template(s): ";
             for (size_t i = 0; i < chain.size() - 1; ++i) {
@@ -211,12 +211,12 @@ TemplateValidationResult TemplateValidator::validate_inheritance(const std::stri
                 chain_info.str()
             ));
             
-            // Check that all parent templates exist and are valid
+            // check that all parent templates exist and are valid
             for (size_t i = 0; i < chain.size() - 1; ++i) {
                 try {
                     std::string parent_content = m_template_manager.load_template(chain[i]);
                     
-                    // Validate parent content but ignore inheritance validation to avoid recursion
+                    // validate parent content but ignore inheritance validation to avoid recursion
                     for (const auto& issue : check_variables(parent_content)) {
                         TemplateValidationIssue parent_issue(
                             issue.get_level(),
@@ -245,7 +245,7 @@ TemplateValidationResult TemplateValidator::validate_inheritance(const std::stri
             }
         }
     } catch (const std::exception& e) {
-        // Only add an error if it's not already caught by check_inheritance_cycle
+        // only add an error if it's not already caught by check_inheritance_cycle
         if (result.count_errors() == 0) {
             result.add_issue(TemplateValidationIssue(
                 TemplateValidationLevel::ERROR,
@@ -264,11 +264,11 @@ void TemplateValidator::add_validation_rule(ValidationRule rule) {
 std::vector<TemplateValidationIssue> TemplateValidator::check_variables(const std::string& content) {
     std::vector<TemplateValidationIssue> issues;
     
-    // Extract variables
+    // extract variables
     auto declared_vars = extract_declared_variables(content);
     auto referenced_vars = extract_referenced_variables(content);
     
-    // Check for undeclared variables
+    // check for undeclared variables
     for (const auto& var : referenced_vars) {
         if (declared_vars.find(var) == declared_vars.end()) {
             issues.push_back(TemplateValidationIssue(
@@ -279,7 +279,7 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_variables(const st
         }
     }
     
-    // Check for unused variables
+    // check for unused variables
     for (const auto& var : declared_vars) {
         if (referenced_vars.find(var) == referenced_vars.end()) {
             issues.push_back(TemplateValidationIssue(
@@ -296,10 +296,10 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_variables(const st
 std::vector<TemplateValidationIssue> TemplateValidator::check_directives(const std::string& content) {
     std::vector<TemplateValidationIssue> issues;
     
-    // Extract all directives
+    // extract all directives
     auto directives = extract_directives(content);
     
-    // Check for essential directives
+    // check for essential directives
     static const std::unordered_set<std::string> essential_directives = {
         "@description"
     };
@@ -315,7 +315,7 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_directives(const s
         }
     }
     
-    // Check for uncommon or potentially incorrect directives
+    // check for uncommon or potentially incorrect directives
     static const std::unordered_set<std::string> common_directives = {
         "@copyright", "@language", "@description", "@context", "@dependency", 
         "@test", "@architecture", "@constraint", "@security", "@complexity",
@@ -340,12 +340,12 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_inheritance_cycle(
     std::vector<TemplateValidationIssue> issues;
     
     try {
-        // Try to get inheritance chain, which will throw if there's a cycle
+        // try to get inheritance chain, which will throw if there's a cycle
         m_template_manager.get_inheritance_chain(template_name);
     } catch (const std::exception& e) {
         std::string error_msg = e.what();
         
-        // Check if it's a circular inheritance error
+        // check if it's a circular inheritance error
         if (error_msg.find("circular") != std::string::npos || 
             error_msg.find("cycle") != std::string::npos) {
             issues.push_back(TemplateValidationIssue(

@@ -8,12 +8,12 @@
 
 namespace cql {
 
-// Helper function to get token type for a node
+// helper function to get token type for a node
 TokenType get_node_type(const QueryNode* node) {
     if (dynamic_cast<const CodeRequestNode*>(node)) {
-        // CodeRequestNode represents both LANGUAGE and DESCRIPTION
-        // For validation, we need to count it as both
-        return TokenType::LANGUAGE; // We'll handle DESCRIPTION separately
+        // coderequestnode represents both language and description
+        // for validation, we need to count it as both
+        return TokenType::LANGUAGE; // we'll handle description separately
     }
     if (dynamic_cast<const ContextNode*>(node)) return TokenType::CONTEXT;
     if (dynamic_cast<const TestNode*>(node)) return TokenType::TEST;
@@ -29,33 +29,33 @@ TokenType get_node_type(const QueryNode* node) {
     if (dynamic_cast<const FormatNode*>(node)) return TokenType::FORMAT;
     if (dynamic_cast<const VariableNode*>(node)) return TokenType::VARIABLE;
     
-    // Default fallback
+    // default fallback
     return TokenType::IDENTIFIER;
 }
 
 QueryValidator::QueryValidator() {
-    // Set up default rules
+    // set up default rules
     
-    // LANGUAGE and DESCRIPTION are always required
+    // language and description are always required
     m_required_directives = {
         TokenType::LANGUAGE,
         TokenType::DESCRIPTION
     };
     
-    // MODEL and FORMAT are exclusive (only one allowed)
+    // model and format are exclusive (only one allowed)
     m_exclusive_directives = {
         TokenType::MODEL,
         TokenType::FORMAT
     };
     
-    // Example dependency rule: If using ARCHITECTURE, should have CONTEXT
+    // example dependency rule: if using architecture, should have context
     m_dependency_rules.emplace_back(TokenType::ARCHITECTURE, TokenType::CONTEXT);
     
-    // Example incompatibility: EXAMPLE and CONSTRAINT don't make sense together
+    // example incompatibility: example and constraint don't make sense together
     // (this is just for demonstration)
-    //m_incompatibility_rules.emplace_back(TokenType::EXAMPLE, TokenType::CONSTRAINT);
+    //m_incompatibility_rules.emplace_back(tokentype::example, tokentype::constraint);
     
-    // Add a custom rule to check if at least one test is specified
+    // add a custom rule to check if at least one test is specified
     add_custom_rule([](const std::vector<std::unique_ptr<QueryNode>>& nodes) -> std::optional<ValidationIssue> {
         bool has_test = false;
         for (const auto& node : nodes) {
@@ -80,7 +80,7 @@ std::map<TokenType, int> QueryValidator::count_directives(const std::vector<std:
     std::map<TokenType, int> counts;
     
     for (const auto& node : nodes) {
-        // Special handling for CodeRequestNode which contains both language and description
+        // special handling for coderequestnode which contains both language and description
         if (auto* code_node = dynamic_cast<const CodeRequestNode*>(node.get())) {
             counts[TokenType::LANGUAGE]++;
             counts[TokenType::DESCRIPTION]++;
@@ -175,17 +175,17 @@ std::vector<ValidationIssue> QueryValidator::run_custom_rules(const std::vector<
 std::vector<ValidationIssue> QueryValidator::validate(const std::vector<std::unique_ptr<QueryNode>>& nodes) {
     std::vector<ValidationIssue> issues;
     
-    // Count directive occurrences
+    // count directive occurrences
     std::map<TokenType, int> counts = count_directives(nodes);
     
-    // Run all validation checks
+    // run all validation checks
     auto required_issues = check_required(counts);
     auto exclusive_issues = check_exclusive(counts);
     auto dependency_issues = check_dependencies(counts);
     auto incompatibility_issues = check_incompatibilities(counts);
     auto custom_issues = run_custom_rules(nodes);
     
-    // Combine all issues
+    // combine all issues
     issues.insert(issues.end(), required_issues.begin(), required_issues.end());
     issues.insert(issues.end(), exclusive_issues.begin(), exclusive_issues.end());
     issues.insert(issues.end(), dependency_issues.begin(), dependency_issues.end());

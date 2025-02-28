@@ -14,7 +14,7 @@
 
 namespace cql::cli {
 
-// CLI interface for interactive use
+// cli interface for interactive use
 void run_cli() {
     Logger::getInstance().log(LogLevel::INFO, "CQL Interactive Mode");
     Logger::getInstance().log(LogLevel::INFO, "Type 'exit' to quit, 'help' for command list");
@@ -23,11 +23,11 @@ void run_cli() {
     std::string current_query;
     TemplateManager template_manager;
     
-    // Create template validator with default schema
+    // create template validator with default schema
     TemplateValidator template_validator(template_manager);
     auto schema = TemplateValidatorSchema::create_default_schema();
     
-    // Add schema validation rules
+    // add schema validation rules
     for (const auto& [name, rule] : schema.get_validation_rules()) {
         template_validator.add_validation_rule(rule);
     }
@@ -117,7 +117,7 @@ void run_cli() {
                 Logger::getInstance().log(LogLevel::ERROR, "Failed to save file: ", e.what());
             }
         } 
-        // Template management commands
+        // template management commands
         else if (line == "templates") {
             try {
                 auto templates = template_manager.list_templates();
@@ -140,10 +140,10 @@ void run_cli() {
                     continue;
                 }
 
-                // Validate the template before saving
+                // validate the template before saving
                 auto validation_result = template_validator.validate_content(current_query);
                 
-                // Check for validation errors
+                // check for validation errors
                 if (validation_result.has_issues(TemplateValidationLevel::ERROR)) {
                     Logger::getInstance().log(LogLevel::ERROR, "Template validation failed with errors:");
                     for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::ERROR)) {
@@ -186,7 +186,7 @@ void run_cli() {
                 std::cout << "Description: " << metadata.description << std::endl;
                 std::cout << "Last modified: " << metadata.last_modified << std::endl;
                 
-                // Show parent template if it exists
+                // show parent template if it exists
                 if (metadata.parent.has_value() && !metadata.parent.value().empty()) {
                     std::cout << "Inherits from: " << metadata.parent.value() << std::endl;
                 }
@@ -225,21 +225,21 @@ void run_cli() {
             std::string name = var_def.substr(0, equals_pos);
             std::string value = var_def.substr(equals_pos + 1);
             
-            // Add/update the variable in both current query and memory
-            // First update in memory for future template usage
+            // add/update the variable in both current query and memory
+            // first update in memory for future template usage
             current_variables[name] = value;
             
-            // Then update in the current query if it exists
+            // then update in the current query if it exists
             std::stringstream new_query;
             bool variable_updated = false;
             
-            // If the query is empty, just add the variable
+            // if the query is empty, just add the variable
             if (current_query.empty()) {
                 new_query << "@variable \"" << name << "\" \"" << value << "\"";
                 current_query = new_query.str();
                 variable_updated = true;
             } else {
-                // Check if variable already exists in the query
+                // check if variable already exists in the query
                 std::istringstream iss(current_query);
                 std::string line;
                 std::regex var_regex("@variable\\s+\"" + name + "\"\\s+\"([^\"]*)\"");
@@ -247,7 +247,7 @@ void run_cli() {
                 while (std::getline(iss, line)) {
                     std::smatch match;
                     if (std::regex_match(line, match, var_regex)) {
-                        // Update the existing variable
+                        // update the existing variable
                         new_query << "@variable \"" << name << "\" \"" << value << "\"";
                         variable_updated = true;
                     } else {
@@ -256,7 +256,7 @@ void run_cli() {
                     new_query << std::endl;
                 }
                 
-                // If the variable wasn't found, add it at the beginning
+                // if the variable wasn't found, add it at the beginning
                 if (!variable_updated) {
                     std::string var_declaration = "@variable \"" + name + "\" \"" + value + "\"\n";
                     current_query = var_declaration + current_query;
@@ -273,10 +273,10 @@ void run_cli() {
         } else if (line.substr(0, 13) == "template use ") {
             std::string name = line.substr(13);
             try {
-                // First validate the template
+                // first validate the template
                 auto validation_result = template_validator.validate_template(name);
                 
-                // Check for critical errors
+                // check for critical errors
                 if (validation_result.has_issues(TemplateValidationLevel::ERROR)) {
                     Logger::getInstance().log(LogLevel::ERROR, "Template validation failed with errors:");
                     for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::ERROR)) {
@@ -298,7 +298,7 @@ void run_cli() {
                     }
                 }
 
-                // Extract variables from the current query
+                // extract variables from the current query
                 std::map<std::string, std::string> variables;
                 std::istringstream iss(current_query);
                 std::string curr_line;
@@ -311,24 +311,24 @@ void run_cli() {
                     }
                 }
                 
-                // Combine current variables with template variables
-                // Template variables will override memory variables if there are duplicates
+                // combine current variables with template variables
+                // template variables will override memory variables if there are duplicates
                 std::map<std::string, std::string> combined_variables = current_variables;
                 for (const auto& [name, value] : variables) {
                     combined_variables[name] = value;
                 }
                 
-                // Check for missing variables
+                // check for missing variables
                 std::string template_content = template_manager.load_template(name);
                 auto template_vars = template_manager.collect_variables(template_content);
                 
-                // Get all variables used in the template from validation result
+                // get all variables used in the template from validation result
                 auto referenced_vars = validation_result.get_issues(TemplateValidationLevel::INFO);
                 std::vector<std::string> missing_vars;
                 
-                // Check for variables that are referenced but not declared
+                // check for variables that are referenced but not declared
                 for (const auto& issue : referenced_vars) {
-                    // If the issue is about a variable, check if it's available
+                    // if the issue is about a variable, check if it's available
                     if (issue.get_variable_name().has_value()) {
                         std::string var_name = issue.get_variable_name().value();
                         if (combined_variables.find(var_name) == combined_variables.end() && 
@@ -338,7 +338,7 @@ void run_cli() {
                     }
                 }
                 
-                // If there are missing variables, prompt the user to enter them
+                // if there are missing variables, prompt the user to enter them
                 if (!missing_vars.empty()) {
                     Logger::getInstance().log(LogLevel::INFO, "Template is missing values for these variables:");
                     
@@ -350,18 +350,18 @@ void run_cli() {
                     }
                 }
                 
-                // Instantiate the template with the variables
+                // instantiate the template with the variables
                 current_query = template_manager.instantiate_template(name, combined_variables);
                 Logger::getInstance().log(LogLevel::INFO, "Template instantiated: ", name);
             } catch (const std::exception& e) {
                 Logger::getInstance().log(LogLevel::ERROR, "Failed to use template: ", e.what());
             }
         } else if (line == "template dir") {
-            // Show the current templates directory
+            // show the current templates directory
             std::cout << "Templates directory: " 
                      << template_manager.get_templates_directory() << std::endl;
         } else if (line.substr(0, 13) == "template dir ") {
-            // Set the templates directory
+            // set the templates directory
             std::string dir = line.substr(13);
             try {
                 template_manager.set_templates_directory(dir);
@@ -370,7 +370,7 @@ void run_cli() {
                 Logger::getInstance().log(LogLevel::ERROR, "Failed to set templates directory: ", e.what());
             }
         } else if (line == "categories") {
-            // List categories
+            // list categories
             try {
                 auto categories = template_manager.list_categories();
                 if (categories.empty()) {
@@ -385,7 +385,7 @@ void run_cli() {
                 Logger::getInstance().log(LogLevel::ERROR, "Error listing categories: ", e.what());
             }
         } else if (line.substr(0, 16) == "category create ") {
-            // Create a new category
+            // create a new category
             std::string category = line.substr(16);
             try {
                 if (template_manager.create_category(category)) {
@@ -397,7 +397,7 @@ void run_cli() {
                 Logger::getInstance().log(LogLevel::ERROR, "Error creating category: ", e.what());
             }
         } else if (line == "template vars") {
-            // Show current variables in memory
+            // show current variables in memory
             if (current_variables.empty()) {
                 Logger::getInstance().log(LogLevel::INFO, "No variables currently defined");
             } else {
@@ -407,11 +407,11 @@ void run_cli() {
                 }
             }
         } else if (line == "template clearvars") {
-            // Clear all current variables
+            // clear all current variables
             current_variables.clear();
             Logger::getInstance().log(LogLevel::INFO, "All variables cleared");
         } else if (line.substr(0, 14) == "template vars ") {
-            // List variables in a specific template
+            // list variables in a specific template
             std::string template_name = line.substr(14);
             try {
                 auto metadata = template_manager.get_template_metadata(template_name);
@@ -421,7 +421,7 @@ void run_cli() {
                 } else {
                     Logger::getInstance().log(LogLevel::INFO, "Variables in template: ", template_name);
                     
-                    // Get template content to extract default values if available
+                    // get template content to extract default values if available
                     std::string content = template_manager.load_template(template_name);
                     auto variables_with_values = template_manager.collect_variables(content);
                     
@@ -435,7 +435,7 @@ void run_cli() {
                 Logger::getInstance().log(LogLevel::ERROR, "Error listing template variables: ", e.what());
             }
         } else if (line == "template setvars") {
-            // Interactive mode for setting multiple variables
+            // interactive mode for setting multiple variables
             Logger::getInstance().log(LogLevel::INFO, "Enter variables in NAME=VALUE format (empty line to finish):");
             
             while (true) {
@@ -456,14 +456,14 @@ void run_cli() {
                 std::string name = var_line.substr(0, equals_pos);
                 std::string value = var_line.substr(equals_pos + 1);
                 
-                // Add to current variables
+                // add to current variables
                 current_variables[name] = value;
                 Logger::getInstance().log(LogLevel::INFO, "Variable set: ", name, "=", value);
             }
             
             Logger::getInstance().log(LogLevel::INFO, "Finished setting variables");
         } else if (line.substr(0, 17) == "template inherit ") {
-            // Create a template that inherits from another template
+            // create a template that inherits from another template
             std::string params = line.substr(17);
             size_t space_pos = params.find(' ');
             if (space_pos == std::string::npos) {
@@ -481,17 +481,17 @@ void run_cli() {
                     continue;
                 }
                 
-                // Add inherit directive if not already present
+                // add inherit directive if not already present
                 std::regex inherit_regex("@inherit\\s+\"([^\"]*)\"");
                 if (!std::regex_search(current_query, inherit_regex)) {
-                    // Add @inherit directive at the beginning of the content
+                    // add @inherit directive at the beginning of the content
                     current_query = "@inherit \"" + parent_name + "\"\n" + current_query;
                 }
                 
-                // Validate the template before saving
+                // validate the template before saving
                 auto validation_result = template_validator.validate_content(current_query);
                 
-                // Check for inheritance errors
+                // check for inheritance errors
                 bool has_inheritance_error = false;
                 for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::ERROR)) {
                     if (issue.to_string().find("inherit") != std::string::npos || 
@@ -501,7 +501,7 @@ void run_cli() {
                     }
                 }
                 
-                // If there are inheritance errors, don't allow override
+                // if there are inheritance errors, don't allow override
                 if (has_inheritance_error) {
                     Logger::getInstance().log(LogLevel::ERROR, "Template inheritance validation failed:");
                     for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::ERROR)) {
@@ -513,7 +513,7 @@ void run_cli() {
                     continue;
                 }
                 
-                // For other validation errors, prompt for confirmation
+                // for other validation errors, prompt for confirmation
                 if (validation_result.has_issues(TemplateValidationLevel::ERROR)) {
                     Logger::getInstance().log(LogLevel::ERROR, "Template validation failed with errors:");
                     for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::ERROR)) {
@@ -542,7 +542,7 @@ void run_cli() {
                 Logger::getInstance().log(LogLevel::ERROR, "Failed to create inherited template: ", e.what());
             }
         } else if (line.substr(0, 17) == "template parents ") {
-            // Show inheritance chain for a template
+            // show inheritance chain for a template
             std::string template_name = line.substr(17);
             try {
                 auto chain = template_manager.get_inheritance_chain(template_name);
@@ -554,7 +554,7 @@ void run_cli() {
                     Logger::getInstance().log(LogLevel::INFO, "Inheritance chain for '", template_name, "':");
                     
                     for (size_t i = 0; i < chain.size(); ++i) {
-                        // First template is the base, last is the current template
+                        // first template is the base, last is the current template
                         if (i == 0) {
                             std::cout << "  Base: " << chain[i] << std::endl;
                         } else if (i == chain.size() - 1) {
@@ -568,12 +568,12 @@ void run_cli() {
                 Logger::getInstance().log(LogLevel::ERROR, "Error getting inheritance chain: ", e.what());
             }
         } else if (line.substr(0, 18) == "template validate ") {
-            // Validate a specific template
+            // validate a specific template
             std::string template_name = line.substr(18);
             try {
                 auto result = template_validator.validate_template(template_name);
                 
-                // Output validation results
+                // output validation results
                 std::cout << "Validation results for template '" << template_name << "':" << std::endl;
                 std::cout << "------------------------------------------" << std::endl;
                 
@@ -582,7 +582,7 @@ void run_cli() {
                               << result.count_warnings() << " warnings, "
                               << result.count_infos() << " info messages." << std::endl;
                     
-                    // Print errors
+                    // print errors
                     if (result.count_errors() > 0) {
                         std::cout << "\nErrors:" << std::endl;
                         for (const auto& issue : result.get_issues(TemplateValidationLevel::ERROR)) {
@@ -590,7 +590,7 @@ void run_cli() {
                         }
                     }
                     
-                    // Print warnings
+                    // print warnings
                     if (result.count_warnings() > 0) {
                         std::cout << "\nWarnings:" << std::endl;
                         for (const auto& issue : result.get_issues(TemplateValidationLevel::WARNING)) {
@@ -598,7 +598,7 @@ void run_cli() {
                         }
                     }
                     
-                    // Print info messages
+                    // print info messages
                     if (result.count_infos() > 0) {
                         std::cout << "\nInfo:" << std::endl;
                         for (const auto& issue : result.get_issues(TemplateValidationLevel::INFO)) {
@@ -612,7 +612,7 @@ void run_cli() {
                 Logger::getInstance().log(LogLevel::ERROR, "Error validating template: ", e.what());
             }
         } else if (line == "template validateall") {
-            // Validate all templates
+            // validate all templates
             try {
                 auto templates = template_manager.list_templates();
                 
@@ -626,19 +626,19 @@ void run_cli() {
                     int warning_count = 0;
                     int info_count = 0;
                     
-                    // Keep track of templates with issues
+                    // keep track of templates with issues
                     std::vector<std::string> templates_with_errors;
                     std::vector<std::string> templates_with_warnings;
                     
                     for (const auto& tmpl : templates) {
                         auto result = template_validator.validate_template(tmpl);
                         
-                        // Count issues
+                        // count issues
                         error_count += result.count_errors();
                         warning_count += result.count_warnings();
                         info_count += result.count_infos();
                         
-                        // Print progress
+                        // print progress
                         if (result.has_issues(TemplateValidationLevel::ERROR)) {
                             templates_with_errors.push_back(tmpl);
                             std::cout << "❌ " << tmpl << ": " << result.count_errors() << " errors, "
@@ -651,7 +651,7 @@ void run_cli() {
                         }
                     }
                     
-                    // Print summary
+                    // print summary
                     std::cout << "\nValidation Summary:" << std::endl;
                     std::cout << "----------------------------" << std::endl;
                     std::cout << "Templates validated: " << templates.size() << std::endl;
@@ -660,7 +660,7 @@ void run_cli() {
                               << warning_count << " warnings, " 
                               << info_count << " info messages)" << std::endl;
                     
-                    // List templates with errors
+                    // list templates with errors
                     if (!templates_with_errors.empty()) {
                         std::cout << "\nTemplates with errors:" << std::endl;
                         for (const auto& tmpl : templates_with_errors) {
@@ -744,7 +744,7 @@ void run_cli() {
                 Logger::getInstance().log(LogLevel::ERROR, "error exporting template documentation: ", e.what());
             }
         } else {
-            // Add line to the current query
+            // add line to the current query
             if (!current_query.empty()) {
                 current_query += "\n";
             }
@@ -753,7 +753,7 @@ void run_cli() {
     }
 }
 
-// Process a query file
+// process a query file
 bool process_file(const std::string& input_file, const std::string& output_file) {
     try {
         Logger::getInstance().log(LogLevel::INFO, "Processing file: ", input_file);
