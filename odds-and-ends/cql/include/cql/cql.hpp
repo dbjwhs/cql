@@ -222,6 +222,12 @@ namespace test {
      * @return testresult indicating pass/fail with error details
      */
     TestResult query_examples();
+    
+    /**
+     * test the phase 2 comprehensive example compilation
+     * @return testresult indicating pass/fail with error details
+     */
+    TestResult test_phase2_example_compilation();
 }
 
 /**

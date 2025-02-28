@@ -441,53 +441,13 @@ int main(int argc, char* argv[]) {
                 }
             }
         } else {
-            // no arguments, run comprehensive tests and examples
-            std::cout << "Running in default mode - tests and examples" << std::endl;
-            logger.log(LogLevel::INFO, "Running in default mode - tests and examples");
+            // Print help message when no arguments are provided
+            std::cout << "No arguments provided. Please use --help to see available options." << std::endl;
+            print_help();
             
-            // run tests with fail-fast enabled
-            std::cout << "Running tests..." << std::endl;
-            if (!cql::test::run_tests(true)) {
-                return 1;
-            }
-            
-            // run examples
-            std::cout << "Running query examples..." << std::endl;
-            auto example_result = cql::test::query_examples();
-            if (!example_result.passed()) {
-                std::cerr << "\nError running examples: " << example_result.get_error_message() << std::endl;
-                return 1;
-            }
-
-            // example query with phase 2 features
-            std::string query =
-                "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
-                "@language \"C++\"\n"
-                "@description \"implement a thread-safe queue with a maximum size\"\n"
-                "@context \"Using C++20 features and RAII principles\"\n"
-                "@architecture \"Producer-consumer pattern with monitoring\"\n"
-                "@constraint \"Thread-safe for concurrent access\"\n"
-                "@security \"Prevent data races and deadlocks\"\n"
-                "@complexity \"O(1) for push and pop operations\"\n"
-                "@variable \"max_size\" \"1000\"\n"
-                "@example \"Basic Usage\" \"\n"
-                "ThreadSafeQueue<int> queue(${max_size});\n"
-                "queue.push(42);\n"
-                "auto value = queue.pop();\n"
-                "\"\n"
-                "@test \"Test concurrent push operations\"\n"
-                "@test \"Test concurrent pop operations\"\n"
-                "@test \"Test boundary conditions\"\n";
-
-            std::cout << "\nDefault example:" << std::endl;
-            std::cout << "Input query:\n" << query << std::endl;
-            logger.log(LogLevel::INFO, "\nDefault example:");
-            logger.log(LogLevel::INFO, "Input query:\n", query);
-
-            std::cout << "Compiling default example..." << std::endl;
-            std::string result = cql::QueryProcessor::compile(query);
-            std::cout << "\n=== Compiled Query ===\n\n" << result << "\n===================" << std::endl;
-            logger.log(LogLevel::INFO, "\n=== Compiled Query ===\n\n", result, "\n===================");
+            // Suggest test command
+            std::cout << "\nTo run tests, use: cql --test" << std::endl;
+            return 0;
         }
     } catch (const std::exception& e) {
         logger.log(LogLevel::ERROR, "Fatal error: ", e.what());

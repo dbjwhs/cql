@@ -105,7 +105,9 @@ bool run_tests(bool fail_fast) {
         {"Phase 2 Features", test_phase2_features},
         {"Template Management", test_template_management},
         {"Template Inheritance", test_template_inheritance},
-        {"Template Validator", test_template_validator}
+        {"Template Validator", test_template_validator},
+        {"Query Examples", query_examples},
+        {"Phase 2 Example Compilation", test_phase2_example_compilation}
     };
     
     // run each test
@@ -641,6 +643,61 @@ TestResult query_examples() {
     }
     
     return TestResult::pass();
+}
+
+// Test the phase 2 example that was previously in main.cpp
+TestResult test_phase2_example_compilation() {
+    std::cout << "Testing Phase 2 comprehensive example compilation..." << std::endl;
+    
+    try {
+        // Example query with phase 2 features that was previously in main.cpp
+        std::string query =
+            "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+            "@language \"C++\"\n"
+            "@description \"implement a thread-safe queue with a maximum size\"\n"
+            "@context \"Using C++20 features and RAII principles\"\n"
+            "@architecture \"Producer-consumer pattern with monitoring\"\n"
+            "@constraint \"Thread-safe for concurrent access\"\n"
+            "@security \"Prevent data races and deadlocks\"\n"
+            "@complexity \"O(1) for push and pop operations\"\n"
+            "@variable \"max_size\" \"1000\"\n"
+            "@example \"Basic Usage\" \"\n"
+            "ThreadSafeQueue<int> queue(${max_size});\n"
+            "queue.push(42);\n"
+            "auto value = queue.pop();\n"
+            "\"\n"
+            "@test \"Test concurrent push operations\"\n"
+            "@test \"Test concurrent pop operations\"\n"
+            "@test \"Test boundary conditions\"\n";
+
+        std::cout << "\nDefault example:" << std::endl;
+        std::cout << "Input query:\n" << query << std::endl;
+        auto& logger = Logger::getInstance();
+        logger.log(LogLevel::INFO, "\nDefault example:");
+        logger.log(LogLevel::INFO, "Input query:\n", query);
+
+        std::cout << "Compiling default example..." << std::endl;
+        std::string result = QueryProcessor::compile(query);
+        std::cout << "\n=== Compiled Query ===\n\n" << result << "\n===================" << std::endl;
+        logger.log(LogLevel::INFO, "\n=== Compiled Query ===\n\n", result, "\n===================");
+        
+        TEST_ASSERT(!result.empty(), "Compilation result should not be empty");
+        TEST_ASSERT(result.find("thread-safe queue with a maximum size") != std::string::npos,
+                  "Result should contain the description");
+        TEST_ASSERT(result.find("C++20 features and RAII principles") != std::string::npos,
+                  "Result should contain context information");
+        TEST_ASSERT(result.find("Producer-consumer pattern") != std::string::npos,
+                  "Result should contain architecture information");
+        TEST_ASSERT(result.find("O(1) for push and pop operations") != std::string::npos,
+                  "Result should contain complexity requirements");
+        TEST_ASSERT(result.find("ThreadSafeQueue<int> queue(1000)") != std::string::npos,
+                  "Result should contain variable substitution");
+        
+        return TestResult::pass();
+    } catch (const std::exception& e) {
+        return TestResult::fail("Exception in test_phase2_example_compilation: " + std::string(e.what()),
+                              __FILE__, __LINE__);
+    }
 }
 
 // test template validator
