@@ -7,6 +7,29 @@
 #include "../../include/cql/template_validator_schema.hpp"
 #include "../../../headers/project_utils.hpp"
 
+// Print the help message with usage information
+void print_help() {
+    std::cout << "Claude Query Language (CQL) Compiler v1.0\n"
+              << "Usage: cql [OPTIONS] [INPUT_FILE] [OUTPUT_FILE]\n\n"
+              << "Options:\n"
+              << "  --help, -h              Show this help information\n"
+              << "  --test, -t              Run the test suite\n"
+              << "  --examples, -e          Show example queries\n"
+              << "  --interactive, -i       Run in interactive mode\n"
+              << "  --copyright             Show copyright example\n"
+              << "  --templates, -l         List all available templates\n"
+              << "  --template NAME, -T     Use a specific template\n"
+              << "  --template NAME --force Use template even with validation errors\n"
+              << "  --validate NAME         Validate a specific template\n"
+              << "  --validate-all          Validate all templates\n"
+              << "  --docs NAME             Generate documentation for a template\n"
+              << "  --docs-all              Generate documentation for all templates\n"
+              << "  --export PATH [format]  Export template documentation to a file\n"
+              << "                          (formats: md, html, txt; default: md)\n\n"
+              << "If INPUT_FILE is provided, it will be processed as a CQL query.\n"
+              << "If OUTPUT_FILE is also provided, the compiled query will be written to it.\n";
+}
+
 int main(int argc, char* argv[]) {
     // initialize logger
     auto& logger = Logger::getInstance();
@@ -22,25 +45,7 @@ int main(int argc, char* argv[]) {
 
             if (arg1 == "--help" || arg1 == "-h") {
                 // show help information
-                std::cout << "Claude Query Language (CQL) Compiler v1.0\n"
-                          << "Usage: cql [OPTIONS] [INPUT_FILE] [OUTPUT_FILE]\n\n"
-                          << "Options:\n"
-                          << "  --help, -h              Show this help information\n"
-                          << "  --test, -t              Run the test suite\n"
-                          << "  --examples, -e          Show example queries\n"
-                          << "  --interactive, -i       Run in interactive mode\n"
-                          << "  --copyright             Show copyright example\n"
-                          << "  --templates, -l         List all available templates\n"
-                          << "  --template NAME, -T     Use a specific template\n"
-                          << "  --template NAME --force Use template even with validation errors\n"
-                          << "  --validate NAME         Validate a specific template\n"
-                          << "  --validate-all          Validate all templates\n"
-                          << "  --docs NAME             Generate documentation for a template\n"
-                          << "  --docs-all              Generate documentation for all templates\n"
-                          << "  --export PATH [format]  Export template documentation to a file\n"
-                          << "                          (formats: md, html, txt; default: md)\n\n"
-                          << "If INPUT_FILE is provided, it will be processed as a CQL query.\n"
-                          << "If OUTPUT_FILE is also provided, the compiled query will be written to it.\n";
+                print_help();
             } else if (arg1 == "--test" || arg1 == "-t") {
                 // run the test suite
                 bool fail_fast = true;
@@ -418,6 +423,12 @@ int main(int argc, char* argv[]) {
                     std::cerr << "error exporting template documentation: " << e.what() << std::endl;
                     return 1;
                 }
+            } else if (arg1.substr(0, 2) == "--") {
+                // unknown option starting with "--"
+                std::cerr << "Error: Unknown option: " << arg1 << std::endl;
+                std::cerr << "Available options:" << std::endl;
+                print_help();
+                return 1;
             } else {
                 // assume it's an input file
                 std::string output_file;
