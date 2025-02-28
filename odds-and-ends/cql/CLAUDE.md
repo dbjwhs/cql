@@ -19,3 +19,16 @@
 - Document all classes and methods with Doxygen-style comments
 - Use `const` for methods/parameters that don't modify state
 - Implement thorough unit tests for new features
+
+## TODO Items
+1. **Validation System Improvements**:
+   - Fix the language directive validation test in `test_validation_requirements()`
+   - The parser currently raises syntax errors before validation can run
+   - Finalize changes to `include/cql/compiler.hpp`, `include/cql/cql.hpp`, and `src/cql/validator.cpp`
+   - Consider separating parsing errors from validation errors more cleanly
+
+2. **Future Enhancements**:
+   - Improve error reporting with line/column information
+   - Consider adding a `strict` mode to catch more issues
+   - Add more comprehensive validation test cases
+   - Explore adding a linting capability to suggest improvements
