@@ -124,6 +124,35 @@ TestResult test_architecture_patterns() {
         TEST_ASSERT(ui_issues.empty(),
                    "Factory + Composite + Decorator should be compatible");
         
+        // Test behavioral patterns
+        ArchitectureNode observer_node(PatternLayer::INTERACTION, "observer", 
+                                    "events: [\"valueChanged\", \"objectCreated\"]");
+        ArchitectureNode command_node(PatternLayer::INTERACTION, "command", 
+                                    "commands: [\"SaveCommand\", \"DeleteCommand\"]");
+        ArchitectureNode strategy_node(PatternLayer::INTERACTION, "strategy", 
+                                     "strategies: [\"FastStrategy\", \"AccurateStrategy\"]");
+        
+        Pattern observer_pattern(observer_node);
+        Pattern command_pattern(command_node);
+        Pattern strategy_pattern(strategy_node);
+        
+        // Test behavioral patterns compatibility
+        TEST_ASSERT(manager.are_patterns_compatible(command_pattern, observer_pattern) == true,
+                   "Command and Observer should be compatible");
+        TEST_ASSERT(manager.are_patterns_compatible(command_pattern, strategy_pattern) == true,
+                   "Command and Strategy should be compatible");
+        
+        // Test combined creational, structural, and behavioral patterns
+        std::vector<Pattern> complex_patterns = {
+            component_pattern1,  // factory_method - creational
+            decorator_pattern,   // decorator - structural
+            observer_pattern     // observer - behavioral
+        };
+        
+        auto complex_issues = manager.check_compatibility(complex_patterns);
+        TEST_ASSERT(complex_issues.empty(),
+                   "Factory + Decorator + Observer should be compatible");
+        
         // Test legacy pattern format
         ArchitectureNode legacy_node("Singleton pattern with thread safety");
         Pattern legacy_pattern(legacy_node);

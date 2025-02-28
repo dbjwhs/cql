@@ -123,8 +123,14 @@ private:
     // Maps pattern names to their compatibility rules
     std::map<std::string, CompatibilityRule> m_compatibility_rules;
     
-    // Initialize the compatibility rules for creational patterns (Phase 1)
+    // Initialize the compatibility rules for creational patterns
     void initialize_creational_patterns();
+    
+    // Initialize the compatibility rules for structural patterns
+    void initialize_structural_patterns();
+    
+    // Initialize the compatibility rules for behavioral patterns
+    void initialize_behavioral_patterns();
 };
 
 } // namespace cql

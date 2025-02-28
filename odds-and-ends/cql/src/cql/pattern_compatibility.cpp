@@ -66,8 +66,10 @@ std::string CompatibilityIssue::to_string() const {
 
 // PatternCompatibilityManager implementation
 PatternCompatibilityManager::PatternCompatibilityManager() {
-    // Initialize the compatibility rules
+    // Initialize the compatibility rules for all pattern categories
     initialize_creational_patterns();
+    initialize_structural_patterns();
+    initialize_behavioral_patterns();
 }
 
 void PatternCompatibilityManager::initialize_creational_patterns() {
@@ -129,12 +131,13 @@ void PatternCompatibilityManager::initialize_creational_patterns() {
         "observer", "decorator", "strategy"
     };
     prototype.incompatible_patterns = {
-        "singleton" // Singleton conflicts with prototype's cloning behavior
+        "singleton", // Singleton conflicts with prototype's cloning behavior
+        "flyweight"  // Flyweight shares instances, prototype copies them
     };
     m_compatibility_rules["prototype"] = prototype;
-    
-    // Structural patterns - Phase 2
-    
+}
+
+void PatternCompatibilityManager::initialize_structural_patterns() {
     // Adapter pattern
     CompatibilityRule adapter;
     adapter.pattern_name = "adapter";
@@ -225,6 +228,148 @@ void PatternCompatibilityManager::initialize_creational_patterns() {
         // Generally compatible with most patterns
     };
     m_compatibility_rules["proxy"] = proxy;
+}
+
+void PatternCompatibilityManager::initialize_behavioral_patterns() {
+    // Chain of Responsibility pattern
+    CompatibilityRule chain;
+    chain.pattern_name = "chain";
+    chain.compatible_patterns = {
+        "factory_method", "abstract_factory", "builder",
+        "proxy", "decorator", "composite",
+        "observer", "mediator", "command"
+    };
+    chain.incompatible_patterns = {
+        // Generally compatible with most patterns
+    };
+    m_compatibility_rules["chain"] = chain;
+    
+    // Command pattern
+    CompatibilityRule command;
+    command.pattern_name = "command";
+    command.compatible_patterns = {
+        "factory_method", "prototype", "singleton",
+        "composite", "proxy", "memento",
+        "chain", "observer", "strategy", "state"
+    };
+    command.incompatible_patterns = {
+        // Generally compatible with most patterns
+    };
+    m_compatibility_rules["command"] = command;
+    
+    // Interpreter pattern
+    CompatibilityRule interpreter;
+    interpreter.pattern_name = "interpreter";
+    interpreter.compatible_patterns = {
+        "factory_method", "composite", "visitor",
+        "flyweight", "iterator"
+    };
+    interpreter.incompatible_patterns = {
+        // Specific implementation concerns
+    };
+    m_compatibility_rules["interpreter"] = interpreter;
+    
+    // Iterator pattern
+    CompatibilityRule iterator;
+    iterator.pattern_name = "iterator";
+    iterator.compatible_patterns = {
+        "factory_method", "composite", "interpreter",
+        "visitor", "template_method"
+    };
+    iterator.incompatible_patterns = {
+        // Specific implementation concerns
+    };
+    m_compatibility_rules["iterator"] = iterator;
+    
+    // Mediator pattern
+    CompatibilityRule mediator;
+    mediator.pattern_name = "mediator";
+    mediator.compatible_patterns = {
+        "factory_method", "singleton", 
+        "facade", "proxy",
+        "observer", "command", "state"
+    };
+    mediator.incompatible_patterns = {
+        // Can conflict with observer in some implementations
+    };
+    m_compatibility_rules["mediator"] = mediator;
+    
+    // Memento pattern
+    CompatibilityRule memento;
+    memento.pattern_name = "memento";
+    memento.compatible_patterns = {
+        "factory_method", "prototype",
+        "command", "state"
+    };
+    memento.incompatible_patterns = {
+        // Specific implementation concerns
+    };
+    m_compatibility_rules["memento"] = memento;
+    
+    // Observer pattern
+    CompatibilityRule observer;
+    observer.pattern_name = "observer";
+    observer.compatible_patterns = {
+        "factory_method", "abstract_factory", "singleton", "prototype",
+        "adapter", "bridge", "decorator", "flyweight", "proxy",
+        "chain", "command", "state", "strategy"
+    };
+    observer.incompatible_patterns = {
+        // Generally compatible with most patterns but can overlap with mediator
+    };
+    m_compatibility_rules["observer"] = observer;
+    
+    // State pattern
+    CompatibilityRule state;
+    state.pattern_name = "state";
+    state.compatible_patterns = {
+        "factory_method", "singleton",
+        "flyweight", "proxy",
+        "command", "memento", "observer", "strategy"
+    };
+    state.incompatible_patterns = {
+        // Can conflict with strategy if not properly separated
+    };
+    m_compatibility_rules["state"] = state;
+    
+    // Strategy pattern
+    CompatibilityRule strategy;
+    strategy.pattern_name = "strategy";
+    strategy.compatible_patterns = {
+        "factory_method", "abstract_factory", "singleton", "prototype",
+        "adapter", "bridge", "decorator", "proxy",
+        "command", "observer", "template_method"
+    };
+    strategy.incompatible_patterns = {
+        // Can conflict with state if not properly separated
+    };
+    m_compatibility_rules["strategy"] = strategy;
+    
+    // Template Method pattern
+    CompatibilityRule template_method;
+    template_method.pattern_name = "template_method";
+    template_method.compatible_patterns = {
+        "factory_method", "singleton",
+        "decorator", "adapter",
+        "strategy", "iterator"
+    };
+    template_method.incompatible_patterns = {
+        // Strategy can sometimes overlap with template method
+    };
+    m_compatibility_rules["template_method"] = template_method;
+    
+    // Visitor pattern
+    CompatibilityRule visitor;
+    visitor.pattern_name = "visitor";
+    visitor.compatible_patterns = {
+        "factory_method", "abstract_factory",
+        "composite", "adapter", "proxy",
+        "iterator", "interpreter"
+    };
+    visitor.incompatible_patterns = {
+        // Can be complex to implement with some patterns
+    };
+    m_compatibility_rules["visitor"] = visitor;
 }
 
 std::vector<CompatibilityIssue> PatternCompatibilityManager::check_compatibility(

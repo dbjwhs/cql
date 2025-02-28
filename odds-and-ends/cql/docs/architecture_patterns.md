@@ -58,6 +58,22 @@ Examples:
 | Flyweight | `@architecture component "flyweight"` | Shares common state between multiple objects | `shared_state: string[], unique_state: string[]` |
 | Proxy | `@architecture component "proxy"` | Provides surrogate for another object | `proxy_type: string` |
 
+### Behavioral Patterns
+
+| Pattern | Directive | Description | Parameters |
+|---------|-----------|-------------|------------|
+| Chain of Responsibility | `@architecture interaction "chain"` | Passes requests along a chain | `handlers: string[]` |
+| Command | `@architecture interaction "command"` | Encapsulates a request as an object | `commands: string[]` |
+| Interpreter | `@architecture interaction "interpreter"` | Defines grammar for instructions | `grammar_rules: string[]` |
+| Iterator | `@architecture interaction "iterator"` | Accesses elements sequentially | `collection_type: string` |
+| Mediator | `@architecture interaction "mediator"` | Defines how objects interact | `colleagues: string[]` |
+| Memento | `@architecture interaction "memento"` | Captures and restores object state | `state_attributes: string[]` |
+| Observer | `@architecture interaction "observer"` | Notifies dependents of changes | `events: string[]` |
+| State | `@architecture interaction "state"` | Alters object behavior when state changes | `states: string[]` |
+| Strategy | `@architecture interaction "strategy"` | Encapsulates interchangeable algorithms | `strategies: string[]` |
+| Template Method | `@architecture interaction "template_method"` | Defines skeleton of an algorithm | `steps: string[]` |
+| Visitor | `@architecture interaction "visitor"` | Separates algorithm from object structure | `visitable_elements: string[]` |
+
 ### Compatibility Rules
 
 The pattern compatibility system ensures that patterns work well together:
@@ -77,6 +93,14 @@ The pattern compatibility system ensures that patterns work well together:
    - Flyweight conflicts with Prototype (sharing vs. copying)
    - Adapter, Decorator, and Proxy are compatible with most patterns
    - Facade works well with complex subsystems using other patterns
+   
+   #### Behavioral Pattern Rules
+   - Command works well with Memento for undo/redo operations
+   - Observer and Mediator can overlap in communication responsibilities
+   - State and Strategy should be carefully separated to avoid confusion
+   - Visitor works well with Composite for complex tree traversals
+   - Chain of Responsibility pairs well with Command and Composite
+   - Template Method may overlap with Strategy's responsibilities
 
 ## Examples
 
@@ -137,6 +161,41 @@ The pattern compatibility system ensures that patterns work well together:
 @test "Composite allows building complex UI hierarchies"
 @test "Decorator dynamically adds visual effects to components"
 @test "Flyweight reduces memory usage for repeated UI elements"
+```
+
+### Behavioral Patterns Example
+
+```
+@copyright "MIT License" "2025 dbjwhs"
+@language "C++"
+@description "Implement a workflow management system"
+@context "Modern C++20 implementation with event-driven design"
+
+# Foundation layer pattern
+@architecture foundation "event_driven"
+"Components communicate via events and callbacks"
+
+# Interaction layer patterns - Behavioral patterns
+@architecture interaction "observer"
+"events: [\"workflowCreated\", \"taskAssigned\", \"taskCompleted\"]"
+
+@architecture interaction "command"
+"commands: [\"CreateWorkflow\", \"AssignTask\", \"CompleteTask\"]"
+
+@architecture interaction "state"
+"states: [\"Draft\", \"InProgress\", \"UnderReview\", \"Completed\"]"
+
+@architecture interaction "chain"
+"handlers: [\"ValidationHandler\", \"SecurityHandler\", \"ProcessingHandler\"]"
+
+# Component layer patterns for implementation
+@architecture component "factory_method"
+"products: [\"Workflow\", \"Task\", \"Notification\"]"
+
+@test "Observer pattern notifies relevant components of workflow changes"
+@test "Command pattern encapsulates workflow operations"
+@test "State pattern manages workflow lifecycle properly"
+@test "Chain of responsibility validates and processes workflow requests"
 ```
 
 ## Legacy Format Support
