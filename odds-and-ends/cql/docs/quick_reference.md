@@ -62,6 +62,50 @@ create category_name                  # Create a category
 instantiate template_name var=value   # Instantiate with variables
 ```
 
+## Template Instantiation
+
+When you need to generate code from a template with specific variable values, use the `instantiate` command:
+
+### Command Line
+
+```bash
+# Using a template directly from command line with variables
+./cql --template template_name var1=value1 var2=value2 --output output_file.cpp
+
+# Or process a file containing instantiate command
+./cql instantiate_file.cql output_file.cpp
+```
+
+### Instantiate File Format
+
+Create a file containing just the instantiation command:
+
+```
+instantiate template_name var1=value1 var2=value2 var3=value3
+```
+
+### Interactive Mode
+
+```bash
+./cql --interactive
+> instantiate template_name var1=value1 var2=value2
+> save output_file.cpp
+> exit
+```
+
+### Example
+
+To generate a REST API handler for products:
+
+```bash
+# Command line with template
+./cql --template rest_api resource=products namespace=shop auth_required=true --output products_api.cpp
+
+# Or using an instantiation file (instantiate.cql):
+# instantiate rest_api resource=products namespace=shop auth_required=true
+./cql instantiate.cql products_api.cpp
+```
+
 ## Common Patterns
 
 ### Basic Template
