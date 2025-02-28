@@ -3,7 +3,7 @@
 
 #include "../../include/cql/template_manager.hpp"
 #include "../../include/cql/cql.hpp"
-#include "../../../headers/project_utils.hpp"
+#include "../../include/cql/project_utils.hpp"
 
 #include <fstream>
 #include <regex>

@@ -7,7 +7,7 @@
 #include <set>
 #include <optional>
 #include "../../include/cql/cql.hpp"
-#include "../../../headers/project_utils.hpp"
+#include "../../include/cql/project_utils.hpp"
 
 namespace cql::util {
 

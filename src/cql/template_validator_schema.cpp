@@ -2,7 +2,10 @@
 // Copyright (c) 2025 dbjwhs
 
 #include "../../include/cql/template_validator_schema.hpp"
-#include "../../../headers/project_utils.hpp"
+
+// note file exists in the cpp-snippets repo, you will need to check this out and have it and cql share the
+// same root directory
+#include "../../cpp-snippets/headers/project_utils.hpp"
 
 namespace cql {
 
