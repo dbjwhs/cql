@@ -6,6 +6,7 @@
 #include "../../include/cql/pattern_compatibility.hpp"
 #include "../../include/cql/nodes.hpp"
 #include "../../include/cql/cql.hpp"
+#include "../../include/cql/test_utils.hpp"
 
 namespace cql::test {
 
@@ -94,6 +95,34 @@ TestResult test_architecture_patterns() {
         
         TEST_ASSERT(manager.are_patterns_compatible(component_pattern2, prototype_pattern) == false,
                    "Singleton and prototype should be incompatible");
+        
+        // Test structural patterns
+        ArchitectureNode bridge_node(PatternLayer::COMPONENT, "bridge", 
+                                     "implementors: [\"WindowsRenderer\", \"MacOSRenderer\"]");
+        ArchitectureNode composite_node(PatternLayer::COMPONENT, "composite", 
+                                       "component_type: \"UIComponent\"");
+        ArchitectureNode decorator_node(PatternLayer::COMPONENT, "decorator", 
+                                       "decorations: [\"Border\", \"Shadow\"]");
+        
+        Pattern bridge_pattern(bridge_node);
+        Pattern composite_pattern(composite_node);
+        Pattern decorator_pattern(decorator_node);
+        
+        // Test bridge and composite incompatibility
+        TEST_ASSERT(manager.are_patterns_compatible(bridge_pattern, composite_pattern) == false,
+                   "Bridge and composite should be incompatible");
+        
+        // Test decorator compatibility
+        TEST_ASSERT(manager.are_patterns_compatible(decorator_pattern, composite_pattern) == true,
+                   "Decorator and composite should be compatible");
+        
+        // Test multiple patterns compatibility
+        std::vector<Pattern> ui_patterns = {
+            composite_pattern, decorator_pattern, component_pattern1 // factory + composite + decorator
+        };
+        auto ui_issues = manager.check_compatibility(ui_patterns);
+        TEST_ASSERT(ui_issues.empty(),
+                   "Factory + Composite + Decorator should be compatible");
         
         // Test legacy pattern format
         ArchitectureNode legacy_node("Singleton pattern with thread safety");

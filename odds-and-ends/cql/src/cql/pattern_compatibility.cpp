@@ -132,6 +132,99 @@ void PatternCompatibilityManager::initialize_creational_patterns() {
         "singleton" // Singleton conflicts with prototype's cloning behavior
     };
     m_compatibility_rules["prototype"] = prototype;
+    
+    // Structural patterns - Phase 2
+    
+    // Adapter pattern
+    CompatibilityRule adapter;
+    adapter.pattern_name = "adapter";
+    adapter.compatible_patterns = {
+        "factory_method", "abstract_factory", "builder", "singleton",
+        "facade", "bridge", "decorator", "proxy",
+        "observer", "strategy", "visitor"
+    };
+    adapter.incompatible_patterns = {
+        // Generally compatible with most patterns
+    };
+    m_compatibility_rules["adapter"] = adapter;
+    
+    // Bridge pattern
+    CompatibilityRule bridge;
+    bridge.pattern_name = "bridge";
+    bridge.compatible_patterns = {
+        "factory_method", "abstract_factory", "singleton",
+        "adapter", "decorator", "proxy",
+        "observer", "strategy"
+    };
+    bridge.incompatible_patterns = {
+        // Bridge and composite can conflict in some implementations
+        "composite"
+    };
+    m_compatibility_rules["bridge"] = bridge;
+    
+    // Composite pattern
+    CompatibilityRule composite;
+    composite.pattern_name = "composite";
+    composite.compatible_patterns = {
+        "factory_method", "abstract_factory", "builder", 
+        "decorator", "flyweight", "iterator", "visitor"
+    };
+    composite.incompatible_patterns = {
+        "bridge" // Can conflict with bridge in some implementations
+    };
+    m_compatibility_rules["composite"] = composite;
+    
+    // Decorator pattern
+    CompatibilityRule decorator;
+    decorator.pattern_name = "decorator";
+    decorator.compatible_patterns = {
+        "factory_method", "abstract_factory", "builder", "prototype",
+        "adapter", "bridge", "composite", "proxy",
+        "observer", "strategy", "template_method"
+    };
+    decorator.incompatible_patterns = {
+        // Generally compatible with most patterns
+    };
+    m_compatibility_rules["decorator"] = decorator;
+    
+    // Facade pattern
+    CompatibilityRule facade;
+    facade.pattern_name = "facade";
+    facade.compatible_patterns = {
+        "factory_method", "abstract_factory", "singleton",
+        "adapter", "proxy", "mediator"
+    };
+    facade.incompatible_patterns = {
+        // Facade can conflict with decorator if overused
+        // But this is context-dependent
+    };
+    m_compatibility_rules["facade"] = facade;
+    
+    // Flyweight pattern
+    CompatibilityRule flyweight;
+    flyweight.pattern_name = "flyweight";
+    flyweight.compatible_patterns = {
+        "factory_method", "singleton",
+        "composite", "proxy",
+        "observer", "state"
+    };
+    flyweight.incompatible_patterns = {
+        "prototype" // Flyweight shares instances, prototype copies them
+    };
+    m_compatibility_rules["flyweight"] = flyweight;
+    
+    // Proxy pattern
+    CompatibilityRule proxy;
+    proxy.pattern_name = "proxy";
+    proxy.compatible_patterns = {
+        "factory_method", "abstract_factory", "singleton",
+        "adapter", "bridge", "decorator", "facade", "flyweight",
+        "observer", "strategy", "chain"
+    };
+    proxy.incompatible_patterns = {
+        // Generally compatible with most patterns
+    };
+    m_compatibility_rules["proxy"] = proxy;
 }
 
 std::vector<CompatibilityIssue> PatternCompatibilityManager::check_compatibility(

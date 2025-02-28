@@ -46,6 +46,18 @@ Examples:
 | Prototype | `@architecture component "prototype"` | Creates objects by cloning existing ones | `deep_copy: boolean` |
 | Singleton | `@architecture component "singleton"` | Ensures a class has only one instance | `thread_safe: boolean, name: string` |
 
+### Structural Patterns
+
+| Pattern | Directive | Description | Parameters |
+|---------|-----------|-------------|------------|
+| Adapter | `@architecture component "adapter"` | Makes incompatible interfaces compatible | `adaptee: string, interface: string` |
+| Bridge | `@architecture component "bridge"` | Separates abstraction from implementation | `implementors: string[]` |
+| Composite | `@architecture component "composite"` | Composes objects into tree structures | `component_type: string` |
+| Decorator | `@architecture component "decorator"` | Adds responsibilities to objects dynamically | `decorations: string[]` |
+| Facade | `@architecture component "facade"` | Provides unified interface to a set of interfaces | `subsystems: string[]` |
+| Flyweight | `@architecture component "flyweight"` | Shares common state between multiple objects | `shared_state: string[], unique_state: string[]` |
+| Proxy | `@architecture component "proxy"` | Provides surrogate for another object | `proxy_type: string` |
+
 ### Compatibility Rules
 
 The pattern compatibility system ensures that patterns work well together:
@@ -53,13 +65,22 @@ The pattern compatibility system ensures that patterns work well together:
 1. Only one foundation pattern allowed per query
 2. Patterns in different layers are always compatible
 3. Specific compatibility rules apply to patterns within the same layer:
+
+   #### Creational Pattern Rules
    - Singleton and Prototype are incompatible (conflicting object creation models)
    - Factory Method and Abstract Factory work well together
    - Builder works well with Factory patterns
+   
+   #### Structural Pattern Rules
+   - Bridge and Composite are incompatible in some implementations
+   - Decorator works well with Composite (tree structure decoration)
+   - Flyweight conflicts with Prototype (sharing vs. copying)
+   - Adapter, Decorator, and Proxy are compatible with most patterns
+   - Facade works well with complex subsystems using other patterns
 
-## Example
+## Examples
 
-Here's a complete example showing layered pattern usage:
+### Creational Patterns Example
 
 ```
 @copyright "MIT License" "2025 dbjwhs"
@@ -85,6 +106,37 @@ Here's a complete example showing layered pattern usage:
 @test "Factory method creates correct document types"
 @test "Singleton ensures only one DocumentManager exists"
 @test "Observer pattern properly notifies subscribers"
+```
+
+### Structural Patterns Example
+
+```
+@copyright "MIT License" "2025 dbjwhs"
+@language "C++"
+@description "Implement a flexible UI component system"
+@context "Modern C++20 implementation with component-based design"
+
+# Foundation layer pattern
+@architecture foundation "layered"
+"Separate UI components from business logic and data sources"
+
+# Component layer patterns - Structural patterns
+@architecture component "composite"
+"component_type: \"UIComponent\""
+
+@architecture component "decorator"
+"decorations: [\"Border\", \"Shadow\", \"ScrollBar\"]"
+
+@architecture component "flyweight"
+"shared_state: [\"Theme\", \"FontFamily\"], unique_state: [\"Text\", \"Position\"]"
+
+# Use a factory to create components
+@architecture component "factory_method"
+"products: [\"Button\", \"TextField\", \"Panel\"]"
+
+@test "Composite allows building complex UI hierarchies"
+@test "Decorator dynamically adds visual effects to components"
+@test "Flyweight reduces memory usage for repeated UI elements"
 ```
 
 ## Legacy Format Support
