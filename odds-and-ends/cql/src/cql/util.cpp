@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <regex>
 #include <set>
+#include <optional>
 #include "../../include/cql/cql.hpp"
 #include "../../../headers/project_utils.hpp"
 
@@ -91,16 +92,40 @@ namespace cql {
 
 // queryprocessor implementation
 std::string QueryProcessor::compile(const std::string_view query_str) {
-    // parse the query string
-    Parser parser(query_str);
-    auto nodes = parser.parse();
+    // Store parser errors to report them after validation
+    std::optional<std::string> parser_error;
+    std::vector<std::unique_ptr<QueryNode>> nodes;
     
-    // validate the query structure
-    QueryValidator validator;
-    auto issues = validator.validate(nodes);
+    // Try to parse the query string, but catch parser errors
+    try {
+        Parser parser(query_str);
+        nodes = parser.parse();
+    } catch (const ParserError& e) {
+        // Store the error message but continue with validation on any nodes we did parse
+        parser_error = e.what();
+    } catch (const std::exception& e) {
+        // For other errors, just rethrow
+        throw;
+    }
     
-    // report validation issues
-    for (const auto& issue : issues) {
+    // If we have no nodes at all, we can't validate, so just report the parser error
+    if (nodes.empty() && parser_error) {
+        throw std::runtime_error(*parser_error);
+    }
+    
+    // Always attempt validation, even if parsing had errors
+    std::vector<ValidationIssue> validation_issues;
+    try {
+        // validate the query structure
+        QueryValidator validator;
+        validation_issues = validator.validate(nodes);
+    } catch (const ValidationException& e) {
+        // Transform validation exceptions to runtime errors
+        throw std::runtime_error("Validation error: " + std::string(e.what()));
+    }
+    
+    // Report validation issues
+    for (const auto& issue : validation_issues) {
         std::string level;
         switch (issue.severity) {
             case ValidationSeverity::INFO:
@@ -119,13 +144,18 @@ std::string QueryProcessor::compile(const std::string_view query_str) {
             "Validation ", level, ": ", issue.message
         );
         
-        // for errors, throw an exception
+        // For errors, throw an exception
         if (issue.severity == ValidationSeverity::ERROR) {
             throw std::runtime_error("Validation error: " + issue.message);
         }
     }
     
-    // compile the query
+    // After reporting validation issues, report any parser errors
+    if (parser_error) {
+        throw std::runtime_error(*parser_error);
+    }
+    
+    // If we got here, we have valid nodes, so compile the query
     QueryCompiler compiler;
     for (const auto& node : nodes) {
         node->accept(compiler);

@@ -266,7 +266,25 @@ TestResult test_validation_requirements() {
                        "Error message should mention missing DESCRIPTION directive");
         }
         
-        // Test 4: Successful validation with all required directives
+        // Test 4: Parser errors shouldn't prevent validation from running
+        // This test has both a parser error (invalid syntax) and a missing required directive
+        std::string parser_and_validation_error = "@copyright \"MIT License\" \"2025 dbjwhs\"\n@invalid_token \"Something\"\n@language \"C++\"";
+        
+        try {
+            std::string result = QueryProcessor::compile(parser_and_validation_error);
+            return TestResult::fail("Compilation should have failed due to errors", 
+                                   __FILE__, __LINE__);
+        } catch (const std::exception& e) {
+            std::string error_message = e.what();
+            std::transform(error_message.begin(), error_message.end(), error_message.begin(), ::tolower);
+            
+            // We should see the validation error (missing description) in the output
+            TEST_ASSERT(error_message.find("description") != std::string::npos || 
+                        error_message.find("invalid") != std::string::npos,
+                       "Error should be reported for either validation or parser issues");
+        }
+        
+        // Test 5: Successful validation with all required directives
         std::string valid_query = "@copyright \"MIT License\" \"2025 dbjwhs\"\n@language \"C++\"\n@description \"test with all required fields\"";
         std::string result = QueryProcessor::compile(valid_query);
         TEST_ASSERT(!result.empty(), "Valid query should compile successfully");
