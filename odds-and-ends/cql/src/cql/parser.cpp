@@ -212,6 +212,9 @@ std::unique_ptr<QueryNode> Parser::parse_copyright() {
 std::unique_ptr<QueryNode> Parser::parse_architecture() {
     advance(); // skip @architecture
     
+    // Backup the current token to restore if needed
+    std::optional<Token> saved_token = m_current_token;
+    
     // Check for layered format - first token should be the layer type
     std::string first_token;
     if (m_current_token && m_current_token->m_type == TokenType::IDENTIFIER) {
@@ -240,24 +243,12 @@ std::unique_ptr<QueryNode> Parser::parse_architecture() {
             return std::make_unique<ArchitectureNode>(layer, pattern_name, parameters);
         }
         
-        // If we got here, it wasn't a valid layer, so go back and parse as regular string
-        // We need to rewind one token
-        // Since we don't have a real "unget" in the lexer, we'll re-parse the entire query
-        // This is inefficient but simpler than adding unget support
-        size_t current_pos = m_current - first_token.length();
-        if (current_pos > 0) current_pos--;  // Account for any whitespace
-        m_current = current_pos;
-        m_lexer = Lexer(m_input);
-        advance();
+        // If we got here, it wasn't a valid layer
+        // Restore token and continue with the standard format
+        m_current_token = saved_token;
         
-        // Skip to just after @architecture
-        while (m_current_token && 
-               (m_current_token->m_type != TokenType::ARCHITECTURE || m_current_token->m_line != m_line)) {
-            advance();
-        }
-        if (m_current_token && m_current_token->m_type == TokenType::ARCHITECTURE) {
-            advance(); // Skip @architecture
-        }
+        // We'll just reparse the string as the regular format
+        // The token position is already saved and restored above
     }
     
     // Old format - just a single string

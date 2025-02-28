@@ -52,22 +52,8 @@ int TestResult::get_line_number() const {
     return m_line_number;
 }
 
-// define helper macros for tests
-#define TEST_ASSERT(condition, message) \
-    do { \
-        if (!(condition)) { \
-            return TestResult::fail(message, __FILE__, __LINE__); \
-        } \
-    } while (false)
-
-#define TEST_ASSERT_MESSAGE(condition, message) \
-    do { \
-        if (!(condition)) { \
-            std::stringstream ss; \
-            ss << message; \
-            return TestResult::fail(ss.str(), __FILE__, __LINE__); \
-        } \
-    } while (false)
+// Use test macros from test_utils.hpp
+#include "../../include/cql/test_utils.hpp"
 
 // function to print a properly formatted test result
 void print_test_result(const std::string& test_name, const TestResult& result) {
