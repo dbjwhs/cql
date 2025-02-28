@@ -14,7 +14,7 @@ namespace cql {
 
 /**
  * compiler class that transforms ast nodes into formatted query text
- * implements the queryvisitor interface to traverse the ast
+ * implements the query visitor interface to traverse the ast
  */
 class QueryCompiler final : public QueryVisitor {
 public:
@@ -25,8 +25,6 @@ public:
     void visit(const DependencyNode& node) override;
     void visit(const PerformanceNode& node) override;
     void visit(const CopyrightNode& node) override;
-    
-    // phase 2 directive support
     void visit(const ArchitectureNode& node) override;
     void visit(const ConstraintNode& node) override;
     void visit(const ExampleNode& node) override;
@@ -56,7 +54,7 @@ private:
     std::map<std::string, std::string> m_variables;
     
     // process string with variable interpolation
-    std::string interpolate_variables(const std::string& input) const;
+    [[nodiscard]] std::string interpolate_variables(const std::string& input) const;
 };
 
 } // namespace cql

@@ -182,6 +182,12 @@ namespace test {
     TestResult test_complex_compilation();
     
     /**
+     * test validation requirements
+     * @return testresult indicating pass/fail with error details
+     */
+    TestResult test_validation_requirements();
+    
+    /**
      * test phase 2 features
      * @return testresult indicating pass/fail with error details
      */

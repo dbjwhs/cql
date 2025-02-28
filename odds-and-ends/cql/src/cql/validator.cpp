@@ -193,6 +193,13 @@ std::vector<ValidationIssue> QueryValidator::validate(const std::vector<std::uni
     issues.insert(issues.end(), incompatibility_issues.begin(), incompatibility_issues.end());
     issues.insert(issues.end(), custom_issues.begin(), custom_issues.end());
     
+    // throw ValidationException if there are any ERROR issues
+    for (const auto& issue : issues) {
+        if (issue.severity == ValidationSeverity::ERROR) {
+            throw ValidationException(issue.message);
+        }
+    }
+    
     return issues;
 }
 
