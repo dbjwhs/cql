@@ -1,0 +1,37 @@
+# OSX
+.DS_Store
+
+# Build directories
+**/build/
+**/out/
+**/cmake-build-*/
+
+# CMake generated files
+**/CMakeCache.txt
+**/CMakeFiles/
+**/cmake_install.cmake
+**/Makefile
+
+# Compiled files
+**/*.o
+**/*.obj
+**/*.exe
+**/*.dll
+**/*.so
+**/*.dylib
+
+# IDE specific files
+**/.vscode/
+**/.idea/
+**/*.swp
+**/.DS_Store
+
+# Binary outputs (assuming each project might have different names)
+**/bin/
+**/lib/
+
+# Generated files
+**/*.generated.*
+**/compile_commands.json
+**/custom.log
+
