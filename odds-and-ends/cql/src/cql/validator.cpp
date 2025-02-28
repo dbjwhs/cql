@@ -36,10 +36,11 @@ TokenType get_node_type(const QueryNode* node) {
 QueryValidator::QueryValidator() {
     // set up default rules
     
-    // language and description are always required
+    // language, description, and copyright are always required
     m_required_directives = {
         TokenType::LANGUAGE,
-        TokenType::DESCRIPTION
+        TokenType::DESCRIPTION,
+        TokenType::COPYRIGHT
     };
     
     // model and format are exclusive (only one allowed)
