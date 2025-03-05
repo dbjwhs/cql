@@ -352,18 +352,19 @@ TestResult test_template_management() {
     std::string temp_dir = "./temp_templates";
     
     try {
-        // suppress stderr for template directory issues
-        Logger::StderrSuppressionGuard stderr_guard;
-        
-        // create a temporary template directory
+        // Create a temporary template directory
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
         }
         fs::create_directory(temp_dir);
         
-        // create required common and user subdirectories to avoid errors
-        fs::create_directory(fs::path(temp_dir) / "common");
-        fs::create_directory(fs::path(temp_dir) / "user");
+        // Create required common and user subdirectories to avoid errors
+        // Suppress stderr only for directory creation operations that might log warnings
+        {
+            Logger::StderrSuppressionGuard stderr_guard;
+            fs::create_directory(fs::path(temp_dir) / "common");
+            fs::create_directory(fs::path(temp_dir) / "user");
+        }
         
         // create a template manager with the temp directory
         TemplateManager manager(temp_dir);
@@ -461,18 +462,19 @@ TestResult test_template_inheritance() {
     std::string temp_dir = "./temp_templates";
     
     try {
-        // suppress stderr for template directory issues
-        Logger::StderrSuppressionGuard stderr_guard;
-        
-        // create a temporary template directory
+        // Create a temporary template directory
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
         }
         fs::create_directory(temp_dir);
         
-        // create required common and user subdirectories to avoid errors
-        fs::create_directory(fs::path(temp_dir) / "common");
-        fs::create_directory(fs::path(temp_dir) / "user");
+        // Create required common and user subdirectories to avoid errors
+        // Suppress stderr only for directory creation operations that might log warnings
+        {
+            Logger::StderrSuppressionGuard stderr_guard;
+            fs::create_directory(fs::path(temp_dir) / "common");
+            fs::create_directory(fs::path(temp_dir) / "user");
+        }
         
         // create a template manager with the temp directory
         TemplateManager manager(temp_dir);
@@ -737,18 +739,19 @@ TestResult test_template_validator() {
     std::string temp_dir = "./temp_templates";
     
     try {
-        // suppress stderr for template directory issues
-        Logger::StderrSuppressionGuard stderr_guard;
-        
-        // create a temporary template directory
+        // Create a temporary template directory
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
         }
         fs::create_directory(temp_dir);
         
-        // create required common and user subdirectories to avoid errors
-        fs::create_directory(fs::path(temp_dir) / "common");
-        fs::create_directory(fs::path(temp_dir) / "user");
+        // Create required common and user subdirectories to avoid errors
+        // Suppress stderr only for directory creation operations that might log warnings
+        {
+            Logger::StderrSuppressionGuard stderr_guard;
+            fs::create_directory(fs::path(temp_dir) / "common");
+            fs::create_directory(fs::path(temp_dir) / "user");
+        }
         
         // create a template manager with the temp directory
         TemplateManager manager(temp_dir);

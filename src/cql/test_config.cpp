@@ -120,16 +120,18 @@ TestResult test_config_from_env_vars() {
         env_vars["CQL_MAX_RETRIES"] = "also_not_a_number";
         set_env_vars(env_vars);
         
-        // Suppress error logs during this test
-        Logger::StderrSuppressionGuard stderr_guard;
-        Config invalid_config = Config::load_from_default_locations();
-        
-        // Should keep default values for invalid inputs
-        TEST_ASSERT(invalid_config.get_timeout() != 0, 
-                  "Timeout should use default value when environment variable is invalid");
-                  
-        TEST_ASSERT(invalid_config.get_max_retries() != 0, 
-                  "Max retries should use default value when environment variable is invalid");
+        // Suppress error logs only for the specific part where we expect errors
+        {
+            Logger::StderrSuppressionGuard stderr_guard;
+            Config invalid_config = Config::load_from_default_locations();
+            
+            // Should keep default values for invalid inputs
+            TEST_ASSERT(invalid_config.get_timeout() != 0, 
+                      "Timeout should use default value when environment variable is invalid");
+                      
+            TEST_ASSERT(invalid_config.get_max_retries() != 0, 
+                      "Max retries should use default value when environment variable is invalid");
+        }
         
         // Clean up
         unset_env_vars({"CQL_API_KEY", "CQL_MODEL", "CQL_TIMEOUT", "CQL_MAX_RETRIES", "CQL_OUTPUT_DIR"});
@@ -207,17 +209,19 @@ TestResult test_config_from_file() {
         std::string invalid_json = R"({ "api": { "key": "test", )"; // Missing closing braces
         create_temp_config_file(config_file, invalid_json);
         
-        // Suppress error logs during this test
-        Logger::StderrSuppressionGuard stderr_guard;
-        bool exception_thrown = false;
-        
-        try {
-            Config::load_from_file(config_file);
-        } catch (const std::exception&) {
-            exception_thrown = true;
+        // Suppress error logs only for the specific part where we expect errors
+        {
+            Logger::StderrSuppressionGuard stderr_guard;
+            bool exception_thrown = false;
+            
+            try {
+                Config::load_from_file(config_file);
+            } catch (const std::exception&) {
+                exception_thrown = true;
+            }
+            
+            TEST_ASSERT(exception_thrown, "Exception should be thrown when loading invalid JSON");
         }
-        
-        TEST_ASSERT(exception_thrown, "Exception should be thrown when loading invalid JSON");
         
         // Clean up
         std::filesystem::remove(config_file);

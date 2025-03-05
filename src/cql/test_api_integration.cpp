@@ -30,9 +30,7 @@ TestResult test_api_integration() {
     }
     
     try {
-        // Create a mock server with stderr suppression for expected API errors
-        Logger::StderrSuppressionGuard stderr_guard;
-        
+        // Create a mock server 
         MockServer server(8089);
         
         // Configure the mock server to respond to Claude API requests
