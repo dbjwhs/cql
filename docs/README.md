@@ -19,7 +19,6 @@ Welcome to the Claude Query Language (CQL) documentation. CQL is a powerful lang
 - [API Client Specification](api_client_specification.md) - Technical specification for the API client
 - [Response Processor Spec](response_processor_spec.md) - Design for parsing and handling API responses
 - [CLI Integration Example](cli_integration_example.md) - Command-line interface for API features
-- [Example Feedback](example_feedback.md) - Template for providing feedback on API integration
 
 ## Visual Guides
 
