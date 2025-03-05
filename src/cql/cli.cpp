@@ -10,6 +10,8 @@
 #include "../../include/cql/template_manager.hpp"
 #include "../../include/cql/template_validator.hpp"
 #include "../../include/cql/template_validator_schema.hpp"
+#include "../../include/cql/api_client.hpp"
+#include "../../include/cql/response_processor.hpp"
 
 // note file exists in the cpp-snippets repo, you will need to check this out and have it and cql share the
 // same root directory
@@ -228,7 +230,7 @@ void run_cli() {
             std::string name = var_def.substr(0, equals_pos);
             std::string value = var_def.substr(equals_pos + 1);
             
-            // add/update the variable in both current query and memory
+            // add/update the variable in both current query- and memory -
             // first update in memory for future template usage
             current_variables[name] = value;
             
@@ -236,25 +238,25 @@ void run_cli() {
             std::stringstream new_query;
             bool variable_updated = false;
             
-            // if the query is empty, just add the variable
+            // if the query is empty, add the variable
             if (current_query.empty()) {
                 new_query << "@variable \"" << name << "\" \"" << value << "\"";
                 current_query = new_query.str();
                 variable_updated = true;
             } else {
-                // check if variable already exists in the query
+                // check if a variable already exists in the query
                 std::istringstream iss(current_query);
-                std::string line;
+                std::string get_line;
                 std::regex var_regex("@variable\\s+\"" + name + "\"\\s+\"([^\"]*)\"");
-                
-                while (std::getline(iss, line)) {
+
+                while (std::getline(iss, get_line)) {
                     std::smatch match;
-                    if (std::regex_match(line, match, var_regex)) {
+                    if (std::regex_match(get_line, match, var_regex)) {
                         // update the existing variable
                         new_query << "@variable \"" << name << "\" \"" << value << "\"";
                         variable_updated = true;
                     } else {
-                        new_query << line;
+                        new_query << get_line;
                     }
                     new_query << std::endl;
                 }
@@ -314,8 +316,8 @@ void run_cli() {
                     }
                 }
                 
-                // combine current variables with template variables
-                // template variables will override memory variables if there are duplicates
+                // combine current variables with template variables will override memory variables
+                // if there are duplicates
                 std::map<std::string, std::string> combined_variables = current_variables;
                 for (const auto& [name, value] : variables) {
                     combined_variables[name] = value;
@@ -325,7 +327,7 @@ void run_cli() {
                 std::string template_content = template_manager.load_template(name);
                 auto template_vars = template_manager.collect_variables(template_content);
                 
-                // get all variables used in the template from validation result
+                // get all variables used in the template from a validation result
                 auto referenced_vars = validation_result.get_issues(TemplateValidationLevel::INFO);
                 std::vector<std::string> missing_vars;
                 
@@ -334,8 +336,8 @@ void run_cli() {
                     // if the issue is about a variable, check if it's available
                     if (issue.get_variable_name().has_value()) {
                         std::string var_name = issue.get_variable_name().value();
-                        if (combined_variables.find(var_name) == combined_variables.end() && 
-                            template_vars.find(var_name) == template_vars.end()) {
+                        if (!combined_variables.contains(var_name) &&
+                            !template_vars.contains(var_name)) {
                             missing_vars.push_back(var_name);
                         }
                     }
@@ -429,8 +431,11 @@ void run_cli() {
                     auto variables_with_values = template_manager.collect_variables(content);
                     
                     for (const auto& var_name : metadata.variables) {
-                        std::string default_value = variables_with_values.count(var_name) > 0 ? 
-                                                   variables_with_values[var_name] : "(no default)";
+                        std::string default_value;
+                        if (variables_with_values.contains(var_name))
+                            default_value = variables_with_values[var_name];
+                        else
+                            default_value = "(no default)";
                         std::cout << "  " << var_name << " = \"" << default_value << "\"" << std::endl;
                     }
                 }
@@ -545,7 +550,7 @@ void run_cli() {
                 Logger::getInstance().log(LogLevel::ERROR, "Failed to create inherited template: ", e.what());
             }
         } else if (line.substr(0, 17) == "template parents ") {
-            // show inheritance chain for a template
+            // show an inheritance chain for a template
             std::string template_name = line.substr(17);
             try {
                 auto chain = template_manager.get_inheritance_chain(template_name);
@@ -557,7 +562,7 @@ void run_cli() {
                     Logger::getInstance().log(LogLevel::INFO, "Inheritance chain for '", template_name, "':");
                     
                     for (size_t i = 0; i < chain.size(); ++i) {
-                        // first template is the base, last is the current template
+                        // the first template is the base, the last is the current template
                         if (i == 0) {
                             std::cout << "  Base: " << chain[i] << std::endl;
                         } else if (i == chain.size() - 1) {
@@ -669,7 +674,7 @@ void run_cli() {
                         for (const auto& tmpl : templates_with_errors) {
                             std::cout << "  - " << tmpl << std::endl;
                         }
-                        std::cout << "Run 'template validate <name>' for details" << std::endl;
+                        std::cout << "Run 'template validate <n>' for details" << std::endl;
                     }
                     
                     if (error_count > 0) {
@@ -724,7 +729,7 @@ void run_cli() {
             std::string output_path;
             std::string format = "markdown"; // default format
             
-            // check if format is specified
+            // check if a format is specified
             size_t space_pos = params.find(' ');
             if (space_pos != std::string::npos) {
                 output_path = params.substr(0, space_pos);
@@ -735,9 +740,8 @@ void run_cli() {
             
             try {
                 // export the documentation
-                bool success = template_manager.export_documentation(output_path, format);
-                
-                if (success) {
+
+                if (template_manager.export_documentation(output_path, format)) {
                     Logger::getInstance().log(LogLevel::INFO, 
                         "template documentation exported to ", output_path, " in ", format, " format");
                 } else {
@@ -779,6 +783,131 @@ bool process_file(const std::string& input_file, const std::string& output_file)
     } catch (const std::exception& e) {
         std::cerr << "Error processing file: " << e.what() << std::endl;
         Logger::getInstance().log(LogLevel::ERROR, "Error processing file: ", e.what());
+        return false;
+    }
+}
+
+// Prepare the configuration for API submission
+Config prepare_api_config(const std::string& model, const std::string& output_dir, bool overwrite, bool create_dirs, bool no_save) {
+    // Load the configuration
+    Config config = Config::load_from_default_locations();
+    
+    // Override with command-line arguments
+    if (!model.empty()) {
+        config.set_model(model);
+        Logger::getInstance().log(LogLevel::INFO, "Using model: ", model);
+    }
+    
+    if (!output_dir.empty()) {
+        config.set_output_directory(output_dir);
+        Logger::getInstance().log(LogLevel::INFO, "Output directory: ", output_dir);
+    }
+    
+    config.set_overwrite_existing_files(overwrite);
+    config.set_create_missing_directories(create_dirs);
+    config.set_no_save_mode(no_save);
+    
+    return config;
+}
+
+// Compile a CQL file for API submission
+std::string compile_query_for_api(const std::string& input_file) {
+    Logger::getInstance().log(LogLevel::INFO, "Compiling query from: ", input_file);
+    std::string query_content = util::read_file(input_file);
+    std::string compiled_query = QueryProcessor::compile(query_content);
+    Logger::getInstance().log(LogLevel::INFO, "Query compiled successfully");
+    return compiled_query;
+}
+
+// Submit a compiled query to the API
+ApiResponse submit_to_api(const std::string& compiled_query, const Config& config) {
+    Logger::getInstance().log(LogLevel::INFO, "Submitting to Claude API...");
+    std::cout << "Submitting to Claude API (model: " << config.get_model() << ")..." << std::endl;
+    
+    ApiClient api_client(config);
+    ApiResponse response = api_client.submit_query(compiled_query);
+    
+    if (!response.m_success) {
+        Logger::getInstance().log(LogLevel::ERROR, "API request failed: ", response.m_error_message);
+        std::cerr << "API request failed: " << response.m_error_message << std::endl;
+    } else {
+        Logger::getInstance().log(LogLevel::INFO, "API request successful");
+        std::cout << "API request successful" << std::endl;
+    }
+    
+    return response;
+}
+
+// Process API response into files
+std::vector<GeneratedFile> process_api_response(const ApiResponse& response, const Config& config) {
+    ResponseProcessor processor(config);
+    std::vector<GeneratedFile> files = processor.process_response(response.m_raw_response);
+    
+    Logger::getInstance().log(LogLevel::INFO, "Generated ", files.size(), " files:");
+    std::cout << "Generated " << files.size() << " files:" << std::endl;
+    
+    for (const auto& file : files) {
+        Logger::getInstance().log(LogLevel::INFO, "- ", file.m_filename);
+        std::cout << "  - " << file.m_filename << std::endl;
+    }
+    
+    return files;
+}
+
+// Save generated files to disk
+void save_generated_files(const std::vector<GeneratedFile>& files, const Config& config) {
+    // Skip saving if no-save mode is enabled
+    if (config.no_save_mode()) {
+        Logger::getInstance().log(LogLevel::INFO, "Files not saved (--no-save option used)");
+        std::cout << "Files not saved (--no-save option used)" << std::endl;
+        return;
+    }
+    
+    // Save each file
+    for (const auto& file : files) {
+        save_generated_file(file, config.get_output_directory(), config);
+    }
+    
+    // Log where files were saved
+    if (!config.get_output_directory().empty()) {
+        Logger::getInstance().log(LogLevel::INFO, "Files saved to ", config.get_output_directory());
+        std::cout << "Files saved to " << config.get_output_directory() << std::endl;
+    } else {
+        Logger::getInstance().log(LogLevel::INFO, "Files saved to current directory");
+        std::cout << "Files saved to current directory" << std::endl;
+    }
+}
+
+// process a submit command
+bool process_submit_command(const std::string& input_file, 
+                          const std::string& output_dir,
+                          const std::string& model,
+                          bool overwrite,
+                          bool create_dirs,
+                          bool no_save) {
+    try {
+        // Prepare the configuration
+        Config config = prepare_api_config(model, output_dir, overwrite, create_dirs, no_save);
+        
+        // Compile the query
+        std::string compiled_query = compile_query_for_api(input_file);
+        
+        // Submit to API
+        ApiResponse response = submit_to_api(compiled_query, config);
+        if (!response.m_success) {
+            return false;
+        }
+        
+        // Process the response
+        std::vector<GeneratedFile> files = process_api_response(response, config);
+        
+        // Save files
+        save_generated_files(files, config);
+        
+        return true;
+    } catch (const std::exception& e) {
+        Logger::getInstance().log(LogLevel::ERROR, "Error processing submit command: ", e.what());
+        std::cerr << "Error processing submit command: " << e.what() << std::endl;
         return false;
     }
 }
