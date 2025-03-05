@@ -42,6 +42,7 @@ set(CQL_SOURCES
     src/cql/response_processor.cpp
     src/cql/mock_server.cpp
     src/cql/test_api_integration.cpp
+    src/cql/test_config.cpp
 )
 
 # Find required packages

@@ -28,6 +28,7 @@ namespace cql::test {
 TestResult test_api_client();
 TestResult test_response_processor();
 TestResult test_api_integration();
+TestResult test_configuration();
 
 // testresult implementation
 TestResult::TestResult(const bool passed, std::string  error_message,
@@ -106,7 +107,8 @@ bool run_tests(bool fail_fast) {
         {"Architecture Patterns", test_architecture_patterns},
         {"API Client", test_api_client},
         {"Response Processor", test_response_processor},
-        {"API Integration", test_api_integration}
+        {"API Integration", test_api_integration},
+        {"Configuration", test_configuration}
     };
     
     // run each test
