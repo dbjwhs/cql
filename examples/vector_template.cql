@@ -1,4 +1,5 @@
-@inherit "base_data_structure"
+@copyright "MIT" "dbjwhs"
+@language "C++"
 @description "Vector data structure template with standard operations"
 
 @variable "structure_type" "vector"

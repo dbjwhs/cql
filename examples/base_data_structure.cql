@@ -1,3 +1,5 @@
+@copyright "MIT" "dbjwhs"
+@language "C++"
 @description "Base template for common data structure features"
 @variable "structure_type" "data structure"
 @variable "complexity_insert" "O(n)"

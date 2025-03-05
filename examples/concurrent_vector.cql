@@ -1,4 +1,5 @@
-@inherit "vector_template"
+@copyright "MIT" "dbjwhs"
+@language "C++"
 @description "Thread-safe vector implementation with synchronization"
 
 @variable "structure_type" "concurrent vector"

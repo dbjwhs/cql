@@ -1,3 +1,4 @@
+@copyright "MIT" "dbjwhs"
 @language "C++"
 @description "Simple hello world program for testing JSON output"
 @context "Minimal example"

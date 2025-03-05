@@ -1,3 +1,4 @@
+@copyright "MIT" "dbjwhs"
 @language "C++"
 @description "Implement ${class_name} class with the specified interfaces"
 
