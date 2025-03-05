@@ -69,7 +69,7 @@ private:
      * @param response_text The response text to process
      * @return Vector of extracted code blocks
      */
-    [[nodiscard]] std::vector<CodeBlock> extract_code_blocks(const std::string& response_text);
+    [[nodiscard]] static std::vector<CodeBlock> extract_code_blocks(const std::string& response_text);
     
     /**
      * @brief Organize code blocks into files

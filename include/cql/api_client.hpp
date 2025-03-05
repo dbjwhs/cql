@@ -235,21 +235,17 @@ public:
      */
     void set_api_key(const std::string& api_key) const;
 
-    void set_timeout(int timeout_seconds) const;
-
-    void set_max_retries(int max_retries) const;
-
     /**
      * @brief Set the timeout for requests in seconds
      * @param timeout_seconds Timeout value
      */
-    void set_timeout(int timeout_seconds);
+    void set_timeout(int timeout_seconds) const;
     
     /**
      * @brief Set the maximum number of retries for failed requests
      * @param max_retries Maximum retries value
      */
-    void set_max_retries(int max_retries);
+    void set_max_retries(int max_retries) const;
     
     /**
      * @brief Check if the client is connected to the API

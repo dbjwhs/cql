@@ -1,0 +1,10 @@
+  1. Unit tests for ApiClient and ResponseProcessor:
+    - Test basic API request/response parsing without actual API calls
+    - Verify error handling with mocked responses
+    - Test parsing of code blocks from a sample response
+  2. Integration test with mock server:
+    - Create a simple mock server that returns predefined responses
+    - Test the full submission workflow without hitting the actual Claude API
+
+
+check if         Logger::StderrSuppressionGuard stderr_guard; is too broad

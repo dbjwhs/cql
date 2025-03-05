@@ -169,8 +169,8 @@ namespace test {
         int m_line_number;
         
         // private constructor used by static factory methods
-        TestResult(bool passed, const std::string& error_message = "",
-                  const std::string& file_name = "", int line_number = 0);
+        TestResult(bool passed, std::string  error_message = "",
+                  std::string  file_name = "", int line_number = 0);
     };
     
     /**

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cassert>
 #include <sstream>
+#include <utility>
 #include <vector>
 #include <map>
 #include <filesystem>
@@ -11,6 +12,9 @@
 #include "../../include/cql/template_manager.hpp"
 #include "../../include/cql/template_validator.hpp"
 #include "../../include/cql/template_validator_schema.hpp"
+#include "../../include/cql/api_client.hpp"
+#include "../../include/cql/response_processor.hpp"
+#include "../../include/cql/test_utils.hpp"
 
 // note file exists in the cpp-snippets repo, you will need to check this out and have it and cql share the
 // same root directory
@@ -20,23 +24,28 @@ namespace fs = std::filesystem;
 
 namespace cql::test {
 
+// Forward declarations
+TestResult test_api_client();
+TestResult test_response_processor();
+TestResult test_api_integration();
+
 // testresult implementation
-TestResult::TestResult(bool passed, const std::string& error_message,
-                      const std::string& file_name, int line_number)
+TestResult::TestResult(const bool passed, std::string  error_message,
+                      std::string  file_name, const int line_number)
     : m_passed(passed), 
-      m_error_message(error_message),
-      m_file_name(file_name),
+      m_error_message(std::move(error_message)),
+      m_file_name(std::move(file_name)),
       m_line_number(line_number) {
 }
 
 TestResult TestResult::pass() {
-    return TestResult(true);
+    return TestResult{true};
 }
 
 TestResult TestResult::fail(const std::string& error_message, 
-                           const std::string& file_name, 
-                           int line_number) {
-    return TestResult(false, error_message, file_name, line_number);
+                           const std::string& file_name,
+                           const int line_number) {
+    return TestResult{false, error_message, file_name, line_number};
 }
 
 bool TestResult::passed() const {
@@ -55,12 +64,9 @@ int TestResult::get_line_number() const {
     return m_line_number;
 }
 
-// Use test macros from test_utils.hpp
-#include "../../include/cql/test_utils.hpp"
-
 // function to print a properly formatted test result
 void print_test_result(const std::string& test_name, const TestResult& result) {
-    const int name_width = 40;
+    constexpr int name_width = 40;
     
     std::cout << std::left << std::setw(name_width) << test_name;
     
@@ -97,7 +103,10 @@ bool run_tests(bool fail_fast) {
         {"Template Validator", test_template_validator},
         {"Query Examples", query_examples},
         {"Phase 2 Example Compilation", test_phase2_example_compilation},
-        {"Architecture Patterns", test_architecture_patterns}
+        {"Architecture Patterns", test_architecture_patterns},
+        {"API Client", test_api_client},
+        {"Response Processor", test_response_processor},
+        {"API Integration", test_api_integration}
     };
     
     // run each test
@@ -165,7 +174,7 @@ TestResult test_complex_compilation() {
     std::cout << "Testing complex compilation..." << std::endl;
     
     try {
-        std::string query = 
+        const std::string query =
             "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
             "@language \"C++\"\n"
             "@description \"implement a thread-safe queue\"\n"
@@ -174,8 +183,8 @@ TestResult test_complex_compilation() {
             "@dependency \"std::mutex, std::condition_variable\"\n"
             "@test \"Test concurrent push operations\"\n"
             "@test \"Test concurrent pop operations\"\n";
-        
-        std::string result = QueryProcessor::compile(query);
+
+        const std::string result = QueryProcessor::compile(query);
         
         TEST_ASSERT(!result.empty(), "Compilation result should not be empty");
         TEST_ASSERT(result.find("MIT License") != std::string::npos, 
@@ -214,7 +223,7 @@ TestResult test_validation_requirements() {
                                    __FILE__, __LINE__);
         } catch (const std::exception& e) {
             std::string error_message = e.what();
-            std::transform(error_message.begin(), error_message.end(), error_message.begin(), ::tolower);
+            std::ranges::transform(error_message, error_message.begin(), ::tolower);
             TEST_ASSERT(error_message.find("copyright") != std::string::npos,
                        "Error message should mention missing COPYRIGHT directive");
         }
@@ -229,14 +238,14 @@ TestResult test_validation_requirements() {
             nodes.push_back(std::make_unique<CodeRequestNode>("", "test without language"));
             
             // Now test the validator directly with our manually constructed AST
-            QueryValidator validator;
             try {
+                QueryValidator validator;
                 validator.validate(nodes);
                 return TestResult::fail("Missing language validation failed - validation should have failed", 
                                        __FILE__, __LINE__);
             } catch (const ValidationException& e) {
                 std::string error_message = e.what();
-                std::transform(error_message.begin(), error_message.end(), error_message.begin(), ::tolower);
+                std::ranges::transform(error_message, error_message.begin(), ::tolower);
                 TEST_ASSERT(error_message.find("language") != std::string::npos,
                            "Error message should mention missing LANGUAGE directive");
             }
@@ -251,7 +260,7 @@ TestResult test_validation_requirements() {
                                    __FILE__, __LINE__);
         } catch (const std::exception& e) {
             std::string error_message = e.what();
-            std::transform(error_message.begin(), error_message.end(), error_message.begin(), ::tolower);
+            std::ranges::transform(error_message, error_message.begin(), ::tolower);
             TEST_ASSERT(error_message.find("description") != std::string::npos,
                        "Error message should mention missing DESCRIPTION directive");
         }
@@ -266,7 +275,7 @@ TestResult test_validation_requirements() {
                                    __FILE__, __LINE__);
         } catch (const std::exception& e) {
             std::string error_message = e.what();
-            std::transform(error_message.begin(), error_message.end(), error_message.begin(), ::tolower);
+            std::ranges::transform(error_message, error_message.begin(), ::tolower);
             
             // We should see the validation error (missing description) in the output
             TEST_ASSERT(error_message.find("description") != std::string::npos || 
@@ -286,12 +295,12 @@ TestResult test_validation_requirements() {
     }
 }
 
-// test the phase 2 features
+// test phase 2 features
 TestResult test_phase2_features() {
     std::cout << "Testing Phase 2 features..." << std::endl;
     
     try {
-        std::string query = 
+        const std::string query =
             "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
             "@language \"C++\"\n"
             "@description \"implement a thread-safe queue with a maximum size\"\n"
@@ -309,12 +318,12 @@ TestResult test_phase2_features() {
             "@test \"Test concurrent push operations\"\n"
             "@test \"Test concurrent pop operations\"\n"
             "@test \"Test boundary conditions\"\n";
-        
-        std::string result = QueryProcessor::compile(query);
+
+        const std::string result = QueryProcessor::compile(query);
         
         TEST_ASSERT(!result.empty(), "Compilation result should not be empty");
         
-        // check for presence of the content without the exact format string
+        // check for the presence of the content without the exact format string
         TEST_ASSERT(result.find("Producer-consumer pattern") != std::string::npos,
                    "Result should contain architecture information");
         TEST_ASSERT(result.find("Thread-safe for concurrent access") != std::string::npos,
@@ -548,25 +557,22 @@ TestResult test_template_inheritance() {
                    "grandchild_var should be replaced with new value");
         TEST_ASSERT(instantiated.find("\"shared_var\" \"new_shared_value\"") != std::string::npos,
                    "shared_var should be replaced with new value");
-        
-        // test circular inheritance detection with targeted logging suppression
-        // create unique template names with timestamps to avoid collisions
-        std::string timestamp = std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
-        std::string name1 = "circular_t1_" + timestamp;
-        std::string name2 = "circular_t2_" + timestamp;
-        
+
         // create templates that reference each other by their unique names
-        std::string circular1_content = 
-            "@description \"circular template 1\"\n"
-            "@inherit \"" + name2 + "\"\n";
-        
-        std::string circular2_content = 
-            "@description \"circular template 2\"\n"
-            "@inherit \"" + name1 + "\"\n";
-        
         // only use stderr suppression for the operations that will generate error logs
         {
-            Logger::StderrSuppressionGuard stderr_guard;
+            // test circular inheritance detection with targeted logging suppression
+            // create unique template names with timestamps to avoid collisions
+            std::string timestamp = std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
+            std::string name1 = "circular_t1_" + timestamp;
+            std::string name2 = "circular_t2_" + timestamp;
+            std::string circular1_content =
+                    "@description \"circular template 1\"\n"
+                    "@inherit \"" + name2 + "\"\n";
+            std::string circular2_content =
+                    "@description \"circular template 2\"\n"
+                    "@inherit \"" + name1 + "\"\n";
+            Logger::StderrSuppressionGuard stderr_guard_scoped;
             
             // save templates
             manager.save_template(name1, circular1_content);
@@ -763,16 +769,16 @@ TestResult test_template_validator() {
                    "Good template should not have ERROR level issues");
         TEST_ASSERT(!good_result.has_issues(TemplateValidationLevel::WARNING),
                    "Good template should not have WARNING level issues");
-        
+
         // test 2: template with undeclared variable (should generate warning)
-        std::string warning_template = 
+        std::string warning_template =
             "@description \"A template with undeclared variable\"\n"
             "@variable \"var1\" \"value1\"\n"
             "@language \"${var1}\"\n"
             "@context \"Using ${undeclared_var} features\"\n";
-        
+
         manager.save_template("warning_template", warning_template);
-        
+
         auto warning_result = validator.validate_template("warning_template");
         TEST_ASSERT(!warning_result.has_issues(TemplateValidationLevel::ERROR),
                    "Warning template should not have ERROR level issues");
@@ -780,16 +786,16 @@ TestResult test_template_validator() {
                    "Warning template should have WARNING level issues");
         TEST_ASSERT(warning_result.count_warnings() > 0,
                    "Warning template should have at least one warning");
-        
+
         // test 3: template with unused variable (should generate info)
-        std::string info_template = 
+        std::string info_template =
             "@description \"A template with unused variable\"\n"
             "@variable \"var1\" \"value1\"\n"
             "@variable \"unused_var\" \"unused_value\"\n"
             "@language \"${var1}\"\n";
-        
+
         manager.save_template("info_template", info_template);
-        
+
         auto info_result = validator.validate_template("info_template");
         TEST_ASSERT(!info_result.has_issues(TemplateValidationLevel::ERROR),
                    "Info template should not have ERROR level issues");
@@ -798,20 +804,21 @@ TestResult test_template_validator() {
                    "Info template should have WARNING level issues for unused variables");
         TEST_ASSERT(info_result.count_warnings() > 0,
                    "Info template should have at least one warning");
-        
-        // test 4: template with circular inheritance (should generate error)
-        // create unique names for this test run
-        std::string circ_timestamp = std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
-        std::string circular1_name = "circ1_" + circ_timestamp; 
-        std::string circular2_name = "circ2_" + circ_timestamp;
-        
-        // construct templates with these unique names
-        std::string circular1 = "@description \"Template with circular inheritance\"\n@inherit \"" + circular2_name + "\"\n";
-        std::string circular2 = "@description \"Another template in the circle\"\n@inherit \"" + circular1_name + "\"\n";
-        
-        // only suppress stderr during the actual operations that will generate error logs
+
         {
+            // test 4: template with circular inheritance (should generate error)
+            // create unique names for this test run
+            std::string circ_timestamp = std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
+            std::string circular1_name = "circ1_" + circ_timestamp;
+            std::string circular2_name = "circ2_" + circ_timestamp;
+
+            // construct templates with these unique names
+            std::string circular1 = "@description \"Template with circular inheritance\"\n@inherit \"" + circular2_name + "\"\n";
+            std::string circular2 = "@description \"Another template in the circle\"\n@inherit \"" + circular1_name + "\"\n";
+
+            // only suppress stderr during the actual operations that will generate error logs
             Logger::StderrSuppressionGuard circular_stderr_guard;
+
             manager.save_template(circular1_name, circular1);
             manager.save_template(circular2_name, circular2);
             auto circular_result = validator.validate_template(circular1_name);
@@ -820,53 +827,52 @@ TestResult test_template_validator() {
             TEST_ASSERT(circular_result.count_errors() > 0,
                        "Circular inheritance should have at least one error");
         }
-        
+
         // test 5: template with proper inheritance
-        std::string parent = 
+        std::string parent =
             "@description \"Parent template\"\n"
             "@variable \"parent_var\" \"parent_value\"\n"
             "@language \"${parent_var}\"\n";
-        
-        std::string child = 
+
+        std::string child =
             "@inherit \"parent\"\n"
             "@description \"Child template\"\n"
             "@variable \"child_var\" \"child_value\"\n"
             "@context \"${child_var} with ${parent_var}\"\n";
-        
+
         manager.save_template("parent", parent);
         manager.save_template("child", child);
-        
+
         auto inheritance_result = validator.validate_template("child");
         TEST_ASSERT(!inheritance_result.has_issues(TemplateValidationLevel::ERROR),
                    "Valid inheritance should not generate ERROR level issues");
-        
+
         // test schema validation
-        auto schema = TemplateValidatorSchema::create_default_schema();
-        
+
         // create validator with schema rules
-        for (const auto& [name, rule] : schema.get_validation_rules()) {
+        for (auto schema = TemplateValidatorSchema::create_default_schema(); const auto& [name, rule] : schema.get_validation_rules()) {
             validator.add_validation_rule(rule);
         }
-        
+
         // test schema rules with malformed template without logging
-        std::string malformed = 
+        std::string malformed =
             "@description \"Too short\"\n"  // description too short warning
             "@variable \"bad-name\" \"bad\"\n"  // invalid variable name (should be error)
             "@language \"${bad-name}\"\n"
             "@invalidDirective \"something\"\n";  // unknown directive (should be error)
-        
-        // create a validator with stricter rules that treats invalid directives and 
+
+        // create a validator with stricter rules that treats invalid directives and
         // variable names as errors instead of warnings
         TemplateValidator strict_validator(manager);
         strict_validator.add_validation_rule([](const std::string& content) {
             std::vector<TemplateValidationIssue> issues;
-            
+
             // check for invalid directives (anything not starting with @ followed by a valid name)
             std::regex directive_regex("@([a-zA-Z_][a-zA-Z0-9_]*)");
             std::regex invalid_directive_regex("@([^a-zA-Z_]\\S*)");
-            
+
             std::smatch m;
-            std::string::const_iterator search_start(content.cbegin());
+            auto search_start(content.cbegin());
             while (std::regex_search(search_start, content.cend(), m, invalid_directive_regex)) {
                 issues.emplace_back(
                     TemplateValidationLevel::ERROR,
@@ -876,11 +882,11 @@ TestResult test_template_validator() {
                 );
                 search_start = m.suffix().first;
             }
-            
+
             // check for invalid variable names (should only contain letters, numbers, and underscores)
             std::regex variable_decl_regex("@variable\\s+\"([^\"]+)\"");
             std::regex valid_var_name_regex("[a-zA-Z_][a-zA-Z0-9_]*");
-            
+
             search_start = content.cbegin();
             while (std::regex_search(search_start, content.cend(), m, variable_decl_regex)) {
                 std::string var_name = m[1].str();
@@ -893,23 +899,23 @@ TestResult test_template_validator() {
                 }
                 search_start = m.suffix().first;
             }
-            
+
             return issues;
         });
-        
-        // create a unique filename for each test run to avoid collisions
-        std::string malformed_name = "malformed_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
-        
+
         // only use the logger suppression during the actual save and load operations
         {
-            Logger::StderrSuppressionGuard stderr_guard;
+            // create a unique filename for each test run to avoid collisions
+            std::string malformed_name = "malformed_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
+            Logger::StderrSuppressionGuard stderr_guard_scoped;
+
             manager.save_template(malformed_name, malformed);
             auto schema_result = strict_validator.validate_template(malformed_name);
             TEST_ASSERT(schema_result.has_issues(TemplateValidationLevel::ERROR),
                        "Malformed template should generate ERROR level issues");
             TEST_ASSERT(schema_result.count_errors() > 0,
                        "Malformed template should have at least one error");
-            TEST_ASSERT(schema_result.get_issues().size() > 0,
+            TEST_ASSERT(!schema_result.get_issues().empty(),
                        "Malformed template should have validation issues");
         }
         
@@ -924,6 +930,177 @@ TestResult test_template_validator() {
         }
         return TestResult::fail("Exception in test_template_validator: " + std::string(e.what()),
                                __FILE__, __LINE__);
+    }
+}
+
+// Test the ApiClient class
+TestResult test_api_client() {
+    std::cout << "Testing API Client..." << std::endl;
+    
+    try {
+        // Create a config for testing without real API calls
+        Config config;
+        config.set_api_key("dummy_api_key_for_testing");
+        config.set_model("claude-3-test-model");
+        config.set_timeout(1); // Short timeout for tests
+        config.set_output_directory("./test_output");
+        config.set_no_save_mode(true); // Don't save files to disk during tests
+        
+        // Create an ApiClient with the test config
+        ApiClient client(config);
+        
+        // Test client initialization
+        TEST_ASSERT(client.get_status() == ApiClientStatus::Ready ||
+                    client.get_status() == ApiClientStatus::Error, // Maybe error if no curl
+                    "Client should be in Ready or Error state after initialization");
+        
+        // Test config getters and setters
+        client.set_model("claude-3-different-model");
+        client.set_timeout(30); // calls const version
+        client.set_max_retries(5); // calls const version
+        
+        // We can't easily test actual API requests without mocking,
+        // but we can test error handling with invalid configuration
+        
+        // Suppress stderr for API error logs
+        {
+            Logger::StderrSuppressionGuard stderr_guard;
+            
+            // Test handling of invalided (empty) request
+            auto empty_response = client.submit_query("");
+            TEST_ASSERT(empty_response.has_error(), "Empty query should result in error");
+            
+            // Test callback in async request (using lambda)
+            bool callback_called = false;
+            auto async_response = client.submit_query_async("", [&callback_called](const ApiResponse& /*response*/) {
+                callback_called = true;
+            });
+            TEST_ASSERT(callback_called, "Async callback should be called");
+            TEST_ASSERT(async_response.has_error(), "Empty async query should result in error");
+        }
+        
+        return TestResult::pass();
+    } catch (const std::exception& e) {
+        return TestResult::fail("Exception in test_api_client: " + std::string(e.what()),
+                              __FILE__, __LINE__);
+    }
+}
+
+// Test the ResponseProcessor class
+TestResult test_response_processor() {
+    std::cout << "Testing Response Processor..." << std::endl;
+    
+    try {
+        // Create a config for testing
+        Config config;
+        config.set_output_directory("./test_output");
+        config.set_no_save_mode(true); // Don't save files to disk during tests
+        
+        // Create a ResponseProcessor with the test config
+        ResponseProcessor processor(config);
+        
+        // Test empty response handling
+        auto empty_files = processor.process_response("");
+        TEST_ASSERT(empty_files.empty(), "Empty response should produce no files");
+        
+        // Test basic response with no code blocks
+        std::string text_only_response = "This is a response with no code blocks.";
+        auto text_only_files = processor.process_response(text_only_response);
+        TEST_ASSERT(text_only_files.empty(), "Response without code blocks should produce no files");
+        
+        // Test response with a single code block
+        std::string single_block_response = 
+            "Here's an implementation of a simple counter class:\n\n"
+            "```cpp\n"
+            "class Counter {\n"
+            "private:\n"
+            "    int m_count = 0;\n"
+            "public:\n"
+            "    void increment() { m_count++; }\n"
+            "    int get_count() const { return m_count; }\n"
+            "};\n"
+            "```\n";
+        
+        auto single_block_files = processor.process_response(single_block_response);
+        TEST_ASSERT(single_block_files.size() == 1, "Response with one code block should produce one file");
+        
+        if (!single_block_files.empty()) {
+            auto& file = single_block_files[0];
+            TEST_ASSERT(file.m_language == "C++", "File language should be C++");
+            TEST_ASSERT(file.m_content.find("class Counter") != std::string::npos, 
+                      "File content should contain the Counter class");
+            TEST_ASSERT(!file.m_is_test, "File should not be marked as a test");
+        }
+        
+        // Test response with multiple code blocks including a test
+        std::string multi_block_response = 
+            "Here's an implementation of a Vector class:\n\n"
+            "```cpp\n"
+            "// vector.hpp\n"
+            "template <typename T>\n"
+            "class Vector {\n"
+            "private:\n"
+            "    T* m_data;\n"
+            "    size_t m_size;\n"
+            "public:\n"
+            "    Vector() : m_data(nullptr), m_size(0) {}\n"
+            "    void push_back(const T& value);\n"
+            "    T& at(size_t index);\n"
+            "};\n"
+            "```\n\n"
+            "And here's the implementation:\n\n"
+            "```cpp\n"
+            "// vector.cpp\n"
+            "template <typename T>\n"
+            "void Vector<T>::push_back(const T& value) {\n"
+            "    // Implementation\n"
+            "}\n\n"
+            "template <typename T>\n"
+            "T& Vector<T>::at(size_t index) {\n"
+            "    // Implementation\n"
+            "}\n"
+            "```\n\n"
+            "Here's a test for the Vector class:\n\n"
+            "```cpp\n"
+            "// test_vector.cpp\n"
+            "void test_vector() {\n"
+            "    Vector<int> v;\n"
+            "    v.push_back(42);\n"
+            "    assert(v.at(0) == 42);\n"
+            "}\n"
+            "```\n";
+        
+        auto multi_block_files = processor.process_response(multi_block_response);
+        TEST_ASSERT(multi_block_files.size() >= 2, "Response with multiple code blocks should produce at least 2 files");
+        
+        bool found_impl = false;
+        bool found_test = false;
+        
+        for (const auto& file : multi_block_files) {
+            if (file.m_is_test) {
+                found_test = true;
+                TEST_ASSERT(file.m_content.find("test_vector") != std::string::npos, 
+                          "Test file should contain test_vector function");
+            } else {
+                found_impl = true;
+                TEST_ASSERT(file.m_content.find("class Vector") != std::string::npos || 
+                           file.m_content.find("Vector<T>::") != std::string::npos,
+                          "Implementation file should contain Vector class");
+            }
+        }
+        
+        TEST_ASSERT(found_impl, "Should have found at least one implementation file");
+        TEST_ASSERT(found_test, "Should have found at least one test file");
+        
+        // Test setting different configuration options
+        processor.set_output_directory("./different_output");
+        processor.set_overwrite_existing(true);
+        processor.set_create_directories(false);
+        
+        return TestResult::pass();
+    } catch (const std::exception& e) {
+        return TestResult::fail("Exception in test_response_processor: " + std::string(e.what()),
+                              __FILE__, __LINE__);
     }
 }
 

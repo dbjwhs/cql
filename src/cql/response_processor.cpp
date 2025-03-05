@@ -27,7 +27,7 @@ std::vector<GeneratedFile> ResponseProcessor::process_response(const std::string
     Logger::getInstance().log(LogLevel::INFO, "Processing API response");
     
     // Extract code blocks from the response
-    std::vector<CodeBlock> blocks = extract_code_blocks(response_text);
+    const std::vector<CodeBlock> blocks = extract_code_blocks(response_text);
     
     if (blocks.empty()) {
         Logger::getInstance().log(LogLevel::NORMAL, "No code blocks found in response");
@@ -125,8 +125,7 @@ std::string ResponseProcessor::extract_filename_hint(const std::string& text) {
     };
     
     for (const auto& pattern : hint_patterns) {
-        std::smatch match;
-        if (std::regex_search(text, match, pattern) && match.size() > 1) {
+        if (std::smatch match; std::regex_search(text, match, pattern) && match.size() > 1) {
             Logger::getInstance().log(LogLevel::INFO, "Found filename hint: ", match[1].str());
             return match[1].str();
         }
@@ -134,8 +133,7 @@ std::string ResponseProcessor::extract_filename_hint(const std::string& text) {
     
     // Look for class or struct definitions to derive filename
     std::regex class_def_regex(R"(\bclass\s+(\w+)\b)");
-    std::smatch class_match;
-    if (std::regex_search(text, class_match, class_def_regex) && class_match.size() > 1) {
+    if (std::smatch class_match; std::regex_search(text, class_match, class_def_regex) && class_match.size() > 1) {
         std::string class_name = class_match[1].str();
         
         // Convert CamelCase to snake_case for filename
@@ -193,8 +191,7 @@ std::string ResponseProcessor::sanitize_filename(const std::string& filename) {
 std::string ResponseProcessor::determine_language(const std::string& language_tag) {
     // Normalize language tag
     std::string normalized = language_tag;
-    std::ranges::transform(normalized, normalized.begin(),
-                           [](unsigned char c){ return std::tolower(c); });
+    std::ranges::transform(normalized, normalized.begin(), [](unsigned char c){ return std::tolower(c); });
     
     // Map to standard language names
     std::map<std::string, std::string> language_map = {
