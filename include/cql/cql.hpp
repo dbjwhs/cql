@@ -274,6 +274,14 @@ namespace cli {
     
     // process a query file
     bool process_file(const std::string& input_file, const std::string& output_file);
+    
+    // process a submit command
+    bool process_submit_command(const std::string& input_file, 
+                              const std::string& output_dir,
+                              const std::string& model,
+                              bool overwrite,
+                              bool create_dirs,
+                              bool no_save = false);
 }
 
 } // namespace cql

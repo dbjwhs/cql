@@ -5,6 +5,7 @@
 #include "../../include/cql/cql.hpp"
 #include "../../include/cql/template_validator.hpp"
 #include "../../include/cql/template_validator_schema.hpp"
+#include "../../include/cql/api_client.hpp"
 
 // note file exists in the cpp-snippets repo, you will need to check this out and have it and cql share the
 // same root directory
@@ -29,6 +30,13 @@ void print_help() {
               << "  --docs-all              Generate documentation for all templates\n"
               << "  --export PATH [format]  Export template documentation to a file\n"
               << "                          (formats: md, html, txt; default: md)\n\n"
+              << "API Integration Options:\n"
+              << "  --submit                Submit the compiled query to the Claude API\n"
+              << "  --model <model_name>    Specify the Claude model to use (default: claude-3-opus)\n"
+              << "  --output-dir <directory> Directory to save generated code files\n"
+              << "  --overwrite             Overwrite existing files without prompting\n"
+              << "  --create-dirs           Create missing directories for output files\n"
+              << "  --no-save               Display generated code but don't save to files\n\n"
               << "If INPUT_FILE is provided, it will be processed as a CQL query.\n"
               << "If OUTPUT_FILE is also provided, the compiled query will be written to it.\n";
 }
@@ -87,6 +95,42 @@ int main(int argc, char* argv[]) {
                 std::string result = cql::QueryProcessor::compile(copyright_example);
                 logger.log(LogLevel::INFO, "\n=== Compiled Query with Copyright ===\n\n", 
                           result, "\n===================");
+            } else if (arg1 == "--submit") {
+                // Submit a query to the Claude API
+                if (argc < 3) {
+                    std::cerr << "Error: Input file required for --submit" << std::endl;
+                    std::cerr << "Usage: cql --submit INPUT_FILE [options]" << std::endl;
+                    return 1;
+                }
+                
+                std::string input_file = argv[2];
+                std::string output_dir;
+                std::string model;
+                bool overwrite = false;
+                bool create_dirs = false;
+                bool no_save = false;
+                
+                // Parse additional options
+                for (int ndx = 3; ndx < argc; ndx++) {
+                    std::string arg = argv[ndx];
+                    
+                    if (arg == "--model" && ndx + 1 < argc) {
+                        model = argv[++ndx];
+                    } else if (arg == "--output-dir" && ndx + 1 < argc) {
+                        output_dir = argv[++ndx];
+                    } else if (arg == "--overwrite") {
+                        overwrite = true;
+                    } else if (arg == "--create-dirs") {
+                        create_dirs = true;
+                    } else if (arg == "--no-save") {
+                        no_save = true;
+                    }
+                }
+                
+                // Process submission
+                if (!cql::cli::process_submit_command(input_file, output_dir, model, overwrite, create_dirs, no_save)) {
+                    return 1;
+                }
             } else if (arg1 == "--templates" || arg1 == "-l") {
                 // list all templates
                 cql::TemplateManager manager;
@@ -141,10 +185,9 @@ int main(int argc, char* argv[]) {
                     
                     // validate the template before using it
                     auto validation_result = validator.validate_template(template_name);
-                    bool has_errors = validation_result.has_issues(cql::TemplateValidationLevel::ERROR);
-                    
+
                     // show validation issues
-                    if (has_errors) {
+                    if (validation_result.has_issues(cql::TemplateValidationLevel::ERROR)) {
                         std::cerr << "Warning: Template has validation errors:" << std::endl;
                         for (const auto& issue : validation_result.get_issues(cql::TemplateValidationLevel::ERROR)) {
                             std::cerr << "  - " << issue.to_string() << std::endl;
@@ -413,9 +456,8 @@ int main(int argc, char* argv[]) {
                     cql::TemplateManager manager;
                     
                     // export the documentation
-                    bool success = manager.export_documentation(output_path, format);
-                    
-                    if (success) {
+
+                    if (manager.export_documentation(output_path, format)) {
                         std::cout << "template documentation exported to " << output_path 
                                   << " in " << format << " format" << std::endl;
                     } else {

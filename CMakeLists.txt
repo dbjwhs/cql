@@ -38,10 +38,40 @@ set(CQL_SOURCES
     src/cql/template_validator_schema.cpp
     src/cql/pattern_compatibility.cpp
     src/cql/test_architecture_patterns.cpp
+    src/cql/api_client.cpp
+    src/cql/response_processor.cpp
 )
+
+# Find required packages
+find_package(CURL REQUIRED)
+
+# Include files directly
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include)
+
+# JSON library version configuration
+set(JSON_VERSION "3.11.2" CACHE STRING "Version of nlohmann_json to use")
+
+# Download nlohmann_json if not already present
+set(JSON_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/include/nlohmann")
+if(NOT EXISTS "${JSON_INCLUDE_DIR}/json.hpp")
+  file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/third_party/include/nlohmann")
+  file(DOWNLOAD
+    "https://github.com/nlohmann/json/releases/download/v${JSON_VERSION}/json.hpp"
+    "${JSON_INCLUDE_DIR}/json.hpp"
+    SHOW_PROGRESS
+  )
+  message(STATUS "Downloaded nlohmann/json.hpp v${JSON_VERSION} to ${JSON_INCLUDE_DIR}")
+endif()
+
+# Create interface library for nlohmann_json
+add_library(nlohmann_json INTERFACE)
+target_include_directories(nlohmann_json INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include)
 
 # Add executable
 add_executable(cql ${CQL_SOURCES})
+
+# Link libraries
+target_link_libraries(cql PRIVATE CURL::libcurl nlohmann_json)
 
 # Installation
 install(TARGETS cql DESTINATION bin)
