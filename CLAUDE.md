@@ -35,3 +35,8 @@
 - All new features should have comprehensive tests
 - Test files are located in src/cql/tests.cpp
 - Use TEST_ASSERT macro for assertions with meaningful messages
+
+## Development Workflow
+- Always build the project after making changes to ensure it compiles successfully
+- Run tests after significant changes to verify functionality
+- Before submitting changes, run the full test suite
