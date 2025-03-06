@@ -10,7 +10,7 @@
 #include "../../include/cql/response_processor.hpp"
 #include "../../include/cql/test_utils.hpp"
 #include "../../include/cql/project_utils.hpp"
-#include "mock_server.hpp"
+#include "../../include/cql/mock_server.hpp"
 
 namespace cql::test {
 
