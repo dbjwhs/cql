@@ -132,6 +132,12 @@ public:
     [[nodiscard]] bool no_save_mode() const { return m_no_save; }
     
     /**
+     * @brief Get the API base URL
+     * @return Base URL string
+     */
+    [[nodiscard]] std::string get_api_base_url() const { return m_api_base_url; }
+    
+    /**
      * @brief Set the API key
      * @param api_key API key string
      */
@@ -142,6 +148,12 @@ public:
      * @param model Model name string
      */
     void set_model(const std::string& model) { m_model = model; }
+    
+    /**
+     * @brief Set the base URL for API requests
+     * @param base_url Base URL string
+     */
+    void set_api_base_url(const std::string& base_url) { m_api_base_url = base_url; }
     
     /**
      * @brief Set the timeout for requests in seconds
@@ -182,6 +194,7 @@ public:
 private:
     std::string m_api_key;           ///< API key for authentication
     std::string m_model = "claude-3-opus"; ///< Model to use for requests
+    std::string m_api_base_url = "https://api.anthropic.com"; ///< Base URL for API requests
     int m_timeout = 60;              ///< Timeout in seconds
     int m_max_retries = 3;           ///< Maximum number of retries
     std::string m_output_directory;  ///< Directory to save generated files

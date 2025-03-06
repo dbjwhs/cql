@@ -74,8 +74,11 @@ struct ApiClient::Impl {
         
         request_data = request_json.dump();
         
+        // Construct the full URL by combining base URL and endpoint
+        std::string api_url = m_config.get_api_base_url() + "/v1/messages";
+        
         // Set up CURL request
-        curl_easy_setopt(m_curl, CURLOPT_URL, "https://api.anthropic.com/v1/messages");
+        curl_easy_setopt(m_curl, CURLOPT_URL, api_url.c_str());
         curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, write_callback);
         curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, &m_response_buffer);
         curl_easy_setopt(m_curl, CURLOPT_POSTFIELDS, request_data.c_str());
@@ -303,6 +306,10 @@ Config Config::load_from_default_locations() {
     if (const char *model_env = std::getenv("CQL_MODEL")) {
         config.m_model = model_env;
     }
+    
+    if (const char *base_url_env = std::getenv("CQL_API_BASE_URL")) {
+        config.m_api_base_url = base_url_env;
+    }
 
     if (const char *timeout_env = std::getenv("CQL_TIMEOUT")) {
         try {
@@ -370,6 +377,10 @@ Config Config::load_from_file(const std::string& filename) {
             
             if (api.contains("model") && api["model"].is_string()) {
                 config.m_model = api["model"];
+            }
+            
+            if (api.contains("base_url") && api["base_url"].is_string()) {
+                config.m_api_base_url = api["base_url"];
             }
             
             if (api.contains("timeout") && api["timeout"].is_number()) {

@@ -28,6 +28,7 @@ namespace cql::test {
 TestResult test_api_client();
 TestResult test_response_processor();
 TestResult test_api_integration();
+TestResult test_api_custom_base_url();
 TestResult test_configuration();
 TestResult test_examples_compilation();
 TestResult test_lexer_standalone();
@@ -112,6 +113,7 @@ bool run_tests(bool fail_fast) {
         {"API Client", test_api_client},
         {"Response Processor", test_response_processor},
         {"API Integration", test_api_integration},
+        {"API Custom Base URL", test_api_custom_base_url},
         {"Configuration", test_configuration},
         {"Examples Compilation", test_examples_compilation},
         {"Lexer (Standalone)", test_lexer_standalone},
