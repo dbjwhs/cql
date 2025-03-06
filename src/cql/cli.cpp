@@ -263,8 +263,13 @@ void run_cli() {
                 
                 // if the variable wasn't found, add it at the beginning
                 if (!variable_updated) {
-                    std::string var_declaration = "@variable \"" + name + "\" \"" + value + "\"\n";
-                    current_query = var_declaration + current_query;
+                    std::string var_declaration = "@variable \"";
+                    var_declaration.append(name);
+                    var_declaration.append("\" \"");
+                    var_declaration.append(value);
+                    var_declaration.append("\"\n");
+                    current_query.append(var_declaration);
+                    current_query.append(current_query);
                 } else {
                     current_query = new_query.str();
                 }
@@ -490,10 +495,12 @@ void run_cli() {
                 }
                 
                 // add inherit directive if not already present
-                std::regex inherit_regex("@inherit\\s+\"([^\"]*)\"");
-                if (!std::regex_search(current_query, inherit_regex)) {
+                if (std::regex inherit_regex("@inherit\\s+\"([^\"]*)\""); !std::regex_search(current_query, inherit_regex)) {
                     // add @inherit directive at the beginning of the content
-                    current_query = "@inherit \"" + parent_name + "\"\n" + current_query;
+                    const std::string saved_query = current_query;
+                    current_query.append(parent_name);
+                    current_query.append("\"\n");
+                    current_query.append(saved_query);
                 }
                 
                 // validate the template before saving
@@ -630,9 +637,9 @@ void run_cli() {
                     std::cout << "Validating " << templates.size() << " templates..." << std::endl;
                     std::cout << "----------------------------" << std::endl;
                     
-                    int error_count = 0;
-                    int warning_count = 0;
-                    int info_count = 0;
+                    size_t error_count = 0;
+                    size_t warning_count = 0;
+                    size_t info_count = 0;
                     
                     // keep track of templates with issues
                     std::vector<std::string> templates_with_errors;
@@ -766,13 +773,12 @@ bool process_file(const std::string& input_file, const std::string& output_file)
         Logger::getInstance().log(LogLevel::INFO, "Processing file: ", input_file);
         std::cout << "Processing file: " << input_file << std::endl;
 
-        std::string result = QueryProcessor::compile_file(input_file);
+        const std::string result = QueryProcessor::compile_file(input_file);
 
         if (output_file.empty()) {
-            std::cout << "\n=== Compiled Query ===\n\n" 
-                     << result << "\n===================" << std::endl;
-            Logger::getInstance().log(LogLevel::INFO, "\n=== Compiled Query ===\n\n", 
-                                     result, "\n===================");
+            std::cout << "\nCompiled Query\n";
+            std::cout << "==============\n\n";
+            std::cout << result << std::endl;
         } else {
             util::write_file(output_file, result);
             std::cout << "Compiled query written to " << output_file << std::endl;
@@ -783,6 +789,7 @@ bool process_file(const std::string& input_file, const std::string& output_file)
     } catch (const std::exception& e) {
         std::cerr << "Error processing file: " << e.what() << std::endl;
         Logger::getInstance().log(LogLevel::ERROR, "Error processing file: ", e.what());
+
         return false;
     }
 }
