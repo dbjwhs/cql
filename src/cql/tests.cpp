@@ -29,6 +29,7 @@ TestResult test_api_client();
 TestResult test_response_processor();
 TestResult test_api_integration();
 TestResult test_configuration();
+TestResult test_examples_compilation();
 
 // testresult implementation
 TestResult::TestResult(const bool passed, std::string  error_message,
@@ -108,7 +109,8 @@ bool run_tests(bool fail_fast) {
         {"API Client", test_api_client},
         {"Response Processor", test_response_processor},
         {"API Integration", test_api_integration},
-        {"Configuration", test_configuration}
+        {"Configuration", test_configuration},
+        {"Examples Compilation", test_examples_compilation}
     };
     
     // run each test
@@ -1106,6 +1108,116 @@ TestResult test_response_processor() {
     } catch (const std::exception& e) {
         return TestResult::fail("Exception in test_response_processor: " + std::string(e.what()),
                               __FILE__, __LINE__);
+    }
+}
+
+// Test all example CQL files in the examples directory
+TestResult test_examples_compilation() {
+    std::cout << "Testing compilation of example CQL files..." << std::endl;
+    
+    try {
+        // Get the project root directory
+        std::string project_root;
+        
+        // Try to find the examples directory relative to the current working directory
+        if (fs::exists("../examples")) {
+            project_root = "..";
+        } else if (fs::exists("../../examples")) {
+            project_root = "../..";
+        } else {
+            // If we can't find it, look for the absolute path based on this file's location
+            std::string file_path = __FILE__;
+            std::string src_dir = file_path.substr(0, file_path.find_last_of("/\\"));
+            project_root = src_dir + "/../..";
+        }
+        
+        // Path to examples directory
+        std::string examples_dir = project_root + "/examples";
+        
+        if (!fs::exists(examples_dir)) {
+            return TestResult::fail("Examples directory not found: " + examples_dir,
+                                   __FILE__, __LINE__);
+        }
+        
+        std::cout << "Examples directory found at: " << examples_dir << std::endl;
+        
+        // Find all .cql files in the examples directory
+        std::vector<std::string> example_files;
+        for (const auto& entry : fs::directory_iterator(examples_dir)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".cql") {
+                example_files.push_back(entry.path().string());
+            }
+        }
+        
+        if (example_files.empty()) {
+            return TestResult::fail("No .cql files found in examples directory",
+                                   __FILE__, __LINE__);
+        }
+        
+        std::cout << "Found " << example_files.size() << " example files to test" << std::endl;
+        
+        // Process each example file
+        std::vector<std::string> failed_examples;
+        std::vector<std::string> error_messages;
+        
+        for (const auto& file_path : example_files) {
+            std::string file_name = fs::path(file_path).filename().string();
+            std::cout << "  Testing example: " << file_name << "... ";
+            
+            try {
+                // Read file content
+                std::string content = util::read_file(file_path);
+                
+                // Skip empty files
+                if (content.empty()) {
+                    std::cout << "SKIPPED (empty file)" << std::endl;
+                    continue;
+                }
+                
+                // Compile the example
+                // Use Logger::StderrSuppressionGuard to avoid cluttering the output
+                // with expected warnings from example files
+                {
+                    Logger::StderrSuppressionGuard stderr_guard;
+                    std::string result = QueryProcessor::compile(content);
+                }
+                
+                std::cout << "PASSED" << std::endl;
+            } catch (const std::exception& e) {
+                std::cout << "FAILED" << std::endl;
+                std::string error = e.what();
+                
+                // Check if this is a parser error or validation error
+                // Store the error message for later
+                failed_examples.push_back(file_name);
+                error_messages.push_back(error);
+                
+                std::cout << "    Error: " << error << std::endl;
+            }
+        }
+        
+        // Report results
+        std::cout << "\nExamples compilation test summary:" << std::endl;
+        std::cout << "  Total examples: " << example_files.size() << std::endl;
+        std::cout << "  Passed: " << (example_files.size() - failed_examples.size()) << std::endl;
+        std::cout << "  Failed: " << failed_examples.size() << std::endl;
+        
+        if (!failed_examples.empty()) {
+            std::string error_summary = "Failed to compile " + 
+                                       std::to_string(failed_examples.size()) + 
+                                       " example(s):\n";
+            
+            for (size_t i = 0; i < failed_examples.size(); ++i) {
+                error_summary += "  - " + failed_examples[i] + ": " + error_messages[i] + "\n";
+            }
+            
+            return TestResult::fail(error_summary, __FILE__, __LINE__);
+        }
+        
+        return TestResult::pass();
+    } catch (const std::exception& e) {
+        return TestResult::fail("Exception in test_examples_compilation: " + std::string(e.what()),
+                               __FILE__, __LINE__);
     }
 }
 
