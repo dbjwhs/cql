@@ -30,6 +30,9 @@ TestResult test_response_processor();
 TestResult test_api_integration();
 TestResult test_configuration();
 TestResult test_examples_compilation();
+TestResult test_lexer_standalone();
+TestResult test_parser_standalone();
+TestResult test_compiler_standalone();
 
 // testresult implementation
 TestResult::TestResult(const bool passed, std::string  error_message,
@@ -110,7 +113,10 @@ bool run_tests(bool fail_fast) {
         {"Response Processor", test_response_processor},
         {"API Integration", test_api_integration},
         {"Configuration", test_configuration},
-        {"Examples Compilation", test_examples_compilation}
+        {"Examples Compilation", test_examples_compilation},
+        {"Lexer (Standalone)", test_lexer_standalone},
+        {"Parser (Standalone)", test_parser_standalone},
+        {"Compiler (Standalone)", test_compiler_standalone}
     };
     
     // run each test
@@ -1219,6 +1225,252 @@ TestResult test_examples_compilation() {
         return TestResult::fail("Exception in test_examples_compilation: " + std::string(e.what()),
                                __FILE__, __LINE__);
     }
+}
+
+// Implementation for the lexer tests
+TestResult test_lexer() {
+    std::cout << "Running lexer tests..." << std::endl;
+
+    try {
+        // test basic tokenization
+        {
+            std::string input = "@language \"C++\"\n@description \"implement a stack\"";
+            Lexer lexer(input);
+
+            auto token1 = lexer.next_token();
+            TEST_ASSERT(token1 && token1->m_type == TokenType::LANGUAGE, "First token should be LANGUAGE");
+
+            auto token2 = lexer.next_token();
+            TEST_ASSERT(token2 && token2->m_type == TokenType::STRING && token2->m_value == "C++", 
+                      "Second token should be STRING with value C++");
+
+            auto token3 = lexer.next_token();
+            TEST_ASSERT(token3 && token3->m_type == TokenType::NEWLINE, "Third token should be NEWLINE");
+
+            auto token4 = lexer.next_token();
+            TEST_ASSERT(token4 && token4->m_type == TokenType::DESCRIPTION, "Fourth token should be DESCRIPTION");
+
+            auto token5 = lexer.next_token();
+            TEST_ASSERT(token5 && token5->m_type == TokenType::STRING && token5->m_value == "implement a stack",
+                      "Fifth token should be STRING with value 'implement a stack'");
+
+            auto token6 = lexer.next_token();
+            TEST_ASSERT(!token6, "Sixth token should be null (end of input)");
+        }
+
+        // test string escape sequences
+        {
+            std::string input = "@language \"C++\\n with newline\"";
+            Lexer lexer(input);
+
+            auto token1 = lexer.next_token();
+            TEST_ASSERT(token1 && token1->m_type == TokenType::LANGUAGE, "First token should be LANGUAGE");
+
+            auto token2 = lexer.next_token();
+            TEST_ASSERT(token2 && token2->m_type == TokenType::STRING, "Second token should be STRING");
+            TEST_ASSERT(token2->m_value == "C++\n with newline", "Value should have escaped newline");
+        }
+
+        // test new tokens
+        {
+            std::string input = "@dependency \"boost::asio\"\n@performance \"latency < 5ms\"";
+            Lexer lexer(input);
+
+            auto token1 = lexer.next_token();
+            TEST_ASSERT(token1 && token1->m_type == TokenType::DEPENDENCY, "First token should be DEPENDENCY");
+
+            auto token2 = lexer.next_token();
+            TEST_ASSERT(token2 && token2->m_type == TokenType::STRING && token2->m_value == "boost::asio",
+                      "Second token should be STRING with value 'boost::asio'");
+
+            auto token3 = lexer.next_token();
+            TEST_ASSERT(token3 && token3->m_type == TokenType::NEWLINE, "Third token should be NEWLINE");
+
+            auto token4 = lexer.next_token();
+            TEST_ASSERT(token4 && token4->m_type == TokenType::PERFORMANCE, "Fourth token should be PERFORMANCE");
+
+            auto token5 = lexer.next_token();
+            TEST_ASSERT(token5 && token5->m_type == TokenType::STRING && token5->m_value == "latency < 5ms",
+                      "Fifth token should be STRING with value 'latency < 5ms'");
+        }
+
+        // test copyright token
+        {
+            std::string input = "@copyright \"MIT License\" \"2025 dbjwhs\"";
+            Lexer lexer(input);
+
+            auto token1 = lexer.next_token();
+            TEST_ASSERT(token1 && token1->m_type == TokenType::COPYRIGHT, "First token should be COPYRIGHT");
+
+            auto token2 = lexer.next_token();
+            TEST_ASSERT(token2 && token2->m_type == TokenType::STRING && token2->m_value == "MIT License",
+                      "Second token should be STRING with value 'MIT License'");
+
+            auto token3 = lexer.next_token();
+            TEST_ASSERT(token3 && token3->m_type == TokenType::STRING && token3->m_value == "2025 dbjwhs",
+                      "Third token should be STRING with value '2025 dbjwhs'");
+        }
+
+        return TestResult::pass();
+    } catch (const std::exception& e) {
+        return TestResult::fail("Exception in test_lexer: " + std::string(e.what()),
+                               __FILE__, __LINE__);
+    }
+}
+
+// Implementation for the parser tests
+TestResult test_parser() {
+    std::cout << "Running parser tests..." << std::endl;
+
+    try {
+        // test basic parsing
+        {
+            std::string input = R"(
+                @language "C++"
+                @description "implement a thread-safe queue"
+                @context "Using Modern C++ features"
+                @test "Test empty queue"
+                @dependency "std::mutex"
+                @performance "Handle 1M operations per second"
+            )";
+
+            Parser parser(input);
+            auto nodes = parser.parse();
+
+            TEST_ASSERT(nodes.size() == 5, "Should parse 5 nodes");
+
+            // verify node types
+            auto* code_request = dynamic_cast<CodeRequestNode*>(nodes[0].get());
+            TEST_ASSERT(code_request && code_request->language() == "C++",
+                      "First node should be CodeRequestNode with language C++");
+            TEST_ASSERT(code_request->description() == "implement a thread-safe queue",
+                      "CodeRequestNode should have correct description");
+
+            auto* context = dynamic_cast<ContextNode*>(nodes[1].get());
+            TEST_ASSERT(context && context->context() == "Using Modern C++ features",
+                      "Second node should be ContextNode with correct text");
+
+            auto* test = dynamic_cast<TestNode*>(nodes[2].get());
+            TEST_ASSERT(test && test->test_cases().size() == 1,
+                      "Third node should be TestNode with 1 test case");
+            TEST_ASSERT(test->test_cases()[0] == "Test empty queue",
+                      "TestNode should have correct test case");
+
+            auto* dependency = dynamic_cast<DependencyNode*>(nodes[3].get());
+            TEST_ASSERT(dependency && dependency->dependencies().size() == 1,
+                      "Fourth node should be DependencyNode with 1 dependency");
+            TEST_ASSERT(dependency->dependencies()[0] == "std::mutex",
+                      "DependencyNode should have correct dependency");
+
+            auto* performance = dynamic_cast<PerformanceNode*>(nodes[4].get());
+            TEST_ASSERT(performance && performance->requirement() == "Handle 1M operations per second",
+                      "Fifth node should be PerformanceNode with correct requirement");
+        }
+
+        return TestResult::pass();
+    } catch (const std::exception& e) {
+        return TestResult::fail("Exception in test_parser: " + std::string(e.what()),
+                               __FILE__, __LINE__);
+    }
+}
+
+// Implementation for the compiler tests
+TestResult test_compiler() {
+    std::cout << "Running compiler tests..." << std::endl;
+
+    try {
+        // test basic compilation
+        {
+            std::string input = R"(
+                @language "C++"
+                @description "implement a thread-safe queue"
+                @context "Using Modern C++ features"
+                @test "Test empty queue"
+            )";
+
+            Parser parser(input);
+            auto nodes = parser.parse();
+
+            QueryCompiler compiler;
+            for (const auto& node : nodes) {
+                node->accept(compiler);
+            }
+
+            std::string result = compiler.get_compiled_query();
+
+            // verify the compiled query contains expected sections
+            TEST_ASSERT(result.find("Please generate C++ code that:") != std::string::npos,
+                      "Compiled query should contain code generation prompt");
+            TEST_ASSERT(result.find("implement a thread-safe queue") != std::string::npos,
+                      "Compiled query should contain the description");
+            TEST_ASSERT(result.find("Context:") != std::string::npos,
+                      "Compiled query should contain Context section");
+            TEST_ASSERT(result.find("Using Modern C++ features") != std::string::npos,
+                      "Compiled query should contain the context text");
+            TEST_ASSERT(result.find("Please include tests for the following cases:") != std::string::npos,
+                      "Compiled query should contain test section");
+            TEST_ASSERT(result.find("Test empty queue") != std::string::npos,
+                      "Compiled query should contain the test case");
+        }
+
+        // test compiler copyright
+        {
+            std::string input = R"(
+                @copyright "MIT License" "2025 dbjwhs"
+                @language "C++"
+                @description "implement a thread-safe queue"
+            )";
+
+            Parser parser(input);
+            auto nodes = parser.parse();
+
+            QueryCompiler compiler;
+            for (const auto& node : nodes) {
+                node->accept(compiler);
+            }
+
+            std::string result = compiler.get_compiled_query();
+
+            // verify the compiled query contains expected sections
+            TEST_ASSERT(result.find("Please include the following copyright header") != std::string::npos,
+                      "Compiled query should contain copyright section");
+            TEST_ASSERT(result.find("MIT License") != std::string::npos,
+                      "Compiled query should contain license text");
+            TEST_ASSERT(result.find("Copyright (c) 2025 dbjwhs") != std::string::npos,
+                      "Compiled query should contain copyright owner");
+            TEST_ASSERT(result.find("Please generate C++ code that:") != std::string::npos,
+                      "Compiled query should contain code generation prompt");
+        }
+
+        return TestResult::pass();
+    } catch (const std::exception& e) {
+        return TestResult::fail("Exception in test_compiler: " + std::string(e.what()),
+                               __FILE__, __LINE__);
+    }
+}
+
+// Integration with the standalone tests from cql.cpp
+TestResult test_lexer_standalone() {
+    std::cout << "Running lexer standalone tests..." << std::endl;
+    
+    // This function simply calls our new implementation
+    return test_lexer();
+}
+
+// Integration with the standalone tests from cql.cpp
+TestResult test_parser_standalone() {
+    std::cout << "Running parser standalone tests..." << std::endl;
+    
+    // This function simply calls our new implementation
+    return test_parser();
+}
+
+// Integration with the standalone tests from cql.cpp
+TestResult test_compiler_standalone() {
+    std::cout << "Running compiler standalone tests..." << std::endl;
+    
+    // This function simply calls our new implementation
+    return test_compiler();
 }
 
 } // namespace cql::test

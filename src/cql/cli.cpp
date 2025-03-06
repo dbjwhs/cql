@@ -19,8 +19,8 @@
 
 namespace cql::cli {
 
-// cli interface for interactive use
-void run_cli() {
+// interactive interface for using CQL
+void run_interactive() {
     Logger::getInstance().log(LogLevel::INFO, "CQL Interactive Mode");
     Logger::getInstance().log(LogLevel::INFO, "Type 'exit' to quit, 'help' for command list");
 

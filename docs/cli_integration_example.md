@@ -301,7 +301,7 @@ int main(int argc, char* argv[]) {
         Examples::show_all();
     } else if (interactive_mode) {
         // Run interactive mode with or without API integration
-        cli::run_cli(interactive_api);
+        cli::run_interactive(interactive_api);
     } else if (submit_mode) {
         // Submit mode - process input file and send to API
         if (input_file.empty()) {

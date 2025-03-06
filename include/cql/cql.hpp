@@ -266,11 +266,11 @@ namespace test {
 }
 
 /**
- * interactive cli functions
+ * interactive functions
  */
 namespace cli {
-    // run the interactive cli
-    void run_cli();
+    // run the interactive mode
+    void run_interactive();
     
     // process a query file
     bool process_file(const std::string& input_file, const std::string& output_file);

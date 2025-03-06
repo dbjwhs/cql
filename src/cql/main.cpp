@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
                 }
             } else if (arg1 == "--interactive" || arg1 == "-i") {
                 // run in interactive mode
-                cql::cli::run_cli();
+                cql::cli::run_interactive();
             } else if (arg1 == "--copyright") {
                 // show an example of copyright usage
                 std::string copyright_example =
