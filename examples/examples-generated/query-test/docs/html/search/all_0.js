@@ -1,0 +1,12 @@
+var searchData=
+[
+  ['abstract_5ffactory_2ecpp_0',['abstract_factory.cpp',['../abstract__factory_8cpp.html',1,'']]],
+  ['abstract_5ffactory_2eh_1',['abstract_factory.h',['../abstract__factory_8h.html',1,'']]],
+  ['abstractfactorytest_2',['AbstractFactoryTest',['../class_abstract_factory_test.html',1,'']]],
+  ['academicformattingstrategy_3',['AcademicFormattingStrategy',['../classdoc__system_1_1_academic_formatting_strategy.html',1,'doc_system']]],
+  ['applyformatting_4',['applyFormatting',['../classdoc__system_1_1_pdf_document.html#a82df61df47d0f8fab5581d50c8503ad2',1,'doc_system::PdfDocument::applyFormatting()'],['../classdoc__system_1_1_word_document.html#acf1c6133dca37169172325a22bbfc5f7',1,'doc_system::WordDocument::applyFormatting()'],['../classdoc__system_1_1_text_document.html#ab9d738ed959ccf2d65234397507fd6d6',1,'doc_system::TextDocument::applyFormatting()'],['../classdoc__system_1_1_document.html#aded6d9440b9c2e47eeb68d1c482811d1',1,'doc_system::Document::applyFormatting()']]],
+  ['applylayout_5',['applyLayout',['../classdoc__system_1_1_pdf_document.html#af83b0a6740fb4ecc3cfd64fb87698f03',1,'doc_system::PdfDocument::applyLayout()'],['../classdoc__system_1_1_word_document.html#a036687d081498238522cd7859dc9722f',1,'doc_system::WordDocument::applyLayout()'],['../classdoc__system_1_1_text_document.html#a7c4f270ffcaabc3f001f00008a4ad5f4',1,'doc_system::TextDocument::applyLayout()'],['../classdoc__system_1_1_document.html#a6c6fd6fc3b09ae0ba41d96427f66df31',1,'doc_system::Document::applyLayout()']]],
+  ['applyrendering_6',['applyRendering',['../classdoc__system_1_1_pdf_document.html#a8875c3e74456810d5841ae2db4bc2daf',1,'doc_system::PdfDocument::applyRendering()'],['../classdoc__system_1_1_word_document.html#a1c084ac8dc3a98bdba35c850c5da2f57',1,'doc_system::WordDocument::applyRendering()'],['../classdoc__system_1_1_text_document.html#aead92a26afcdc621a9ea458e1d36628a',1,'doc_system::TextDocument::applyRendering()'],['../classdoc__system_1_1_document.html#a6a0d29b34f486325b564b4f97b38659d',1,'doc_system::Document::applyRendering()']]],
+  ['attachobserver_7',['attachObserver',['../classdoc__system_1_1_base_document.html#ad72c7fd9ddc759e95e0abff016b622e3',1,'doc_system::BaseDocument::attachObserver()'],['../classdoc__system_1_1_document.html#a35f756abe10713518c4b1e6979be92d8',1,'doc_system::Document::attachObserver()']]],
+  ['autosaveobserver_8',['AutoSaveObserver',['../classdoc__system_1_1_auto_save_observer.html',1,'doc_system']]]
+];

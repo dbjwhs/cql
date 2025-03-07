@@ -1,0 +1,12 @@
+var searchData=
+[
+  ['main_0',['main',['../document__system__example_8cpp.html#ae66f6b31b5ad750f1fe042a706a4e3d4',1,'main():&#160;document_system_example.cpp'],['../test__abstract__factory_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627',1,'main(int argc, char **argv):&#160;test_abstract_factory.cpp'],['../test__builder_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627',1,'main(int argc, char **argv):&#160;test_builder.cpp'],['../test__factory_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627',1,'main(int argc, char **argv):&#160;test_factory.cpp'],['../test__observer_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627',1,'main(int argc, char **argv):&#160;test_observer.cpp'],['../test__singleton_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627',1,'main(int argc, char **argv):&#160;test_singleton.cpp'],['../test__strategy_8cpp.html#a3c04138a5bfe5d72780bb7e82a18e627',1,'main(int argc, char **argv):&#160;test_strategy.cpp']]],
+  ['message_1',['Message',['../structdoc__system_1_1_message.html',1,'doc_system::Message'],['../structdoc__system_1_1_message.html#a79b20d94eff55d952f9fd2c8fa7773b2',1,'doc_system::Message::Message()']]],
+  ['message_5fqueue_2eh_2',['message_queue.h',['../message__queue_8h.html',1,'']]],
+  ['messagequeue_3',['MessageQueue',['../classdoc__system_1_1_message_queue.html',1,'doc_system::MessageQueue'],['../classdoc__system_1_1_message_queue.html#a6a2dda5ac3796fbf7895ca72a618a501',1,'doc_system::MessageQueue::MessageQueue(const MessageQueue &amp;)=delete'],['../classdoc__system_1_1_message_queue.html#a4cce835843f0688f1e4d2dd3bcfeacb3',1,'doc_system::MessageQueue::MessageQueue(MessageQueue &amp;&amp;)=delete'],['../classdoc__system_1_1_message_queue.html#a0900f253ee69f3adba7c767ef5dbb64a',1,'doc_system::MessageQueue::MessageQueue()']]],
+  ['messagequeue_5f_4',['messageQueue_',['../classdoc__system_1_1_message_queue.html#afefbff627a848645c8775481af8e41c5',1,'doc_system::MessageQueue']]],
+  ['metadata_5f_5',['metadata_',['../classdoc__system_1_1_base_document.html#ab8faf76b38e5ffcbbfd8cc14b322bfdf',1,'doc_system::BaseDocument']]],
+  ['metadatamap_6',['MetadataMap',['../namespacedoc__system.html#a3530f550a91939112e08a2600d5d9261',1,'doc_system']]],
+  ['microservice_7',['Microservice',['../classdoc__system_1_1_microservice.html',1,'doc_system::Microservice'],['../classdoc__system_1_1_microservice.html#aac5352a598b1a757fd2a2b4742a61302',1,'doc_system::Microservice::Microservice()']]],
+  ['mutex_5f_8',['mutex_',['../classdoc__system_1_1_document_manager.html#a08679ae15241c720285d4c4eec6f5d3b',1,'doc_system::DocumentManager']]]
+];

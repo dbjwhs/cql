@@ -1,0 +1,32 @@
+digraph "doc_system::Document::getFilename"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="doc_system::Document\l::getFilename",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="doc_system::AcademicFormatting\lStrategy::format",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_academic_formatting_strategy.html#ad0d74c77e39cf8860b7e14f36ff2d9ff",tooltip=" "];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="doc_system::CorporateFormatting\lStrategy::format",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_corporate_formatting_strategy.html#ae514873838771b84ddb269a5fbbf7dc4",tooltip=" "];
+  Node1 -> Node4 [id="edge3_Node000001_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="doc_system::CompactLayout\lStrategy::layout",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_compact_layout_strategy.html#a758d97074f9e33934dd09c17ca397892",tooltip=" "];
+  Node1 -> Node5 [id="edge4_Node000001_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="doc_system::GridLayoutStrategy\l::layout",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_grid_layout_strategy.html#a8f4d1c76811439b4949e941d4561df51",tooltip=" "];
+  Node1 -> Node6 [id="edge5_Node000001_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="doc_system::AutoSaveObserver\l::onNotify",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_auto_save_observer.html#a329dee93d522936419a62d9be6e64810",tooltip=" "];
+  Node1 -> Node7 [id="edge6_Node000001_Node000007",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="doc_system::LoggingObserver\l::onNotify",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_logging_observer.html#aa5bc9a273630c77b2098e4528b694a68",tooltip=" "];
+  Node1 -> Node8 [id="edge7_Node000001_Node000008",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="doc_system::ValidationObserver\l::onNotify",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_validation_observer.html#a5c0ae25a94d61913d9030da49e7fbb39",tooltip=" "];
+  Node1 -> Node9 [id="edge8_Node000001_Node000009",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node9 [id="Node000009",label="TestObserver::onNotify",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_test_observer.html#a3f5240e4f8dcd823b672ec42f69530cc",tooltip=" "];
+  Node1 -> Node10 [id="edge9_Node000001_Node000010",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node10 [id="Node000010",label="doc_system::FastRendering\lStrategy::render",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_fast_rendering_strategy.html#a5b11bfc633b78e7d4fee79462b993bbd",tooltip=" "];
+  Node1 -> Node11 [id="edge10_Node000001_Node000011",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node11 [id="Node000011",label="doc_system::HighQualityRendering\lStrategy::render",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_high_quality_rendering_strategy.html#a68b785fbbdd118ec846b47a11a210a93",tooltip=" "];
+  Node1 -> Node12 [id="edge11_Node000001_Node000012",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node12 [id="Node000012",label="TEST_F",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$test__strategy_8cpp.html#ab3ce6ca5878a5fa3342cef30e6af74b6",tooltip=" "];
+}

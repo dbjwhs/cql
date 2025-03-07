@@ -1,0 +1,52 @@
+digraph "doc_system::StrategyRegistry::registerFormattingStrategy"
+{
+ // INTERACTIVE_SVG=YES
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="RL";
+  Node1 [id="Node000001",label="doc_system::StrategyRegistry\l::registerFormattingStrategy",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip=" "];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="doc_system::StrategyRegistry\l::StrategyRegistry",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_strategy_registry.html#a0627411d22cdbb95101531a804999062",tooltip=" "];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="doc_system::StrategyRegistry\l::getInstance",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_strategy_registry.html#acefba6a736ee047d13179c05a0e8c5e6",tooltip=" "];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="doc_system::ImageRendering\lStrategy::create",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_image_rendering_strategy.html#ad810b4ae707f04a1ffefb76c96e43c6e",tooltip=" "];
+  Node4 -> Node5 [id="edge4_Node000004_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="doc_system::PdfDocument\l::applyRendering",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_pdf_document.html#a8875c3e74456810d5841ae2db4bc2daf",tooltip=" "];
+  Node4 -> Node6 [id="edge5_Node000004_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="doc_system::TextDocument\l::applyRendering",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_text_document.html#aead92a26afcdc621a9ea458e1d36628a",tooltip=" "];
+  Node4 -> Node7 [id="edge6_Node000004_Node000007",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="doc_system::WordDocument\l::applyRendering",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_word_document.html#a1c084ac8dc3a98bdba35c850c5da2f57",tooltip=" "];
+  Node4 -> Node8 [id="edge7_Node000004_Node000008",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="TEST_F",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$test__strategy_8cpp.html#ac782dc609d3e85d36d0bb0ccce443cfa",tooltip=" "];
+  Node4 -> Node9 [id="edge8_Node000004_Node000009",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node9 [id="Node000009",label="TEST_F",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$test__strategy_8cpp.html#a4d33ac428d2ddd93bc88b13982e88fde",tooltip=" "];
+  Node3 -> Node10 [id="edge9_Node000003_Node000010",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node10 [id="Node000010",label="doc_system::TableLayoutStrategy\l::create",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_table_layout_strategy.html#ab3a4131bb8b257af83a0264970f31f83",tooltip=" "];
+  Node10 -> Node11 [id="edge10_Node000010_Node000011",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node11 [id="Node000011",label="doc_system::PdfDocument\l::applyLayout",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_pdf_document.html#af83b0a6740fb4ecc3cfd64fb87698f03",tooltip=" "];
+  Node10 -> Node12 [id="edge11_Node000010_Node000012",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node12 [id="Node000012",label="doc_system::TextDocument\l::applyLayout",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_text_document.html#a7c4f270ffcaabc3f001f00008a4ad5f4",tooltip=" "];
+  Node10 -> Node13 [id="edge12_Node000010_Node000013",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node13 [id="Node000013",label="doc_system::WordDocument\l::applyLayout",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_word_document.html#a036687d081498238522cd7859dc9722f",tooltip=" "];
+  Node10 -> Node14 [id="edge13_Node000010_Node000014",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node14 [id="Node000014",label="TEST_F",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$test__strategy_8cpp.html#a760044785135cb23937f0f77b53ecc17",tooltip=" "];
+  Node10 -> Node9 [id="edge14_Node000010_Node000009",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 -> Node15 [id="edge15_Node000003_Node000015",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node15 [id="Node000015",label="doc_system::TextFormatting\lStrategy::create",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_text_formatting_strategy.html#a91efd62b630d8a4cac97f68ca7253638",tooltip=" "];
+  Node15 -> Node16 [id="edge16_Node000015_Node000016",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node16 [id="Node000016",label="doc_system::PdfDocument\l::applyFormatting",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_pdf_document.html#a82df61df47d0f8fab5581d50c8503ad2",tooltip=" "];
+  Node15 -> Node17 [id="edge17_Node000015_Node000017",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node17 [id="Node000017",label="doc_system::TextDocument\l::applyFormatting",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_text_document.html#ab9d738ed959ccf2d65234397507fd6d6",tooltip=" "];
+  Node15 -> Node18 [id="edge18_Node000015_Node000018",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node18 [id="Node000018",label="doc_system::WordDocument\l::applyFormatting",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classdoc__system_1_1_word_document.html#acf1c6133dca37169172325a22bbfc5f7",tooltip=" "];
+  Node15 -> Node19 [id="edge19_Node000015_Node000019",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node19 [id="Node000019",label="TEST_F",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$test__strategy_8cpp.html#afaa8f5a3b815ecc16535603196199bfb",tooltip=" "];
+  Node15 -> Node20 [id="edge20_Node000015_Node000020",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node20 [id="Node000020",label="TEST_F",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$test__strategy_8cpp.html#ab3ce6ca5878a5fa3342cef30e6af74b6",tooltip=" "];
+  Node15 -> Node9 [id="edge21_Node000015_Node000009",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 -> Node20 [id="edge22_Node000003_Node000020",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node20 [id="edge23_Node000001_Node000020",dir="back",color="steelblue1",style="solid",tooltip=" "];
+}

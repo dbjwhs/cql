@@ -1,0 +1,51 @@
+# MIT License
+# Copyright (c) 2025 dbjwhs
+
+# Doxyfile for Document Processing System
+
+# Project information
+PROJECT_NAME           = "Document Processing System"
+PROJECT_NUMBER         = 1.0.0
+PROJECT_BRIEF          = "A modern C++20 document processing system demonstrating architectural patterns"
+OUTPUT_DIRECTORY       = ./docs
+
+# Input files
+INPUT                  = ./headers ./src
+FILE_PATTERNS          = *.h *.cpp
+RECURSIVE              = YES
+
+# Output format
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
+
+# Display options
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+
+# Diagrams and graphs
+HAVE_DOT               = YES
+UML_LOOK               = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+
+# Source browsing options
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+
+# Other settings
+QUIET                  = NO
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = YES
+GENERATE_TREEVIEW      = YES
+SEARCHENGINE           = YES
+

@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['save_0',['save',['../classdoc__system_1_1_pdf_document.html#a114ad64cff3a056de3b78fcb07373619',1,'doc_system::PdfDocument::save()'],['../classdoc__system_1_1_word_document.html#a29e22dd1bfde4f38481e9e527fed540f',1,'doc_system::WordDocument::save()'],['../classdoc__system_1_1_text_document.html#a8061a6e9fc97d15700247c9b71beb3de',1,'doc_system::TextDocument::save()'],['../classdoc__system_1_1_document.html#a29928fe876a88e4f91de32d4b7a66015',1,'doc_system::Document::save()']]],
+  ['servicethread_5f_1',['serviceThread_',['../classdoc__system_1_1_microservice.html#a620d4e9ef78f446455b5c5777be75918',1,'doc_system::Microservice']]],
+  ['setcontent_2',['setContent',['../classdoc__system_1_1_base_document.html#a32db0994a395d42acd33f9649374075f',1,'doc_system::BaseDocument::setContent()'],['../classdoc__system_1_1_document.html#a22b3c40116f8e9bf168ba865d019f8bd',1,'doc_system::Document::setContent()']]],
+  ['setfooter_3',['setFooter',['../classdoc__system_1_1_base_document.html#a6e4eeaca5560494d2ccaad42fcf0561d',1,'doc_system::BaseDocument::setFooter()'],['../classdoc__system_1_1_document.html#a56d92a8247adfe3bd9cfaf71940f77cf',1,'doc_system::Document::setFooter()']]],
+  ['setheader_4',['setHeader',['../classdoc__system_1_1_base_document.html#abf17f7eafdffb7a58b5c95940d34a327',1,'doc_system::BaseDocument::setHeader()'],['../classdoc__system_1_1_document.html#aa37471643982e35d4a1c108b692ea186',1,'doc_system::Document::setHeader()']]],
+  ['setmetadata_5',['setMetadata',['../classdoc__system_1_1_base_document.html#a43a1ee835fa4c8701eee22539a3ef90b',1,'doc_system::BaseDocument::setMetadata()'],['../classdoc__system_1_1_document.html#a139a8f037d450bdc8acd26dc6c9c5c72',1,'doc_system::Document::setMetadata()']]],
+  ['setup_6',['SetUp',['../class_abstract_factory_test.html#a376e402649e90ba915921c0af4a0403f',1,'AbstractFactoryTest::SetUp()'],['../class_builder_test.html#a2eb75bb950790a308236a89ed6ca1afb',1,'BuilderTest::SetUp()'],['../class_factory_method_test.html#af2a719de7fd2e0f509871b5471bf808e',1,'FactoryMethodTest::SetUp()'],['../class_observer_test.html#ab22192ebbb8dc2e7d6f29635108b803a',1,'ObserverTest::SetUp()'],['../class_singleton_test.html#abdfcfbc37d64d2dbc290b48d5ccca045',1,'SingletonTest::SetUp()'],['../class_strategy_test.html#a86adc8a45229e984936c1bb99605168a',1,'StrategyTest::SetUp()']]],
+  ['singletontest_7',['SingletonTest',['../class_singleton_test.html',1,'']]],
+  ['start_8',['start',['../classdoc__system_1_1_microservice.html#a1ce1a04563ab2b7453b66a033cc483de',1,'doc_system::Microservice']]],
+  ['startprocessing_9',['startProcessing',['../classdoc__system_1_1_message_queue.html#aec52ca9a3d25e908d63bfa772a58442d',1,'doc_system::MessageQueue']]],
+  ['stop_10',['stop',['../classdoc__system_1_1_microservice.html#a9c6d74f65699253bdc7e8ac19de2e578',1,'doc_system::Microservice']]],
+  ['stopprocessing_11',['stopProcessing',['../classdoc__system_1_1_message_queue.html#ae29334806c7766665a014c3151d73b46',1,'doc_system::MessageQueue']]],
+  ['strategyregistry_12',['StrategyRegistry',['../classdoc__system_1_1_strategy_registry.html',1,'doc_system::StrategyRegistry'],['../classdoc__system_1_1_strategy_registry.html#a0627411d22cdbb95101531a804999062',1,'doc_system::StrategyRegistry::StrategyRegistry()']]],
+  ['strategytest_13',['StrategyTest',['../class_strategy_test.html',1,'']]],
+  ['subscribe_14',['subscribe',['../classdoc__system_1_1_message_queue.html#a465a63cda491dfc297edbd624e106405',1,'doc_system::MessageQueue::subscribe()'],['../classdoc__system_1_1_microservice.html#a132aea06836073488b9e4d7b8e1ab50a',1,'doc_system::Microservice::subscribe()']]],
+  ['subscriptionmutex_5f_15',['subscriptionMutex_',['../classdoc__system_1_1_message_queue.html#af6c574c76a349bcba8b9b1ac41fb23f7',1,'doc_system::MessageQueue']]],
+  ['subscriptions_5f_16',['subscriptions_',['../classdoc__system_1_1_message_queue.html#a8606b820145843747f2e66c41960ad25',1,'doc_system::MessageQueue']]]
+];
