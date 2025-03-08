@@ -83,3 +83,16 @@ install(FILES LICENSE DESTINATION share/doc/cql)
 # Enable testing
 enable_testing()
 add_test(NAME cql_tests COMMAND cql --test)
+
+# Add a custom target for documentation
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    find_package(Doxygen)
+    if(DOXYGEN_FOUND)
+        add_custom_target(docs
+                COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                COMMENT "Generating API documentation with Doxygen"
+                VERBATIM
+        )
+    endif()
+endif()
