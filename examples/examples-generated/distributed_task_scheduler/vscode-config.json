@@ -1,0 +1,45 @@
+{
+    "C_Cpp.default.includePath": [
+        "${workspaceFolder}/include"
+    ],
+    "C_Cpp.default.compilerPath": "/usr/bin/g++",
+    "C_Cpp.default.cppStandard": "c++20",
+    "C_Cpp.default.intelliSenseMode": "gcc-x64",
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "C_Cpp.autoAddFileAssociations": false,
+    "C_Cpp.formatting": "clangFormat",
+    "C_Cpp.clang_format_fallbackStyle": "Google",
+    "C_Cpp.clang_format_style": "file",
+    "C_Cpp.doxygen.generateOnType": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.rulers": [
+        100
+    ],
+    "files.associations": {
+        "*.hpp": "cpp",
+        "*.cpp": "cpp",
+        "CMakeLists.txt": "cmake",
+        "Doxyfile": "makefile"
+    },
+    "cmake.generator": "Ninja",
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.configureOnOpen": true,
+    "cmake.configureArgs": [
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=1"
+    ],
+    "tasks.defaultHandler": "cmake",
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/build": false,
+        "**/bin": false
+    },
+    "search.exclude": {
+        "**/build": true,
+        "**/bin": true,
+        "**/docs": true
+    },
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true
+}
