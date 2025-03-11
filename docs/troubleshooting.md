@@ -204,6 +204,108 @@ Error: Unable to open file: /path/to/input.cql
 2. Check file permissions
 3. If the path contains spaces, enclose it in quotes: `"path with spaces/input.cql"`
 
+## API Integration Issues
+
+### Error: API key not found
+
+**Symptoms:**
+```
+Error: API key not found. Please set CLAUDE_API_KEY environment variable or configure in ~/.cql/config.json
+```
+
+**Causes:**
+- Missing API key in environment variables or config file
+- Incorrect API key format
+- Config file not accessible
+
+**Solutions:**
+1. Set the API key in your environment: `export CLAUDE_API_KEY=your_api_key_here`
+2. Create or update the config file with your API key:
+   ```json
+   {
+     "api": {
+       "key": "your_api_key_here"
+     }
+   }
+   ```
+3. Verify API key format (should start with 'sk-')
+4. Check permissions on the config file
+
+### Error: API request failed
+
+**Symptoms:**
+```
+Error: API request failed: 401 Unauthorized
+```
+
+**Causes:**
+- Invalid API key
+- Expired API key
+- Rate limiting
+- Network connectivity issues
+- Server-side errors
+
+**Solutions:**
+1. Verify your API key is valid and has sufficient permissions
+2. Check your network connection
+3. Look for rate limiting in the error message and wait before retrying
+4. Use the `--verbose` flag for more detailed error information
+5. Check that you're using a supported model name with `--model`
+
+### Error: Streaming response interrupted
+
+**Symptoms:**
+```
+Error: Streaming response interrupted: Connection reset by peer
+```
+
+**Causes:**
+- Network interruption during streaming
+- Server timeout
+- Client-side timeout
+
+**Solutions:**
+1. Check your network stability
+2. Increase the timeout setting: `--timeout 120`
+3. For large generations, use the asynchronous mode: `--async`
+4. Consider using a smaller query or breaking it into parts
+
+### Error: Failed to create output directory
+
+**Symptoms:**
+```
+Error: Failed to create output directory: /path/to/output
+```
+
+**Causes:**
+- Insufficient permissions
+- Invalid path
+- Path contains special characters
+
+**Solutions:**
+1. Check permissions on the parent directory
+2. Use a simpler path without special characters
+3. Create the parent directories manually before running the command
+4. Use a relative path instead of absolute path
+
+### Warning: Response contained no code blocks
+
+**Symptoms:**
+```
+Warning: Response contained no code blocks to extract
+```
+
+**Causes:**
+- Claude's response didn't include properly formatted code blocks
+- Query may not have clearly requested code
+- Model may have generated explanation-only content
+
+**Solutions:**
+1. Review your query to ensure it clearly asks for code implementation
+2. Add explicit test cases to encourage code generation
+3. Use a more capable model with `--model claude-3-opus`
+4. Add `@output_format "code_blocks"` to your query
+
 ### Error: Failed to create template directory
 
 **Symptoms:**

@@ -51,6 +51,15 @@ across teams and integrated into development workflows.
 
 See [PHASE2_FEATURES.md](PHASE2_FEATURES.md) for detailed information on the new features.
 
+### API Integration Features (Implemented)
+- **Claude API Integration** for direct submission of queries
+- **Retries with exponential backoff** for transient errors
+- **Response processing** with multi-file code generation
+- **Asynchronous API support** using C++20 features
+- **Streaming response handling** for long-running generations
+- **API configuration options** including temperature and tokens
+- **Error categorization** for network, authentication, rate limit, server, timeout, and client errors
+
 ## Phase 3 Feature: Query Template System
 
 CQL now includes a powerful template system that enables saving, loading, and reusing effective query patterns. The template system provides:
@@ -192,6 +201,18 @@ make
 
 # Process a query file
 ./cql input.cql output.txt
+
+# Submit a query to Claude API
+./cql --submit input.cql
+
+# Submit a query and save generated files to a directory
+./cql --submit input.cql --output-dir ./output
+
+# Submit with specific model selection
+./cql --submit input.cql --model claude-3-opus
+
+# Use a template, submit to API, and save results
+./cql --template thread_safe_queue collection_type=stack --submit --output-dir ./output
 ```
 
 ### Query Syntax Examples
@@ -330,13 +351,18 @@ Quality Assurance Requirements:
 ## Interactive Mode Commands
 
 ```
-help       - Show help
-exit/quit  - Exit the program
-clear      - Clear the current query
-show       - Show the current query
-compile    - Compile the current query
-load FILE  - Load query from file
-save FILE  - Save compiled query to file
+help         - Show help
+exit/quit    - Exit the program
+clear        - Clear the current query
+show         - Show the current query
+compile      - Compile the current query
+load FILE    - Load query from file
+save FILE    - Save compiled query to file
+submit       - Submit compiled query to Claude API
+async_submit - Submit query asynchronously to Claude API
+stream       - Submit query with streaming response
+model NAME   - Set Claude model to use (e.g., claude-3-opus)
+output_dir   - Set directory for generated files
 ```
 
 ## Related Resources and Books

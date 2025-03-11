@@ -1,6 +1,6 @@
 # CQL Template Examples
 
-This directory contains example templates demonstrating CQL features, including the new template inheritance system.
+This directory contains example templates demonstrating CQL features, including the new template inheritance system and API integration capabilities.
 
 ## Template Inheritance Examples
 
@@ -20,6 +20,27 @@ These templates showcase a three-level inheritance chain:
 
 - `default_values.cql` - Demonstrates template with variable declarations and default values
 - `template_example.cql` - Shows template with variable references but no default values
+
+## API Integration Examples
+
+These examples demonstrate using CQL with Claude API integration:
+
+- `api_basic_example.cql` - Simple query for API submission
+- `api_streaming_example.cql` - Query configured for streaming responses
+- `api_advanced_example.cql` - Complex query with multiple file generation
+
+To use these examples with the API:
+
+```bash
+# Basic API submission
+cql --submit examples/api_basic_example.cql
+
+# API submission with output directory
+cql --submit examples/api_advanced_example.cql --output-dir ./generated_code
+
+# API submission with specific model
+cql --submit examples/api_streaming_example.cql --model claude-3-opus
+```
 
 ## Other Examples
 

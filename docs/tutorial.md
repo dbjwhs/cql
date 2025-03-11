@@ -863,7 +863,131 @@ for template in template1 template2 template3; do
 done
 ```
 
-## 11. Integration Examples
+## 11. Claude API Integration
+
+### API Integration Setup
+
+To use CQL with Claude's API, you'll need to configure your API credentials:
+
+1. **Setup API Key**:
+   
+   Set your Claude API key as an environment variable:
+   ```bash
+   export CLAUDE_API_KEY=your_api_key_here
+   ```
+   
+   Or create a configuration file at `~/.cql/config.json`:
+   ```json
+   {
+     "api": {
+       "key": "your_api_key_here",
+       "model": "claude-3-opus",
+       "timeout": 30,
+       "max_retries": 3
+     },
+     "output": {
+       "default_directory": "./generated_code",
+       "create_missing_dirs": true,
+       "overwrite_existing": false
+     }
+   }
+   ```
+
+2. **Test API Configuration**:
+   ```bash
+   ./cql --test-api
+   ```
+
+### Basic API Submission
+
+Submit a CQL query to Claude and view the response:
+
+```bash
+# Submit a query file to Claude API
+./cql --submit my_query.cql
+
+# Submit and save output to a directory
+./cql --submit my_query.cql --output-dir ./output
+
+# Submit with specific model
+./cql --submit my_query.cql --model claude-3-opus
+```
+
+In interactive mode:
+```
+> load my_query.cql
+> submit
+```
+
+### Working with API Responses
+
+CQL processes API responses to extract generated code:
+
+1. **View Response**:
+   ```bash
+   ./cql --submit my_query.cql --view
+   ```
+
+2. **Multiple File Generation**:
+   When Claude generates multiple files, CQL extracts and creates them automatically:
+   ```bash
+   ./cql --submit examples/api_advanced_example.cql --output-dir ./project
+   ```
+
+3. **Formatting Options**:
+   ```bash
+   ./cql --submit my_query.cql --format json
+   ```
+
+### Asynchronous and Streaming API
+
+For long-running queries, use asynchronous or streaming modes:
+
+```bash
+# Asynchronous processing
+./cql --submit large_query.cql --async
+
+# Streaming response
+./cql --submit large_query.cql --stream
+```
+
+In interactive mode:
+```
+> load large_query.cql
+> async_submit
+```
+
+### API Configuration Options
+
+Fine-tune the API behavior:
+
+```bash
+# Set temperature for response creativity (0.0-1.0)
+./cql --submit my_query.cql --temperature 0.7
+
+# Set maximum tokens in response
+./cql --submit my_query.cql --max-tokens 100000
+
+# Set timeout in seconds
+./cql --submit my_query.cql --timeout 120
+
+# Set number of retries for failed requests
+./cql --submit my_query.cql --retries 3
+```
+
+### API Integration with Templates
+
+Combine templates with API submissions:
+
+```bash
+# Use a template with variables and submit to API
+./cql --template thread_safe_queue collection_type=vector --submit
+
+# Use a template with integration directives
+./cql --template api_streaming_example --submit --output-dir ./output
+```
+
+## 12. Other Integration Examples
 
 ### Using CQL with Version Control
 
@@ -1185,6 +1309,15 @@ int main() {
 | `./cql --docs-all` | Generate all documentation |
 | `./cql --export PATH [format]` | Export documentation |
 | `./cql input.cql [output.sql]` | Process a file |
+| `./cql --submit FILE` | Submit query to Claude API |
+| `./cql --submit FILE --output-dir DIR` | Submit and save results to directory |
+| `./cql --submit FILE --model NAME` | Submit with specific model |
+| `./cql --submit FILE --temperature VAL` | Set temperature for generation |
+| `./cql --submit FILE --max-tokens NUM` | Set maximum tokens in response |
+| `./cql --submit FILE --timeout SEC` | Set timeout in seconds |
+| `./cql --submit FILE --async` | Submit asynchronously |
+| `./cql --submit FILE --stream` | Use streaming response |
+| `./cql --test-api` | Test API configuration |
 
 ## Appendix C: Configuration Options
 
@@ -1197,6 +1330,13 @@ CQL supports configuration through environment variables:
 | CQL_DEFAULT_FORMAT | Default export format | markdown |
 | CQL_STRICT_MODE | Enforce strict validation | false |
 | CQL_COLOR_OUTPUT | Enable colored output | true |
+| CLAUDE_API_KEY | Claude API key | - |
+| CQL_API_MODEL | Default Claude model | claude-3-opus |
+| CQL_API_TIMEOUT | API request timeout in seconds | 30 |
+| CQL_API_MAX_RETRIES | Maximum retry attempts | 3 |
+| CQL_API_TEMPERATURE | Generation temperature | 0.7 |
+| CQL_API_MAX_TOKENS | Maximum response tokens | 100000 |
+| CQL_OUTPUT_DIR | Output directory for generated files | ./output |
 
 ## Appendix D: Example Template Library
 
@@ -1210,6 +1350,9 @@ The CQL installation includes example templates:
 | `examples/reporting.cql` | Reporting query example |
 | `examples/variables.cql` | Variable usage example |
 | `examples/inheritance.cql` | Inheritance example |
+| `examples/api_basic_example.cql` | Simple API submission example |
+| `examples/api_streaming_example.cql` | Streaming API example |
+| `examples/api_advanced_example.cql` | Complex multi-file API example |
 
 Access these examples with:
 ```bash
