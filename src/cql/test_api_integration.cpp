@@ -37,7 +37,7 @@ TestResult test_api_custom_base_url() {
         
         // Create a config that points to our mock server
         Config config;
-        config.set_api_key("test_key");
+        config.set_api_key("test_key_valid_for_testing_12345678901234567890");
         config.set_api_base_url(server.get_url());
         
         // Create an ApiClient
@@ -125,7 +125,7 @@ TestResult test_api_integration() {
         
         // Create a config that points to our mock server
         Config config;
-        config.set_api_key("dummy_api_key_for_testing");
+        config.set_api_key("dummy_api_key_for_testing_12345678901234567890");
         config.set_model("claude-3-test-model");
         config.set_api_base_url(mock_server_url);
         config.set_output_directory(output_dir);
@@ -206,4 +206,72 @@ TestResult test_api_integration() {
     }
 }
 
+/**
+ * @brief Test for API error handling and categorization
+ * 
+ * Since the mock server doesn't accept real connections in our test environment,
+ * we'll test the error categories directly by manipulating ApiResponse objects.
+ */
+TestResult test_api_error_handling_and_retry() {
+    std::cout << "Testing API error handling and categorization..." << std::endl;
+    
+    try {
+        // Create a config with a valid API key
+        Config config;
+        config.set_api_key("test_key_valid_for_testing_12345678901234567890");
+        
+        // Test if retryable errors are correctly identified
+        ApiResponse network_error;
+        network_error.m_success = false;
+        network_error.m_error_category = ApiErrorCategory::Network;
+        TEST_ASSERT(network_error.is_retryable(), "Network errors should be retryable");
+        
+        ApiResponse server_error;
+        server_error.m_success = false;
+        server_error.m_error_category = ApiErrorCategory::Server;
+        TEST_ASSERT(server_error.is_retryable(), "Server errors should be retryable");
+        
+        ApiResponse rate_limit_error;
+        rate_limit_error.m_success = false;
+        rate_limit_error.m_error_category = ApiErrorCategory::RateLimit;
+        TEST_ASSERT(rate_limit_error.is_retryable(), "Rate limit errors should be retryable");
+        
+        // Test if non-retryable errors are correctly identified
+        ApiResponse auth_error;
+        auth_error.m_success = false;
+        auth_error.m_error_category = ApiErrorCategory::Authentication;
+        TEST_ASSERT(!auth_error.is_retryable(), "Authentication errors should not be retryable");
+        
+        ApiResponse client_error;
+        client_error.m_success = false;
+        client_error.m_error_category = ApiErrorCategory::Client;
+        TEST_ASSERT(!client_error.is_retryable(), "Client errors should not be retryable");
+        
+        // Test API key validation
+        // This should succeed with a valid-looking key
+        bool key_validation_succeeded = true;
+        try {
+            ApiClient client(config);
+        } catch (const std::exception&) {
+            key_validation_succeeded = false;
+        }
+        TEST_ASSERT(key_validation_succeeded, "API key validation should succeed with valid key");
+        
+        // This should fail with an invalid key
+        bool key_validation_failed = false;
+        try {
+            Config invalid_config;
+            invalid_config.set_api_key("short_key");
+            ApiClient client(invalid_config);
+        } catch (const std::exception&) {
+            key_validation_failed = true;
+        }
+        TEST_ASSERT(key_validation_failed, "API key validation should fail with invalid key");
+        
+        return TestResult::pass();
+    } catch (const std::exception& e) {
+        return TestResult::fail("Exception in test_api_error_handling_and_retry: " + std::string(e.what()),
+                              __FILE__, __LINE__);
+    }
+}
 } // namespace cql::test

@@ -29,6 +29,7 @@ TestResult test_api_client();
 TestResult test_response_processor();
 TestResult test_api_integration();
 TestResult test_api_custom_base_url();
+TestResult test_api_error_handling_and_retry();
 TestResult test_configuration();
 TestResult test_examples_compilation();
 TestResult test_lexer_standalone();
@@ -114,6 +115,7 @@ bool run_tests(bool fail_fast) {
         {"Response Processor", test_response_processor},
         {"API Integration", test_api_integration},
         {"API Custom Base URL", test_api_custom_base_url},
+        {"API Error Handling", test_api_error_handling_and_retry},
         {"Configuration", test_configuration},
         {"Examples Compilation", test_examples_compilation},
         {"Lexer (Standalone)", test_lexer_standalone},
@@ -955,7 +957,8 @@ TestResult test_api_client() {
     try {
         // Create a config for testing without real API calls
         Config config;
-        config.set_api_key("dummy_api_key_for_testing");
+        // Set a valid-looking API key (at least 30 chars for validation)
+        config.set_api_key("dummy_api_key_for_testing_12345678901234567890");
         config.set_model("claude-3-test-model");
         config.set_timeout(1); // Short timeout for tests
         config.set_output_directory("./test_output");

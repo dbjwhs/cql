@@ -26,6 +26,21 @@ enum class ApiClientStatus {
 };
 
 /**
+ * @enum ApiErrorCategory
+ * @brief Categories of API client errors for better error handling
+ */
+enum class ApiErrorCategory {
+    None,           ///< No error
+    Network,        ///< Network connectivity issues
+    Authentication, ///< API key issues
+    RateLimit,      ///< Rate limiting or quota
+    Server,         ///< Server-side errors
+    Timeout,        ///< Request timeout
+    Client,         ///< Client-side errors
+    Unknown         ///< Unknown errors
+};
+
+/**
  * @struct GeneratedFile
  * @brief Structure to represent a file generated from an API response
  */
@@ -46,6 +61,7 @@ struct ApiResponse {
     std::string m_raw_response;               ///< Raw response body
     std::vector<GeneratedFile> m_generated_files; ///< Files extracted from the response
     std::string m_error_message;              ///< Error message, if any
+    ApiErrorCategory m_error_category = ApiErrorCategory::None; ///< Category of error, if any
     
     /**
      * @brief Check if the response contains an error
@@ -61,6 +77,16 @@ struct ApiResponse {
      */
     [[nodiscard]] std::string get_main_content() const {
         return m_raw_response;
+    }
+    
+    /**
+     * @brief Check if the error is retryable
+     * @return true if the error is retryable, false otherwise
+     */
+    [[nodiscard]] bool is_retryable() const {
+        return m_error_category == ApiErrorCategory::Network ||
+               m_error_category == ApiErrorCategory::RateLimit ||
+               m_error_category == ApiErrorCategory::Server;
     }
 };
 
@@ -88,6 +114,15 @@ public:
      * @return API key string
      */
     [[nodiscard]] std::string get_api_key() const { return m_api_key; }
+    
+    /**
+     * @brief Validate the API key format
+     * @return true if the API key appears valid, false otherwise
+     */
+    [[nodiscard]] bool validate_api_key() const { 
+        // Basic validation: Check if key is not empty and has expected format
+        return !m_api_key.empty() && m_api_key.size() >= 30;
+    }
     
     /**
      * @brief Get the model to use for requests

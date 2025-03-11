@@ -7,6 +7,8 @@
 #include <filesystem>
 #include <stdexcept>
 #include <cstdlib>
+#include <chrono>
+#include <thread>
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 #include "../../include/cql/api_client.hpp"
@@ -22,6 +24,8 @@ struct ApiClient::Impl {
     CURL* m_curl;                            ///< CURL handle
     std::string m_response_buffer;           ///< Buffer for response data
     bool m_initialized;                      ///< Whether the client is initialized
+    int m_current_retry = 0;                 ///< Current retry attempt
+    double m_retry_delay = 1.0;              ///< Initial retry delay in seconds
 
     explicit Impl(const Config& config) 
         : m_config(config),
@@ -117,7 +121,30 @@ struct ApiClient::Impl {
             m_last_error = curl_easy_strerror(curl_result);
             response.m_error_message = m_last_error;
             response.m_status_code = 0;
-            Logger::getInstance().log(LogLevel::ERROR, "CURL error: ", m_last_error);
+            
+            // Categorize CURL errors
+            switch(curl_result) {
+                case CURLE_OPERATION_TIMEDOUT:
+                    response.m_error_category = ApiErrorCategory::Timeout;
+                    break;
+                case CURLE_COULDNT_CONNECT:
+                case CURLE_COULDNT_RESOLVE_HOST:
+                case CURLE_COULDNT_RESOLVE_PROXY:
+                case CURLE_INTERFACE_FAILED:
+                    response.m_error_category = ApiErrorCategory::Network;
+                    break;
+                case CURLE_SSL_CONNECT_ERROR:
+                case CURLE_PEER_FAILED_VERIFICATION:
+                case CURLE_SSL_CERTPROBLEM:
+                    response.m_error_category = ApiErrorCategory::Network;
+                    break;
+                default:
+                    response.m_error_category = ApiErrorCategory::Unknown;
+                    break;
+            }
+            
+            Logger::getInstance().log(LogLevel::ERROR, "CURL error: ", m_last_error, 
+                " (Category: ", static_cast<int>(response.m_error_category), ")");
             return response;
         }
         
@@ -131,7 +158,14 @@ struct ApiClient::Impl {
             return process_successful_response(response);
         } else if (status_code == 429) {
             return process_rate_limited_response(response);
+        } else if (status_code == 401 || status_code == 403) {
+            response.m_error_category = ApiErrorCategory::Authentication;
+            return process_error_response(response, status_code);
+        } else if (status_code >= 500) {
+            response.m_error_category = ApiErrorCategory::Server;
+            return process_error_response(response, status_code);
         } else {
+            response.m_error_category = ApiErrorCategory::Client;
             return process_error_response(response, status_code);
         }
     }
@@ -168,6 +202,7 @@ struct ApiClient::Impl {
     ApiResponse process_rate_limited_response(ApiResponse& response) {
         m_status = ApiClientStatus::RateLimited;
         response.m_error_message = "Rate limited: Too many requests";
+        response.m_error_category = ApiErrorCategory::RateLimit;
         Logger::getInstance().log(LogLevel::ERROR, "API rate limit exceeded (429)");
         return response;
     }
@@ -197,11 +232,21 @@ struct ApiClient::Impl {
 
     // Send a request to the Claude API - main entry point
     ApiResponse send_request(const std::string& query) {
+        // Reset retry counters
+        m_current_retry = 0;
+        m_retry_delay = 1.0;
+        
+        return send_request_with_retry(query);
+    }
+    
+    // Send a request with retry logic
+    ApiResponse send_request_with_retry(const std::string& query) {
         if (!m_initialized) {
             ApiResponse response;
             response.m_success = false;
             response.m_status_code = 0;
             response.m_error_message = "CURL not initialized";
+            response.m_error_category = ApiErrorCategory::Client;
             return response;
         }
 
@@ -223,13 +268,43 @@ struct ApiClient::Impl {
         CURLcode curl_result = execute_request(headers);
         
         // Process response
-        return process_response(curl_result, response);
+        response = process_response(curl_result, response);
+        
+        // Check if we should retry
+        if (!response.m_success && response.is_retryable() && 
+            m_current_retry < m_config.get_max_retries()) {
+            
+            // Log the retry with INFO level
+            Logger::getInstance().log(LogLevel::INFO, 
+                "Retrying request (", m_current_retry + 1, "/", 
+                m_config.get_max_retries(), ") after ", m_retry_delay, " seconds");
+            
+            // Sleep with backoff
+            std::this_thread::sleep_for(std::chrono::milliseconds(
+                static_cast<int>(m_retry_delay * 1000)));
+            
+            // Increase retry counter and delay
+            m_current_retry++;
+            m_retry_delay *= 2.0; // Exponential backoff
+            
+            // Retry the request
+            return send_request_with_retry(query);
+        }
+        
+        return response;
     }
 };
 
 // ApiClient implementation
 
-ApiClient::ApiClient(const Config& config) : m_impl(std::make_unique<Impl>(config)) {
+ApiClient::ApiClient(const Config& config) {
+    if (!config.validate_api_key()) {
+        Logger::getInstance().log(LogLevel::ERROR, 
+            "API key is invalid or not set. ApiClient initialization failed.");
+        throw std::runtime_error("Invalid API key configuration");
+    }
+    
+    m_impl = std::make_unique<Impl>(config);
 }
 
 ApiClient::~ApiClient() = default;
