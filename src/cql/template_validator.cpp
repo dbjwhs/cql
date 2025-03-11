@@ -3,9 +3,6 @@
 
 #include "../../include/cql/template_validator.hpp"
 #include "../../include/cql/template_validator_schema.hpp"
-
-// note file exists in the cpp-snippets repo, you will need to check this out and have it and cql share the
-// same root directory
 #include "../../cpp-snippets/headers/project_utils.hpp"
 
 #include <regex>

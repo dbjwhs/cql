@@ -3,7 +3,7 @@
 
 #include <map>
 #include <cassert>
-#include "include/cql/cql.hpp"
+#include "../include/cql/cql.hpp"
 
 #ifndef CQL_HPP
 #define CQL_HPP

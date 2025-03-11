@@ -1,3 +1,6 @@
+// MIT License
+// Copyright (c) 2025 dbjwhs
+
 #include <iostream>
 #include <cassert>
 #include <sstream>

@@ -12,9 +12,6 @@
 #include "../../include/cql/template_validator_schema.hpp"
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/response_processor.hpp"
-
-// note file exists in the cpp-snippets repo, you will need to check this out and have it and cql share the
-// same root directory
 #include "../../cpp-snippets/headers/project_utils.hpp"
 
 namespace cql::cli {
