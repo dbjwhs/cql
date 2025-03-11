@@ -30,6 +30,7 @@ TestResult test_response_processor();
 TestResult test_api_integration();
 TestResult test_api_custom_base_url();
 TestResult test_api_error_handling_and_retry();
+TestResult test_api_streaming();
 TestResult test_configuration();
 TestResult test_examples_compilation();
 TestResult test_lexer_standalone();
@@ -116,6 +117,7 @@ bool run_tests(bool fail_fast) {
         {"API Integration", test_api_integration},
         {"API Custom Base URL", test_api_custom_base_url},
         {"API Error Handling", test_api_error_handling_and_retry},
+        {"API Streaming", test_api_streaming},
         {"Configuration", test_configuration},
         {"Examples Compilation", test_examples_compilation},
         {"Lexer (Standalone)", test_lexer_standalone},
@@ -990,9 +992,13 @@ TestResult test_api_client() {
             
             // Test callback in async request (using lambda)
             bool callback_called = false;
-            auto async_response = client.submit_query_async("", [&callback_called](const ApiResponse& /*response*/) {
+            auto async_future = client.submit_query_async("", [&callback_called](const ApiResponse& /*response*/) {
                 callback_called = true;
             });
+            
+            // Wait for the future to complete to get the response
+            auto async_response = async_future.get();
+            
             TEST_ASSERT(callback_called, "Async callback should be called");
             TEST_ASSERT(async_response.has_error(), "Empty async query should result in error");
         }
@@ -1265,7 +1271,7 @@ TestResult test_lexer() {
 
         // test string escape sequences
         {
-            std::string input = "@language \"C++\\n with newline\"";
+            std::string input = R"(@language "C++\n with newline")";
             Lexer lexer(input);
 
             auto token1 = lexer.next_token();
@@ -1301,7 +1307,7 @@ TestResult test_lexer() {
 
         // test copyright token
         {
-            std::string input = "@copyright \"MIT License\" \"2025 dbjwhs\"";
+            std::string input = R"(@copyright "MIT License" "2025 dbjwhs")";
             Lexer lexer(input);
 
             auto token1 = lexer.next_token();

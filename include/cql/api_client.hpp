@@ -10,8 +10,24 @@
 #include <functional>
 #include <map>
 #include <string_view>
+#include <future>
+#include <optional>
 
 namespace cql {
+
+// Forward declaration
+struct ApiResponse;
+
+/**
+ * @brief Callback type for streaming responses
+ * 
+ * This callback is invoked when a chunk of data is received from a streaming API response.
+ * @param chunk The response chunk received
+ * @param is_first_chunk Whether this is the first chunk received
+ * @param is_last_chunk Whether this is the last chunk received
+ * @return bool Whether to continue streaming (true) or stop (false)
+ */
+using StreamingCallback = std::function<bool(const ApiResponse& chunk, bool is_first_chunk, bool is_last_chunk)>;
 
 /**
  * @enum ApiClientStatus
@@ -62,6 +78,8 @@ struct ApiResponse {
     std::vector<GeneratedFile> m_generated_files; ///< Files extracted from the response
     std::string m_error_message;              ///< Error message, if any
     ApiErrorCategory m_error_category = ApiErrorCategory::None; ///< Category of error, if any
+    bool m_is_streaming = false;              ///< Whether this is a streaming response
+    bool m_is_complete = true;                ///< Whether the response is complete
     
     /**
      * @brief Check if the response contains an error
@@ -87,6 +105,22 @@ struct ApiResponse {
         return m_error_category == ApiErrorCategory::Network ||
                m_error_category == ApiErrorCategory::RateLimit ||
                m_error_category == ApiErrorCategory::Server;
+    }
+    
+    /**
+     * @brief Check if this is a streaming response
+     * @return true if this is a streaming response, false otherwise
+     */
+    [[nodiscard]] bool is_streaming() const {
+        return m_is_streaming;
+    }
+    
+    /**
+     * @brief Check if the response is complete
+     * @return true if the response is complete, false otherwise
+     */
+    [[nodiscard]] bool is_complete() const {
+        return m_is_complete;
     }
 };
 
@@ -226,6 +260,42 @@ public:
      */
     void set_no_save_mode(bool no_save) { m_no_save = no_save; }
     
+    /**
+     * @brief Set whether to enable streaming mode for requests
+     * @param enable true to enable streaming, false otherwise
+     */
+    void set_streaming_enabled(bool enable) { m_streaming_enabled = enable; }
+    
+    /**
+     * @brief Check if streaming mode is enabled
+     * @return true if streaming is enabled, false otherwise
+     */
+    [[nodiscard]] bool is_streaming_enabled() const { return m_streaming_enabled; }
+    
+    /**
+     * @brief Set the maximum tokens to request from the API
+     * @param max_tokens Maximum number of tokens
+     */
+    void set_max_tokens(int max_tokens) { m_max_tokens = max_tokens; }
+    
+    /**
+     * @brief Get the maximum tokens to request from the API
+     * @return Maximum tokens value
+     */
+    [[nodiscard]] int get_max_tokens() const { return m_max_tokens; }
+    
+    /**
+     * @brief Set the temperature for API requests
+     * @param temperature Temperature value between 0 and 1
+     */
+    void set_temperature(float temperature) { m_temperature = temperature; }
+    
+    /**
+     * @brief Get the temperature for API requests
+     * @return Temperature value
+     */
+    [[nodiscard]] float get_temperature() const { return m_temperature; }
+
 private:
     std::string m_api_key;           ///< API key for authentication
     std::string m_model = "claude-3-opus"; ///< Model to use for requests
@@ -236,6 +306,9 @@ private:
     bool m_overwrite_existing = false; ///< Whether to overwrite existing files
     bool m_create_missing_dirs = true; ///< Whether to create missing directories
     bool m_no_save = false;          ///< Whether to save files to disk
+    bool m_streaming_enabled = false; ///< Whether to use streaming mode for requests
+    int m_max_tokens = 100000;       ///< Maximum number of tokens to request
+    float m_temperature = 0.7f;      ///< Temperature for API requests
 };
 
 /**
@@ -265,11 +338,32 @@ public:
     /**
      * @brief Submit a query to the Claude API asynchronously
      * @param query The compiled query to submit
-     * @param callback Function to call with the response
+     * @param callback Function to call with the complete response
+     * @return std::future<ApiResponse> Future for the final response
+     */
+    [[nodiscard]] std::future<ApiResponse> submit_query_async(
+        const std::string& query, 
+        const std::function<void(ApiResponse)>& callback = nullptr) const;
+    
+    /**
+     * @brief Submit a query to the Claude API with streaming responses
+     * @param query The compiled query to submit
+     * @param callback Function to call for each chunk of the response
      * @return ApiResponse containing initial status
      */
-    [[nodiscard]] ApiResponse submit_query_async(const std::string& query, 
-                                               const std::function<void(ApiResponse)>& callback) const;
+    [[nodiscard]] ApiResponse submit_query_streaming(
+        const std::string& query, 
+        const StreamingCallback& callback) const;
+    
+    /**
+     * @brief Submit a query to the Claude API asynchronously with streaming
+     * @param query The compiled query to submit
+     * @param callback Function to call for each chunk of the response
+     * @return std::future<ApiResponse> Future for the final aggregated response
+     */
+    [[nodiscard]] std::future<ApiResponse> submit_query_streaming_async(
+        const std::string& query, 
+        const StreamingCallback& callback) const;
     
     /**
      * @brief Set the model to use for requests
@@ -294,6 +388,24 @@ public:
      * @param max_retries Maximum retries value
      */
     void set_max_retries(int max_retries) const;
+    
+    /**
+     * @brief Set the temperature for API requests
+     * @param temperature Temperature value between 0 and 1
+     */
+    void set_temperature(float temperature) const;
+    
+    /**
+     * @brief Set the maximum tokens to request from the API
+     * @param max_tokens Maximum number of tokens
+     */
+    void set_max_tokens(int max_tokens) const;
+    
+    /**
+     * @brief Enable or disable streaming mode
+     * @param enable true to enable streaming, false to disable
+     */
+    void set_streaming_enabled(bool enable) const;
     
     /**
      * @brief Check if the client is connected to the API
