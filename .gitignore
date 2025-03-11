@@ -6,6 +6,9 @@
 **/out/
 **/cmake-build-*/
 
+# local doxygen generated files
+**/docs/html/
+
 # CMake generated files
 **/CMakeCache.txt
 **/CMakeFiles/
