@@ -1,0 +1,27 @@
+@copyright "MIT License" "2025 CQL Project Contributors"
+@language "C++"
+@description "implement a complete HTTP server with routing capabilities"
+
+@context "Modern C++20 implementation"
+@context "Cross-platform (Windows, Linux, macOS)"
+@dependency "Asynchronous I/O using std::async and futures"
+@dependency "Socket handling with platform-specific APIs"
+
+@performance "Handle at least 10,000 concurrent connections"
+@performance "Response time under 10ms for static content"
+@security "Protection against common web vulnerabilities (XSS, CSRF, etc.)"
+@security "TLS/SSL support for HTTPS connections"
+
+@model "claude-3-opus"
+@output_format "multiple_files"
+
+@architecture "Modular design with separation of concerns"
+@architecture "Event-driven architecture for request handling"
+@architecture "Thread pool for handling concurrent connections"
+
+@test "Test basic HTTP GET/POST/PUT/DELETE methods"
+@test "Test concurrent request handling"
+@test "Test request routing with path parameters"
+@test "Test HTTPS connections and certificate handling"
+@test "Test streaming responses for large files"
+@test "Test error handling for invalid requests"
