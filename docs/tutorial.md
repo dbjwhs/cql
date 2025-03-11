@@ -273,7 +273,7 @@ Example:
 
 Test directives document how the query should be tested and what scenarios to consider.
 
-## 4. Advanced Directives (Phase 2)
+## 4. Advanced Directives
 
 ### @architecture - Specifying Architecture Patterns
 

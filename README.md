@@ -1,34 +1,20 @@
 # Claude Query Language (CQL)
 
-🚧 **WORK IN PROGRESS** 🚧
+The Claude Query Language (CQL) is a domain-specific language and compiler designed to formalize and standardize the creation of technical queries for Large Language Models, specifically targeting Anthropic's Claude. CQL enables engineers to create structured, consistent prompts that consistently yield high-quality code generation from Claude.
 
-**IMPORTANT NOTICE**: This project is currently a proof of concept and is still in early development. Many features may
-be incomplete, untested, or subject to significant changes. The current implementation serves primarily as a
-demonstration of the concept and requires substantial refinement before it can be considered production-ready. Use at
-your own risk and expect breaking changes in future updates.
+## Overview
 
-The Claude Query Language (CQL) is a domain-specific language and compiler designed to formalize and standardize the
-creation of technical queries for Large Language Models, specifically targeting Anthropic's Claude. The implementation
-leverages multiple software design patterns including the Visitor pattern for traversing Abstract Syntax Trees (AST),
-the Builder pattern for constructing queries, and the Interpreter pattern for processing the DSL. CQL follows classic
-compiler architecture with distinct lexical analysis, parsing, and code generation phases, utilizing modern C++20
-features such as `std::optional`, `std::string_view`, designated initializers, and the ranges library. The core
-architecture implements RAII principles and employs smart pointers for memory management. Developed in 2025, CQL arose
-from the need to standardize the creation of complex, structured prompts that consistently yield high-quality code
-generation from LLMs.
+CQL addresses several critical challenges in prompt engineering for AI code generation:
 
-CQL addresses several critical challenges in prompt engineering for AI code generation. First, it eliminates
-inconsistency in query structure that often leads to variable results from LLMs by enforcing a standardized format with
-required elements. Second, it dramatically reduces the time engineers spend crafting detailed prompts manually through
-its concise syntax. Third, it ensures all necessary context, requirements, and test specifications are included,
-preventing the common problem of incomplete or ambiguous prompts. Fourth, it enables reusability through template
-storage and modification, allowing teams to maintain libraries of effective queries. Finally, it solves the
-collaboration problem by providing a common, version-controllable language for prompt engineering that can be shared
-across teams and integrated into development workflows.
+1. **Standardization**: Eliminates inconsistency in query structure through a standardized format with required elements
+2. **Efficiency**: Dramatically reduces the time engineers spend crafting detailed prompts
+3. **Completeness**: Ensures all necessary context, requirements, and test specifications are included
+4. **Reusability**: Enables template storage and modification through a comprehensive template system
+5. **Collaboration**: Provides a common, version-controllable language for prompt engineering
 
 ## Features
 
-### Core Features (Phase 1)
+### Core Language Features
 - **Simple @directive syntax** for specifying different aspects of the query
 - **Customizable output formatting** for different LLM preferences
 - **Copyright and license specification** for generated code
@@ -36,122 +22,21 @@ across teams and integrated into development workflows.
 - **Test case specification** to ensure proper coverage
 - **Performance requirement** directives
 - **Dependency specification** for frameworks and libraries
-- **Interactive CLI mode** for iterative query development
-- **File import/export** for saving and loading queries
-- **Robust error handling** with detailed diagnostics
 
-### Advanced Features (Phase 2)
-- **Advanced directives** for architecture, constraints, examples, and more
-- **Template variables** with string interpolation
-- **Query validation** to enforce structure and best practices
-- **Multiple output formats** including markdown and JSON
-- **Model targeting** to specify appropriate Claude model
-- **Security requirements** for code generation
-- **Algorithmic complexity** specifications
+### Template System
+- **Template storage and management** for reusing effective query patterns
+- **Variable interpolation** with `${var}` syntax
+- **Template inheritance** for building on existing patterns
+- **Template validation** to ensure quality and correctness
+- **Documentation generation** for templates
 
-See [PHASE2_FEATURES.md](PHASE2_FEATURES.md) for detailed information on the new features.
-
-### API Integration Features (Implemented)
-- **Claude API Integration** for direct submission of queries
-- **Retries with exponential backoff** for transient errors
+### Claude API Integration
+- **Direct query submission** to Claude API
 - **Response processing** with multi-file code generation
-- **Asynchronous API support** using C++20 features
-- **Streaming response handling** for long-running generations
-- **API configuration options** including temperature and tokens
-- **Error categorization** for network, authentication, rate limit, server, timeout, and client errors
-
-## Phase 3 Feature: Query Template System
-
-CQL now includes a powerful template system that enables saving, loading, and reusing effective query patterns. The template system provides:
-
-- **Template storage**: Save effective query patterns for future use
-- **Variable interpolation**: Customize templates with variables using `${var}` syntax
-- **Template organization**: Categorize templates for better management
-- **Template metadata**: View information about available templates
-
-### Template Commands
-
-The CQL CLI now includes comprehensive template commands:
-
-```bash
-# List all templates
-> templates
-
-# Save the current query as a template
-> template save thread_safe_queue
-
-# Load a template
-> template load thread_safe_queue
-
-# Show information about a template
-> template info thread_safe_queue
-
-# Delete a template
-> template delete thread_safe_queue
-
-# Set a template variable
-> template setvar collection_type=stack
-
-# Use a template with current variables
-> template use thread_safe_queue
-
-# Manage template directories
-> template dir
-> template dir ~/my_templates
-
-# Manage template categories
-> categories
-> category create design_patterns
-```
-
-### Using Templates from Command Line
-
-Templates can also be used directly from the command line:
-
-```bash
-# List all available templates
-cql --templates
-
-# Use a template with variable substitutions
-cql --template thread_safe_queue collection_type=stack language=Rust
-
-# Save the result to a file
-cql --template thread_safe_queue collection_type=stack > my_query.txt
-```
-
-### Template Organization
-
-CQL templates are stored in `~/.cql/templates` by default and can be organized into categories (subdirectories) for better management. Each template is a regular `.cql` file that can contain variables using the `${var}` syntax.
-
-### Example Template
-
-Here's an example of a template with variables:
-
-```
-@variable "license_type" "MIT License"
-@variable "license_owner" "2025 dbjwhs"
-@variable "language" "C++"
-@variable "collection_type" "queue"
-@variable "language_version" "C++20"
-@variable "ops_per_second" "100k"
-@variable "synchronization_method" "mutex and condition variables"
-
-@copyright "${license_type}" "${license_owner}"
-@language "${language}"
-@description "implement a ${collection_type} class with thread-safety"
-@context "Using ${language_version} features and RAII principles"
-@context "Must be exception-safe"
-@dependency "std::mutex, std::condition_variable"
-@performance "Support ${ops_per_second} operations per second"
-@security "Prevent data races through proper synchronization"
-@architecture "Thread-safe implementation with ${synchronization_method}"
-@test "Test concurrent push operations"
-@test "Test concurrent pop operations"
-@test "Test boundary conditions (empty/full)"
-@test "Test exception safety guarantees"
-```
-
-This template can be customized by setting different values for the variables, allowing teams to create standardized query patterns while maintaining flexibility.
+- **Streaming responses** for long-running generations
+- **Asynchronous API support** with C++20 features
+- **Retries with exponential backoff** for transient errors
+- **Comprehensive error handling** and categorization
 
 ## Installation
 
@@ -160,6 +45,7 @@ This template can be customized by setting different values for the variables, a
 - C++20 compatible compiler (GCC 10+, Clang 10+, MSVC 19.26+)
 - CMake 3.30 or higher
 - Git (for cloning the repository)
+- CURL library for API integration
 
 ### Building from Source
 
@@ -179,15 +65,15 @@ make
 ./cql --help
 ```
 
-## Basic Usage
+## Command-Line Usage
 
-### Command-line Arguments
+### Basic Commands
 
 ```bash
-# Run the default mode (tests and examples)
-./cql
+# Show help information
+./cql --help
 
-# Run just the test suite
+# Run the test suite
 ./cql --test
 
 # Show example queries
@@ -196,28 +82,51 @@ make
 # Enter interactive mode
 ./cql --interactive
 
-# Show copyright example
-./cql --copyright
-
 # Process a query file
 ./cql input.cql output.txt
+```
 
+### API Integration Commands
+
+```bash
 # Submit a query to Claude API
 ./cql --submit input.cql
-
-# Submit a query and save generated files to a directory
-./cql --submit input.cql --output-dir ./output
 
 # Submit with specific model selection
 ./cql --submit input.cql --model claude-3-opus
 
-# Use a template, submit to API, and save results
-./cql --template thread_safe_queue collection_type=stack --submit --output-dir ./output
+# Submit and save generated files to a directory
+./cql --submit input.cql --output-dir ./output
 ```
 
-### Query Syntax Examples
+### Template Commands
 
-#### Basic Function Query
+```bash
+# List all available templates
+./cql --templates
+
+# Use a template with variable substitutions
+./cql --template thread_safe_queue collection_type=stack
+
+# Validate a template
+./cql --validate thread_safe_queue
+
+# Validate all templates
+./cql --validate-all
+
+# Generate documentation for a template
+./cql --docs thread_safe_queue
+
+# Generate documentation for all templates
+./cql --docs-all
+
+# Export template documentation
+./cql --export docs/templates.md
+```
+
+## Query Syntax Examples
+
+### Basic Function Query
 
 ```
 @language "C++"
@@ -249,9 +158,10 @@ Quality Assurance Requirements:
 - Optimize for readability and maintainability
 ```
 
-#### Class Implementation with Requirements
+### Advanced Query with Requirements
 
 ```
+@copyright "MIT License" "2025 dbjwhs"
 @language "C++"
 @description "implement a thread-safe queue class with a maximum size"
 @context "Using C++20 features and RAII principles"
@@ -264,72 +174,31 @@ Quality Assurance Requirements:
 @test "Test exception safety guarantees"
 ```
 
-**Compiled Output:**
+## Interactive Mode
 
-```
-Please generate C++ code that:
-implement a thread-safe queue class with a maximum size
+CQL provides an interactive CLI mode for iterative query development:
 
-Context:
-- Using C++20 features and RAII principles
-- Must be exception-safe
-
-Dependencies:
-- std::mutex, std::condition_variable
-
-Performance Requirements:
-- Support 100k operations per second
-
-Please include tests for the following cases:
-- Test concurrent push operations
-- Test concurrent pop operations
-- Test boundary conditions (empty/full)
-- Test exception safety guarantees
-
-Quality Assurance Requirements:
-- All code must be well-documented with comments
-- Follow modern C++ best practices
-- Ensure proper error handling
-- Optimize for readability and maintainability
+```bash
+./cql --interactive
 ```
 
-#### With Copyright Header
+Available commands in interactive mode:
 
 ```
-@copyright "MIT License" "2025 dbjwhs"
-@language "C++"
-@description "implement a binary search tree"
-@context "Modern C++ implementation"
-@test "Insert elements"
-@test "Delete elements"
-@test "Find elements"
-```
-
-**Compiled Output:**
-
-```
-Please include the following copyright header at the top of all generated files:
-```
-// MIT License
-// Copyright (c) 2025 dbjwhs
-```
-
-Please generate C++ code that:
-implement a binary search tree
-
-Context:
-- Modern C++ implementation
-
-Please include tests for the following cases:
-- Insert elements
-- Delete elements
-- Find elements
-
-Quality Assurance Requirements:
-- All code must be well-documented with comments
-- Follow modern C++ best practices
-- Ensure proper error handling
-- Optimize for readability and maintainability
+help         - Show help
+exit/quit    - Exit the program
+clear        - Clear the current query
+show         - Show the current query
+compile      - Compile the current query
+load FILE    - Load query from file
+save FILE    - Save compiled query to file
+submit       - Submit compiled query to Claude API
+async_submit - Submit query asynchronously to Claude API
+stream       - Submit query with streaming response
+model NAME   - Set Claude model to use (e.g., claude-3-opus)
+output_dir   - Set directory for generated files
+templates    - List all templates
+template     - Template management commands
 ```
 
 ## Best Practices
@@ -348,36 +217,22 @@ Quality Assurance Requirements:
 - Mix multiple unrelated requirements in a single query
 - Include information irrelevant to the coding task
 
-## Interactive Mode Commands
+## Documentation
 
+CQL offers comprehensive documentation:
+
+- [API Documentation](docs/api_documentation.md): Integration with Claude API
+- [Template Documentation](docs/template_documentation.md): Using the template system
+- [Quick Reference](docs/quick_reference.md): Concise syntax guide
+- [Tutorial](docs/tutorial.md): Step-by-step introduction to CQL
+- [Troubleshooting](docs/troubleshooting.md): Common issues and solutions
+
+For API reference, you can generate Doxygen documentation with:
+
+```bash
+# In the build directory
+make docs
 ```
-help         - Show help
-exit/quit    - Exit the program
-clear        - Clear the current query
-show         - Show the current query
-compile      - Compile the current query
-load FILE    - Load query from file
-save FILE    - Save compiled query to file
-submit       - Submit compiled query to Claude API
-async_submit - Submit query asynchronously to Claude API
-stream       - Submit query with streaming response
-model NAME   - Set Claude model to use (e.g., claude-3-opus)
-output_dir   - Set directory for generated files
-```
-
-## Related Resources and Books
-
-Domain-Specific Languages and query compilers like CQL draw from established patterns in these resources:
-
-- "Compilers: Principles, Techniques, and Tools" (Dragon Book) by Aho, Lam, Sethi, and Ullman
-- "Language Implementation Patterns" by Terence Parr
-- "Domain-Specific Languages" by Martin Fowler
-- "Design Patterns: Elements of Reusable Object-Oriented Software" by Gamma, Helm, Johnson, and Vlissides
-- "Modern Compiler Design" by Grune, van Reeuwijk, Bal, Jacobs, and Langendoen
-- "The Definitive ANTLR 4 Reference" by Terence Parr
-
-Similar patterns are found in query languages like SQL, GraphQL, and SPARQL, as well as in build systems like CMake and
-code generation tools like SWIG.
 
 ## License
 

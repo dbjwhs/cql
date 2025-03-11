@@ -46,7 +46,8 @@ cql --submit examples/api_streaming_example.cql --model claude-3-opus
 
 - `variables.cql` - Simple example of variable usage
 - `json_output.cql` - Example template formatted for JSON output
-- `phase2_features.cql` - Demonstrates features from Phase 2 of CQL development
+- `distributed_task_scheduler.cql` - Comprehensive example with advanced features
+- `advanced_features.md` - Documentation of advanced CQL features
 
 ## Using Template Inheritance
 
