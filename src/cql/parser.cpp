@@ -52,7 +52,13 @@ std::vector<std::unique_ptr<QueryNode>> Parser::parse() {
             m_current_token->m_type != TokenType::COMPLEXITY &&
             m_current_token->m_type != TokenType::MODEL &&
             m_current_token->m_type != TokenType::FORMAT &&
-            m_current_token->m_type != TokenType::VARIABLE) {
+            m_current_token->m_type != TokenType::VARIABLE &&
+            // new directives
+            m_current_token->m_type != TokenType::OUTPUT_FORMAT &&
+            m_current_token->m_type != TokenType::MAX_TOKENS &&
+            m_current_token->m_type != TokenType::TEMPERATURE &&
+            m_current_token->m_type != TokenType::PATTERN &&
+            m_current_token->m_type != TokenType::STRUCTURE) {
             
             if (!m_current_token) {
                 throw ParserError("Expected keyword but reached end of input", 
@@ -107,6 +113,22 @@ std::vector<std::unique_ptr<QueryNode>> Parser::parse() {
                 break;
             case TokenType::VARIABLE:
                 nodes.push_back(parse_variable());
+                break;
+            // New directives
+            case TokenType::OUTPUT_FORMAT:
+                nodes.push_back(parse_output_format());
+                break;
+            case TokenType::MAX_TOKENS:
+                nodes.push_back(parse_max_tokens());
+                break;
+            case TokenType::TEMPERATURE:
+                nodes.push_back(parse_temperature());
+                break;
+            case TokenType::PATTERN:
+                nodes.push_back(parse_pattern());
+                break;
+            case TokenType::STRUCTURE:
+                nodes.push_back(parse_structure());
                 break;
             default:
                 throw ParserError("Unexpected token type", 
@@ -298,6 +320,56 @@ std::unique_ptr<QueryNode> Parser::parse_variable() {
     std::string name = parse_string();
     std::string value = parse_string();
     return std::make_unique<VariableNode>(name, value);
+}
+
+// Model control directive parsers
+std::unique_ptr<QueryNode> Parser::parse_output_format() {
+    advance(); // skip @output_format
+    std::string format = parse_string();
+    return std::make_unique<FormatNode>(format); // Reuse FormatNode for now
+}
+
+std::unique_ptr<QueryNode> Parser::parse_max_tokens() {
+    advance(); // skip @max_tokens
+    
+    // Handle numeric values
+    std::string token_value;
+    if (m_current_token && m_current_token->m_type == TokenType::IDENTIFIER) {
+        token_value = m_current_token->m_value;
+        advance();
+    } else {
+        token_value = parse_string();
+    }
+    
+    return std::make_unique<ModelNode>("max_tokens:" + token_value); // Reuse ModelNode for now
+}
+
+std::unique_ptr<QueryNode> Parser::parse_temperature() {
+    advance(); // skip @temperature
+    
+    // Handle numeric values
+    std::string temp_value;
+    if (m_current_token && m_current_token->m_type == TokenType::IDENTIFIER) {
+        temp_value = m_current_token->m_value;
+        advance();
+    } else {
+        temp_value = parse_string();
+    }
+    
+    return std::make_unique<ModelNode>("temperature:" + temp_value); // Reuse ModelNode for now
+}
+
+// Project structure directive parsers
+std::unique_ptr<QueryNode> Parser::parse_pattern() {
+    advance(); // skip @pattern
+    std::string pattern_desc = parse_string();
+    return std::make_unique<ArchitectureNode>(pattern_desc); // Reuse ArchitectureNode for now
+}
+
+std::unique_ptr<QueryNode> Parser::parse_structure() {
+    advance(); // skip @structure
+    std::string structure_def = parse_string();
+    return std::make_unique<ConstraintNode>(structure_def); // Reuse ConstraintNode for now
 }
 
 } // namespace cql

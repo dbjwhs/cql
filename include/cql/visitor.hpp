@@ -1,4 +1,4 @@
-z`x// MIT License
+// MIT License
 // Copyright (c) 2025 dbjwhs
 
 #ifndef CQL_VISITOR_HPP

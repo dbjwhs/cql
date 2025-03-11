@@ -31,6 +31,11 @@ enum class TokenType {
     MODEL,          // @model
     FORMAT,         // @format
     VARIABLE,       // @variable
+    OUTPUT_FORMAT,  // @output_format
+    MAX_TOKENS,     // @max_tokens
+    TEMPERATURE,    // @temperature
+    PATTERN,        // @pattern
+    STRUCTURE,      // @structure
     IDENTIFIER,     // any text
     STRING,         // "quoted text"
     NEWLINE,        // \n

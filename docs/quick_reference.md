@@ -18,6 +18,22 @@
 | `@complexity` | Performance complexity goals | `@complexity "O(1) for push and pop operations"` |
 | `@example` | Usage examples with optional title | `@example "Basic Usage" "..."` |
 
+## Model Control Directives
+
+| Directive | Description | Example |
+|-----------|-------------|---------|
+| `@model` | Specifies which Claude model to use | `@model "claude-3-opus"` |
+| `@max_tokens` | Sets maximum response length | `@max_tokens 100000` |
+| `@temperature` | Controls randomness (0.0-1.0) | `@temperature 0.7` |
+| `@output_format` | How to format the output | `@output_format "multiple_files"` |
+
+## Project Structure Directives
+
+| Directive | Description | Example |
+|-----------|-------------|---------|
+| `@pattern` | Specifies design patterns to use | `@pattern "Observer pattern for notifications"` |
+| `@structure` | Defines file structure | `@structure "include/core.hpp: Core interface"` |
+
 ## Variable Syntax
 
 - Define variables: `@variable "name" "value"`

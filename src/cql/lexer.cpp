@@ -24,6 +24,11 @@ std::string token_type_to_string(TokenType type) {
         case TokenType::MODEL: return "MODEL";
         case TokenType::FORMAT: return "FORMAT";
         case TokenType::VARIABLE: return "VARIABLE";
+        case TokenType::OUTPUT_FORMAT: return "OUTPUT_FORMAT";
+        case TokenType::MAX_TOKENS: return "MAX_TOKENS";
+        case TokenType::TEMPERATURE: return "TEMPERATURE";
+        case TokenType::PATTERN: return "PATTERN";
+        case TokenType::STRUCTURE: return "STRUCTURE";
         case TokenType::IDENTIFIER: return "IDENTIFIER";
         case TokenType::STRING: return "STRING";
         case TokenType::NEWLINE: return "NEWLINE";
@@ -92,7 +97,7 @@ std::optional<Token> Lexer::lex_keyword() {
     std::string keyword;
     size_t start_column = m_column;
 
-    while (m_current < m_input.length() && std::isalpha(m_input[m_current])) {
+    while (m_current < m_input.length() && (std::isalpha(m_input[m_current]) || m_input[m_current] == '_')) {
         keyword += m_input[m_current];
         advance();
     }
@@ -114,6 +119,12 @@ std::optional<Token> Lexer::lex_keyword() {
     else if (keyword == "model") type = TokenType::MODEL;
     else if (keyword == "format") type = TokenType::FORMAT;
     else if (keyword == "variable") type = TokenType::VARIABLE;
+    // New API and output format directives
+    else if (keyword == "output_format") type = TokenType::OUTPUT_FORMAT;
+    else if (keyword == "max_tokens") type = TokenType::MAX_TOKENS;
+    else if (keyword == "temperature") type = TokenType::TEMPERATURE;
+    else if (keyword == "pattern") type = TokenType::PATTERN;
+    else if (keyword == "structure") type = TokenType::STRUCTURE;
     else {
         throw LexerError("Unknown keyword: @" + keyword, m_line, start_column - 1);
     }

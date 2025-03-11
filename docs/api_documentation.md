@@ -564,6 +564,68 @@ int main() {
 }
 ```
 
+## CQL Directives
+
+CQL supports a variety of directives that provide instructions to the compiler and AI model. Below is a reference of all supported directives:
+
+### Model Control Directives
+
+These directives control the AI model's behavior:
+
+| Directive | Description | Example |
+|-----------|-------------|---------|
+| `@model` | Specifies which Claude model to use | `@model "claude-3-opus"` |
+| `@max_tokens` | Sets the maximum number of tokens in the response | `@max_tokens 100000` |
+| `@temperature` | Controls the randomness/creativity of the response (0.0-1.0) | `@temperature 0.7` |
+| `@output_format` | Specifies how to format the output | `@output_format "multiple_files"` |
+
+#### Temperature
+
+The temperature parameter controls the randomness or creativity of the AI model's response:
+- **Lower values (e.g., 0.1-0.3)**: More deterministic, focused, and conservative responses
+- **Mid-range values (e.g., 0.4-0.7)**: Balanced between deterministic and creative
+- **Higher values (e.g., 0.8-1.0)**: More creative, diverse, and potentially unexpected responses
+
+For code generation, lower temperatures are often preferred for predictable, standard implementations, while higher temperatures might be useful for creative problem-solving or exploring alternative approaches.
+
+#### Output Format
+
+The output_format directive determines how the generated code is structured:
+- **"multiple_files"**: Generates a proper directory structure with multiple files organized in a project layout
+- **"single_file"**: Outputs all code in a single consolidated file
+
+For complex projects, "multiple_files" is recommended as it produces a more maintainable code structure.
+
+### Project Structure Directives
+
+These directives define the structure and organization of the generated code:
+
+| Directive | Description | Example |
+|-----------|-------------|---------|
+| `@pattern` | Specifies design patterns to use | `@pattern "Observer pattern for task status updates"` |
+| `@structure` | Defines the file structure | `@structure "include/scheduler_core.hpp: Core scheduler interface"` |
+
+### Content Definition Directives
+
+Core directives that define the project's content:
+
+| Directive | Description | Example |
+|-----------|-------------|---------|
+| `@language` | Specifies the programming language | `@language "C++"` |
+| `@description` | Describes what to implement | `@description "implement a thread-safe queue"` |
+| `@context` | Provides context for implementation | `@context "Modern C++20 implementation"` |
+| `@dependency` | Specifies project dependencies | `@dependency "Networking library (e.g., Boost.Asio)"` |
+| `@test` | Defines test cases | `@test "Test concurrent access with 100 threads"` |
+| `@security` | Defines security requirements | `@security "Secure communication with JWT"` |
+| `@performance` | Specifies performance requirements | `@performance "Handle 10,000 requests/second"` |
+| `@copyright` | Specifies copyright information | `@copyright "MIT License" "2025 CQL Project"` |
+| `@architecture` | Defines architectural guidelines | `@architecture "Microservices-based design"` |
+| `@constraint` | Specifies implementation constraints | `@constraint "No dynamic memory allocation"` |
+| `@complexity` | Defines complexity requirements | `@complexity "O(log n) lookup time"` |
+| `@format` | Specifies formatting requirements | `@format "Google C++ style guide"` |
+| `@variable` | Defines a template variable | `@variable "container_type=vector"` |
+| `@example` | Provides an example of usage | `@example "MyClass obj; obj.process();"` |
+
 ## Error Handling
 
 ```cpp
