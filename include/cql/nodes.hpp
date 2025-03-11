@@ -643,6 +643,177 @@ private:
     std::string m_value; ///< The variable value
 };
 
+/**
+ * @class OutputFormatNode
+ * @brief Node for specifying how the output should be formatted (@output_format directive)
+ *
+ * Defines the format of the output files to be generated.
+ *
+ * Example:
+ * @output_format "multiple_files"
+ * @output_format "single_file"
+ */
+class OutputFormatNode final : public QueryNode {
+public:
+    /**
+     * @brief Construct an output format node
+     * 
+     * @param format_type The desired output format (e.g., "multiple_files", "single_file")
+     */
+    explicit OutputFormatNode(std::string format_type);
+    
+    /**
+     * @brief Accept a visitor to process this node
+     * @param visitor The visitor object
+     */
+    void accept(QueryVisitor& visitor) const override;
+
+    /**
+     * @brief Get the output format type
+     * @return The format type string
+     */
+    [[nodiscard]] const std::string& format_type() const;
+
+private:
+    std::string m_format_type; ///< The output format type
+};
+
+/**
+ * @class MaxTokensNode
+ * @brief Node for specifying the maximum number of tokens (@max_tokens directive)
+ *
+ * Sets the maximum token limit for the response.
+ *
+ * Example:
+ * @max_tokens 100000
+ */
+class MaxTokensNode final : public QueryNode {
+public:
+    /**
+     * @brief Construct a max tokens node
+     * 
+     * @param token_limit The maximum number of tokens as a string
+     */
+    explicit MaxTokensNode(std::string token_limit);
+    
+    /**
+     * @brief Accept a visitor to process this node
+     * @param visitor The visitor object
+     */
+    void accept(QueryVisitor& visitor) const override;
+
+    /**
+     * @brief Get the token limit
+     * @return The token limit as a string
+     */
+    [[nodiscard]] const std::string& token_limit() const;
+
+private:
+    std::string m_token_limit; ///< The maximum token limit
+};
+
+/**
+ * @class TemperatureNode
+ * @brief Node for specifying randomness/creativity level (@temperature directive)
+ *
+ * Sets the temperature parameter for the LLM response generation.
+ *
+ * Example:
+ * @temperature 0.7
+ */
+class TemperatureNode final : public QueryNode {
+public:
+    /**
+     * @brief Construct a temperature node
+     * 
+     * @param temperature_value The temperature value as a string (typically between 0.0 and 1.0)
+     */
+    explicit TemperatureNode(std::string temperature_value);
+    
+    /**
+     * @brief Accept a visitor to process this node
+     * @param visitor The visitor object
+     */
+    void accept(QueryVisitor& visitor) const override;
+
+    /**
+     * @brief Get the temperature value
+     * @return The temperature value as a string
+     */
+    [[nodiscard]] const std::string& temperature_value() const;
+
+private:
+    std::string m_temperature_value; ///< The temperature value
+};
+
+/**
+ * @class PatternNode
+ * @brief Node for specifying design patterns to use (@pattern directive)
+ *
+ * Defines design patterns to include in the code.
+ *
+ * Example:
+ * @pattern "Observer pattern for task status updates"
+ */
+class PatternNode final : public QueryNode {
+public:
+    /**
+     * @brief Construct a pattern node
+     * 
+     * @param pattern_desc The design pattern description
+     */
+    explicit PatternNode(std::string pattern_desc);
+    
+    /**
+     * @brief Accept a visitor to process this node
+     * @param visitor The visitor object
+     */
+    void accept(QueryVisitor& visitor) const override;
+
+    /**
+     * @brief Get the pattern description
+     * @return The pattern description string
+     */
+    [[nodiscard]] const std::string& pattern_desc() const;
+
+private:
+    std::string m_pattern_desc; ///< The pattern description
+};
+
+/**
+ * @class StructureNode
+ * @brief Node for defining file structure (@structure directive)
+ *
+ * Defines the structure of the files to be generated.
+ *
+ * Example:
+ * @structure "include/core.hpp: Core interface definition"
+ */
+class StructureNode final : public QueryNode {
+public:
+    /**
+     * @brief Construct a structure node
+     * 
+     * @param structure_def The file structure definition
+     */
+    explicit StructureNode(std::string structure_def);
+    
+    /**
+     * @brief Accept a visitor to process this node
+     * @param visitor The visitor object
+     */
+    void accept(QueryVisitor& visitor) const override;
+
+    /**
+     * @brief Get the structure definition
+     * @return The structure definition string
+     */
+    [[nodiscard]] const std::string& structure_def() const;
+
+private:
+    std::string m_structure_def; ///< The structure definition
+};
+
 } // namespace cql
 
 #endif // cql_nodes_hpp

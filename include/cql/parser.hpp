@@ -66,8 +66,6 @@ private:
     std::unique_ptr<QueryNode> parse_dependency();
     std::unique_ptr<QueryNode> parse_performance();
     std::unique_ptr<QueryNode> parse_copyright();
-    
-    // phase 2 directive parsers
     std::unique_ptr<QueryNode> parse_architecture();
     std::unique_ptr<QueryNode> parse_constraint();
     std::unique_ptr<QueryNode> parse_example();
@@ -76,13 +74,9 @@ private:
     std::unique_ptr<QueryNode> parse_model();
     std::unique_ptr<QueryNode> parse_format();
     std::unique_ptr<QueryNode> parse_variable();
-    
-    // model control directive parsers
     std::unique_ptr<QueryNode> parse_output_format();
     std::unique_ptr<QueryNode> parse_max_tokens();
     std::unique_ptr<QueryNode> parse_temperature();
-    
-    // project structure directive parsers
     std::unique_ptr<QueryNode> parse_pattern();
     std::unique_ptr<QueryNode> parse_structure();
 };

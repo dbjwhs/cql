@@ -21,6 +21,11 @@ class ComplexityNode;
 class ModelNode;
 class FormatNode;
 class VariableNode;
+class OutputFormatNode;
+class MaxTokensNode;
+class TemperatureNode;
+class PatternNode;
+class StructureNode;
 
 /**
  * @class QueryVisitor
@@ -133,6 +138,40 @@ public:
      * @param node The node to visit
      */
     virtual void visit(const VariableNode& node) = 0;
+    
+    //------------------------------------------------------------------------------
+    // API and Output control directives
+    //------------------------------------------------------------------------------
+    
+    /**
+     * @brief Visit an OutputFormatNode
+     * @param node The node to visit
+     */
+    virtual void visit(const OutputFormatNode& node) = 0;
+    
+    /**
+     * @brief Visit a MaxTokensNode
+     * @param node The node to visit
+     */
+    virtual void visit(const MaxTokensNode& node) = 0;
+    
+    /**
+     * @brief Visit a TemperatureNode
+     * @param node The node to visit
+     */
+    virtual void visit(const TemperatureNode& node) = 0;
+    
+    /**
+     * @brief Visit a PatternNode
+     * @param node The node to visit
+     */
+    virtual void visit(const PatternNode& node) = 0;
+    
+    /**
+     * @brief Visit a StructureNode
+     * @param node The node to visit
+     */
+    virtual void visit(const StructureNode& node) = 0;
 };
 
 } // namespace cql

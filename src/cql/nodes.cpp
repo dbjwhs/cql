@@ -245,4 +245,64 @@ const std::string& VariableNode::value() const {
     return m_value; 
 }
 
+// outputformatnode implementation
+OutputFormatNode::OutputFormatNode(std::string format_type)
+    : m_format_type(std::move(format_type)) {}
+
+void OutputFormatNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& OutputFormatNode::format_type() const { 
+    return m_format_type; 
+}
+
+// maxtokensnode implementation
+MaxTokensNode::MaxTokensNode(std::string token_limit)
+    : m_token_limit(std::move(token_limit)) {}
+
+void MaxTokensNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& MaxTokensNode::token_limit() const { 
+    return m_token_limit; 
+}
+
+// temperaturenode implementation
+TemperatureNode::TemperatureNode(std::string temperature_value)
+    : m_temperature_value(std::move(temperature_value)) {}
+
+void TemperatureNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& TemperatureNode::temperature_value() const { 
+    return m_temperature_value; 
+}
+
+// patternnode implementation
+PatternNode::PatternNode(std::string pattern_desc)
+    : m_pattern_desc(std::move(pattern_desc)) {}
+
+void PatternNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& PatternNode::pattern_desc() const { 
+    return m_pattern_desc; 
+}
+
+// structurenode implementation
+StructureNode::StructureNode(std::string structure_def)
+    : m_structure_def(std::move(structure_def)) {}
+
+void StructureNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& StructureNode::structure_def() const { 
+    return m_structure_def; 
+}
+
 } // namespace cql

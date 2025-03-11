@@ -119,6 +119,36 @@ public:
      * @param node The node containing variable definition
      */
     void visit(const VariableNode& node) override;
+    
+    /**
+     * @brief Process an OutputFormatNode
+     * @param node The node containing output format information
+     */
+    void visit(const OutputFormatNode& node) override;
+    
+    /**
+     * @brief Process a MaxTokensNode
+     * @param node The node containing maximum token limit
+     */
+    void visit(const MaxTokensNode& node) override;
+    
+    /**
+     * @brief Process a TemperatureNode
+     * @param node The node containing temperature value
+     */
+    void visit(const TemperatureNode& node) override;
+    
+    /**
+     * @brief Process a PatternNode
+     * @param node The node containing design pattern description
+     */
+    void visit(const PatternNode& node) override;
+    
+    /**
+     * @brief Process a StructureNode
+     * @param node The node containing file structure definition
+     */
+    void visit(const StructureNode& node) override;
 
     //------------------------------------------------------------------------------
     // Output methods
@@ -150,6 +180,9 @@ private:
     // Output configuration
     std::string m_target_model = "claude-3-opus";   ///< Target LLM model
     std::string m_output_format = "markdown";       ///< Output format
+    std::string m_api_output_format;                ///< API output format (single/multiple files)
+    std::string m_max_tokens;                       ///< Maximum token limit
+    std::string m_temperature;                      ///< Temperature value
     
     // Template variables for string interpolation
     std::map<std::string, std::string> m_variables; ///< Variable name to value mapping

@@ -44,7 +44,6 @@ std::vector<std::unique_ptr<QueryNode>> Parser::parse() {
             m_current_token->m_type != TokenType::DEPENDENCY &&
             m_current_token->m_type != TokenType::PERFORMANCE &&
             m_current_token->m_type != TokenType::COPYRIGHT &&
-            // phase 2 directives
             m_current_token->m_type != TokenType::ARCHITECTURE &&
             m_current_token->m_type != TokenType::CONSTRAINT &&
             m_current_token->m_type != TokenType::EXAMPLE &&
@@ -53,7 +52,6 @@ std::vector<std::unique_ptr<QueryNode>> Parser::parse() {
             m_current_token->m_type != TokenType::MODEL &&
             m_current_token->m_type != TokenType::FORMAT &&
             m_current_token->m_type != TokenType::VARIABLE &&
-            // new directives
             m_current_token->m_type != TokenType::OUTPUT_FORMAT &&
             m_current_token->m_type != TokenType::MAX_TOKENS &&
             m_current_token->m_type != TokenType::TEMPERATURE &&
@@ -89,7 +87,6 @@ std::vector<std::unique_ptr<QueryNode>> Parser::parse() {
             case TokenType::COPYRIGHT:
                 nodes.push_back(parse_copyright());
                 break;
-            // phase 2 directives
             case TokenType::ARCHITECTURE:
                 nodes.push_back(parse_architecture());
                 break;
@@ -326,7 +323,7 @@ std::unique_ptr<QueryNode> Parser::parse_variable() {
 std::unique_ptr<QueryNode> Parser::parse_output_format() {
     advance(); // skip @output_format
     std::string format = parse_string();
-    return std::make_unique<FormatNode>(format); // Reuse FormatNode for now
+    return std::make_unique<OutputFormatNode>(format);
 }
 
 std::unique_ptr<QueryNode> Parser::parse_max_tokens() {
@@ -341,7 +338,7 @@ std::unique_ptr<QueryNode> Parser::parse_max_tokens() {
         token_value = parse_string();
     }
     
-    return std::make_unique<ModelNode>("max_tokens:" + token_value); // Reuse ModelNode for now
+    return std::make_unique<MaxTokensNode>(token_value);
 }
 
 std::unique_ptr<QueryNode> Parser::parse_temperature() {
@@ -356,20 +353,20 @@ std::unique_ptr<QueryNode> Parser::parse_temperature() {
         temp_value = parse_string();
     }
     
-    return std::make_unique<ModelNode>("temperature:" + temp_value); // Reuse ModelNode for now
+    return std::make_unique<TemperatureNode>(temp_value);
 }
 
 // Project structure directive parsers
 std::unique_ptr<QueryNode> Parser::parse_pattern() {
     advance(); // skip @pattern
     std::string pattern_desc = parse_string();
-    return std::make_unique<ArchitectureNode>(pattern_desc); // Reuse ArchitectureNode for now
+    return std::make_unique<PatternNode>(pattern_desc);
 }
 
 std::unique_ptr<QueryNode> Parser::parse_structure() {
     advance(); // skip @structure
     std::string structure_def = parse_string();
-    return std::make_unique<ConstraintNode>(structure_def); // Reuse ConstraintNode for now
+    return std::make_unique<StructureNode>(structure_def);
 }
 
 } // namespace cql

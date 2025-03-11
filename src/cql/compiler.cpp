@@ -95,6 +95,44 @@ void QueryCompiler::visit(const VariableNode& node) {
     m_variables[node.name()] = node.value();
 }
 
+void QueryCompiler::visit(const OutputFormatNode& node) {
+    m_api_output_format = node.format_type();
+    if (!m_result_sections.contains("model_parameters")) {
+        m_result_sections["model_parameters"] = "Model Parameters:\n";
+    }
+    m_result_sections["model_parameters"] += "- Output Format: " + node.format_type() + "\n";
+}
+
+void QueryCompiler::visit(const MaxTokensNode& node) {
+    m_max_tokens = node.token_limit();
+    if (!m_result_sections.contains("model_parameters")) {
+        m_result_sections["model_parameters"] = "Model Parameters:\n";
+    }
+    m_result_sections["model_parameters"] += "- Max Tokens: " + node.token_limit() + "\n";
+}
+
+void QueryCompiler::visit(const TemperatureNode& node) {
+    m_temperature = node.temperature_value();
+    if (!m_result_sections.contains("model_parameters")) {
+        m_result_sections["model_parameters"] = "Model Parameters:\n";
+    }
+    m_result_sections["model_parameters"] += "- Temperature: " + node.temperature_value() + "\n";
+}
+
+void QueryCompiler::visit(const PatternNode& node) {
+    if (!m_result_sections.contains("design_patterns")) {
+        m_result_sections["design_patterns"] = "Design Patterns:\n";
+    }
+    m_result_sections["design_patterns"] += "- " + node.pattern_desc() + "\n";
+}
+
+void QueryCompiler::visit(const StructureNode& node) {
+    if (!m_result_sections.contains("file_structure")) {
+        m_result_sections["file_structure"] = "File Structure:\n";
+    }
+    m_result_sections["file_structure"] += "- " + node.structure_def() + "\n";
+}
+
 // process a string with variable interpolation (${var})
 std::string QueryCompiler::interpolate_variables(const std::string& input) const {
     std::string result = input;
@@ -187,6 +225,24 @@ std::string QueryCompiler::get_compiled_query() const {
     if (complexity_it != m_result_sections.end()) {
         query_string += complexity_it->second + "\n";
     }
+    
+    // add model parameters section if it exists
+    auto model_params_it = m_result_sections.find("model_parameters");
+    if (model_params_it != m_result_sections.end()) {
+        query_string += model_params_it->second + "\n";
+    }
+    
+    // add design patterns section if it exists
+    auto patterns_it = m_result_sections.find("design_patterns");
+    if (patterns_it != m_result_sections.end()) {
+        query_string += patterns_it->second + "\n";
+    }
+    
+    // add file structure section if it exists
+    auto structure_it = m_result_sections.find("file_structure");
+    if (structure_it != m_result_sections.end()) {
+        query_string += structure_it->second + "\n";
+    }
 
     // add code examples if we have any
     if (!m_examples.empty()) {
@@ -219,8 +275,20 @@ std::string QueryCompiler::get_compiled_query() const {
         std::string json_output = "{\n";
         json_output += "  \"query\": " + std::string(query_string.empty() ? "\"\"" : "\"" + query_string + "\"") + ",\n";
         json_output += "  \"model\": \"" + m_target_model + "\",\n";
-        json_output += "  \"format\": \"" + m_output_format + "\"\n";
-        json_output += "}\n";
+        json_output += "  \"format\": \"" + m_output_format + "\"";
+        
+        // Add new parameters if they exist
+        if (!m_api_output_format.empty()) {
+            json_output += ",\n  \"output_format\": \"" + m_api_output_format + "\"";
+        }
+        if (!m_max_tokens.empty()) {
+            json_output += ",\n  \"max_tokens\": " + m_max_tokens;
+        }
+        if (!m_temperature.empty()) {
+            json_output += ",\n  \"temperature\": " + m_temperature;
+        }
+        
+        json_output += "\n}\n";
         return json_output;
     }
     

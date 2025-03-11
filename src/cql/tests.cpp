@@ -314,7 +314,6 @@ TestResult test_validation_requirements() {
     }
 }
 
-// test phase 2 features
 TestResult test_phase2_features() {
     std::cout << "Testing Phase 2 features..." << std::endl;
     
