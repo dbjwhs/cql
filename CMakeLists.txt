@@ -80,6 +80,7 @@ target_link_libraries(cql PRIVATE CURL::libcurl nlohmann_json)
 install(TARGETS cql DESTINATION bin)
 install(FILES LICENSE DESTINATION share/doc/cql)
 
+
 # Enable testing
 enable_testing()
 add_test(NAME cql_tests COMMAND cql --test)
