@@ -219,7 +219,11 @@ template     - Template management commands
 
 ## Documentation
 
-CQL offers comprehensive documentation:
+### 📚 [API Reference Documentation](https://dbjwhs.github.io/cql/)
+
+**Complete auto-generated documentation of all classes, methods, and interfaces is available at our [Doxygen site](https://dbjwhs.github.io/cql/).**
+
+### User Guides and Manuals
 
 - [API Documentation](docs/api_documentation.md): Integration with Claude API
 - [Template Documentation](docs/template_documentation.md): Using the template system
@@ -227,7 +231,7 @@ CQL offers comprehensive documentation:
 - [Tutorial](docs/tutorial.md): Step-by-step introduction to CQL
 - [Troubleshooting](docs/troubleshooting.md): Common issues and solutions
 
-For API reference, you can generate Doxygen documentation with:
+You can also generate the Doxygen documentation locally with:
 
 ```bash
 # In the build directory

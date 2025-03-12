@@ -2,6 +2,10 @@
 
 This directory contains example templates demonstrating CQL features, including the new template inheritance system and API integration capabilities.
 
+## 📚 API Reference Documentation
+
+**[Complete API Reference](https://dbjwhs.github.io/cql/)**: Visit our [Doxygen site](https://dbjwhs.github.io/cql/) for comprehensive documentation of all classes, methods, and interfaces.
+
 ## Template Inheritance Examples
 
 The following examples demonstrate template inheritance:
