@@ -178,7 +178,8 @@ bool handle_template_dir_commands(const std::string& line, TemplateManager& temp
         std::cout << "Templates directory: " 
                  << template_manager.get_templates_directory() << std::endl;
         return true;
-    } else if (line.substr(0, 13) == "template dir ") {
+    }
+    if (line.substr(0, 13) == "template dir ") {
         std::string dir = line.substr(13);
         try {
             template_manager.set_templates_directory(dir);
@@ -188,7 +189,6 @@ bool handle_template_dir_commands(const std::string& line, TemplateManager& temp
         }
         return true;
     }
-    
     return false;
 }
 
@@ -236,7 +236,8 @@ bool handle_template_basic_commands(const std::string& line,
             Logger::getInstance().log(LogLevel::ERROR, "Failed to save template: ", e.what());
         }
         return true;
-    } else if (line.substr(0, 14) == "template load ") {
+    }
+    if (line.substr(0, 14) == "template load ") {
         std::string name = line.substr(14);
         try {
             current_query = template_manager.load_template(name);
@@ -245,7 +246,8 @@ bool handle_template_basic_commands(const std::string& line,
             Logger::getInstance().log(LogLevel::ERROR, "Failed to load template: ", e.what());
         }
         return true;
-    } else if (line.substr(0, 14) == "template info ") {
+    }
+    if (line.substr(0, 14) == "template info ") {
         std::string name = line.substr(14);
         try {
             auto [template_name, template_description, template_variables, template_last_modified, template_parent]
@@ -401,7 +403,8 @@ bool handle_variable_commands(const std::string& line,
             Logger::getInstance().log(LogLevel::ERROR, "Error listing template variables: ", e.what());
         }
         return true;
-    } else if (line == "template setvars") {
+    }
+    if (line == "template setvars") {
         // interactive mode for setting multiple variables
         Logger::getInstance().log(LogLevel::INFO, "Enter variables in NAME=VALUE format (empty line to finish):");
         
@@ -431,7 +434,6 @@ bool handle_variable_commands(const std::string& line,
         Logger::getInstance().log(LogLevel::INFO, "Finished setting variables");
         return true;
     }
-    
     return false;
 }
 
@@ -474,8 +476,7 @@ bool handle_template_use(const std::string& line, std::string& current_query
             std::regex var_regex("@variable\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"");
             
             while (std::getline(iss, curr_line)) {
-                std::smatch match;
-                if (std::regex_match(curr_line, match, var_regex) && match.size() > 2) {
+                if (std::smatch match; std::regex_match(curr_line, match, var_regex) && match.size() > 2) {
                     variables[match[1].str()] = match[2].str();
                 }
             }
@@ -617,9 +618,7 @@ bool handle_template_inheritance(const std::string& line, std::string& current_q
     if (line.substr(0, 17) == "template parents ") {
         std::string template_name = line.substr(17);
         try {
-            auto chain = template_manager.get_inheritance_chain(template_name);
-            
-            if (chain.size() <= 1) {
+            if (auto chain = template_manager.get_inheritance_chain(template_name); chain.size() <= 1) {
                 Logger::getInstance().log(LogLevel::INFO, "Template '", template_name, 
                                          "' does not inherit from any other template");
             } else {
@@ -648,7 +647,7 @@ bool handle_template_inheritance(const std::string& line, std::string& current_q
 bool handle_template_validation(const std::string& line, TemplateManager& template_manager
     , TemplateValidator& template_validator) {
     if (line.substr(0, 18) == "template validate ") {
-        std::string template_name = line.substr(18);
+        const std::string template_name = line.substr(18);
         try {
             const auto result = template_validator.validate_template(template_name);
             
@@ -691,7 +690,8 @@ bool handle_template_validation(const std::string& line, TemplateManager& templa
             Logger::getInstance().log(LogLevel::ERROR, "Error validating template: ", e.what());
         }
         return true;
-    } else if (line == "template validateall") {
+    }
+    if (line == "template validateall") {
         try {
             if (const auto templates = template_manager.list_templates(); templates.empty()) {
                 Logger::getInstance().log(LogLevel::INFO, "No templates found to validate");
@@ -761,7 +761,6 @@ bool handle_template_validation(const std::string& line, TemplateManager& templa
         }
         return true;
     }
-    
     return false;
 }
 
@@ -781,7 +780,8 @@ bool handle_template_documentation(const std::string& line, TemplateManager& tem
             Logger::getInstance().log(LogLevel::ERROR, "error generating template documentation: ", e.what());
         }
         return true;
-    } else if (line == "template docsall") {
+    }
+    if (line == "template docsall") {
         try {
             std::string docs = template_manager.generate_all_template_documentation();
             
@@ -796,7 +796,8 @@ bool handle_template_documentation(const std::string& line, TemplateManager& tem
             Logger::getInstance().log(LogLevel::ERROR, "error generating template documentation: ", e.what());
         }
         return true;
-    } else if (line.substr(0, 16) == "template export ") {
+    }
+    if (line.substr(0, 16) == "template export ") {
         std::string params = line.substr(16);
         std::string output_path;
         std::string format = "markdown"; // default format
@@ -1198,7 +1199,6 @@ ApiResponse submit_to_api(const std::string& compiled_query, const Config& confi
         Logger::getInstance().log(LogLevel::INFO, "API request successful");
         std::cout << "API request successful" << std::endl;
     }
-    
     return response;
 }
 
@@ -1214,7 +1214,6 @@ std::vector<GeneratedFile> process_api_response(const ApiResponse& response, con
         Logger::getInstance().log(LogLevel::INFO, "- ", file.m_filename);
         std::cout << "  - " << file.m_filename << std::endl;
     }
-    
     return files;
 }
 
