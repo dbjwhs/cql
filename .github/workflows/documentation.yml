@@ -24,6 +24,8 @@ jobs:
         run: sudo apt-get install doxygen graphviz -y
       - name: Build Documentation
         run: doxygen Doxyfile
+      - name: Disable Jekyll
+        run: touch docs/html/.nojekyll
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
