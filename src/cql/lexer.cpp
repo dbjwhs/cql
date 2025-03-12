@@ -110,7 +110,6 @@ std::optional<Token> Lexer::lex_keyword() {
     else if (keyword == "dependency") type = TokenType::DEPENDENCY;
     else if (keyword == "performance") type = TokenType::PERFORMANCE;
     else if (keyword == "copyright") type = TokenType::COPYRIGHT;
-    // New directive types for Phase 2
     else if (keyword == "architecture") type = TokenType::ARCHITECTURE;
     else if (keyword == "constraint") type = TokenType::CONSTRAINT;
     else if (keyword == "example") type = TokenType::EXAMPLE;
@@ -119,7 +118,6 @@ std::optional<Token> Lexer::lex_keyword() {
     else if (keyword == "model") type = TokenType::MODEL;
     else if (keyword == "format") type = TokenType::FORMAT;
     else if (keyword == "variable") type = TokenType::VARIABLE;
-    // New API and output format directives
     else if (keyword == "output_format") type = TokenType::OUTPUT_FORMAT;
     else if (keyword == "max_tokens") type = TokenType::MAX_TOKENS;
     else if (keyword == "temperature") type = TokenType::TEMPERATURE;
