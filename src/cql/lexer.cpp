@@ -66,6 +66,14 @@ void Lexer::skip_whitespace() {
     }
 }
 
+void Lexer::skip_trailing_whitespace() {
+    while (m_current < m_input.length() && 
+           std::isspace(m_input[m_current]) && 
+           m_input[m_current] != '\n') {
+        advance();
+    }
+}
+
 std::optional<Token> Lexer::next_token() {
     skip_whitespace();
 
@@ -144,6 +152,8 @@ std::optional<Token> Lexer::lex_keyword() {
     else {
         throw LexerError("Unknown keyword: @" + keyword, m_line, start_column - 1);
     }
+    
+    skip_trailing_whitespace();
 
     return Token(type, keyword, m_line, start_column);
 }
@@ -182,6 +192,8 @@ std::optional<Token> Lexer::lex_string() {
     }
 
     advance(); // skip closing quote
+    skip_trailing_whitespace();
+    
     return Token(TokenType::STRING, value, m_line, start_column);
 }
 
@@ -196,6 +208,8 @@ std::optional<Token> Lexer::lex_identifier() {
         value += m_input[m_current];
         advance();
     }
+    
+    skip_trailing_whitespace();
 
     return Token(TokenType::IDENTIFIER, value, m_line, start_column);
 }

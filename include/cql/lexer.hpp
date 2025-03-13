@@ -91,6 +91,9 @@ private:
     // skip whitespace characters (except newlines)
     void skip_whitespace();
     
+    // skip trailing whitespace on the current line (except newlines)
+    void skip_trailing_whitespace();
+    
     // parse a keyword token (starting with @)
     std::optional<Token> lex_keyword();
     
