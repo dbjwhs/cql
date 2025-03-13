@@ -81,6 +81,7 @@ chmod +x build.sh
 
 ### Basic Task Scheduling
 
+{% raw %}
 ```cpp
 #include "scheduler_core.hpp"
 #include "worker_node.hpp"
@@ -92,39 +93,40 @@ using namespace distributed_scheduler;
 int main() {
     // Create IO context
     boost::asio::io_context io_context;
-    
+
     // Initialize security manager
     auto security_manager = std::make_shared<SecurityManager>("your-secret-key");
     security_manager->add_user("admin", "admin123", {"admin"});
-    
+
     // Create task scheduler
     TaskScheduler scheduler(io_context, security_manager);
-    
+
     // Create and register worker nodes
     auto worker = WorkerNodeFactory::create_worker(io_context, scheduler);
     scheduler.register_worker(worker);
-    
+
     // Create security context for task submission
     SecurityContext context;
     context.user_id = "admin";
     context.roles = {"admin"};
     context.auth_token = security_manager->authenticate("admin", "admin123").auth_token;
-    
+
     // Create and submit a task
     Task task;
     task.type = "compute";
     task.payload = {{"complexity", 5}, {"input", 42}};
     task.deadline = std::chrono::system_clock::now() + std::chrono::seconds(10);
     task.priority = 5;
-    
+
     std::string task_id = scheduler.submit_task(task, context);
-    
+
     // Run the IO context
     io_context.run();
-    
+
     return 0;
 }
 ```
+{% endraw %}
 
 ### Monitoring Worker Nodes
 
@@ -134,7 +136,7 @@ scheduler.register_node_status_callback([](const NodeStatus& status) {
     std::cout << "Node: " << status.node_id << std::endl;
     std::cout << "  CPU Load: " << status.cpu_load << "%" << std::endl;
     std::cout << "  Memory Used: " << (status.memory_used / 1024 / 1024) << " MB" << std::endl;
-    std::cout << "  Tasks: " << status.tasks_processing << " processing, " 
+    std::cout << "  Tasks: " << status.tasks_processing << " processing, "
               << status.tasks_queued << " queued" << std::endl;
     std::cout << "  Health Score: " << status.get_health_score() << std::endl;
 });
@@ -146,24 +148,24 @@ scheduler.register_node_status_callback([](const NodeStatus& status) {
 TaskCoroutine process_data(std::shared_ptr<Task> task) {
     // Start timing
     auto start_time = std::chrono::steady_clock::now();
-    
+
     // Simulate work with progress reporting
     auto result_data = co_await WorkSimulator(*task, [](double progress) {
         std::cout << "Progress: " << (progress * 100) << "%" << std::endl;
     });
-    
+
     // Calculate execution time
     auto end_time = std::chrono::steady_clock::now();
     auto execution_time = std::chrono::duration_cast<std::chrono::milliseconds>(
         end_time - start_time);
-    
+
     // Prepare result
     TaskResult result;
     result.task_id = task->id;
     result.success = true;
     result.result_data = std::move(result_data);
     result.execution_time = execution_time;
-    
+
     co_return result;
 }
 ```
