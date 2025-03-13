@@ -40,6 +40,12 @@ TestResult test_lexer_standalone();
 TestResult test_parser_standalone();
 TestResult test_compiler_standalone();
 
+// Define TestInfo struct at namespace level
+struct TestInfo {
+    std::string name;
+    std::function<TestResult()> test_func;
+};
+
 // testresult implementation
 TestResult::TestResult(const bool passed, std::string  error_message,
                       std::string  file_name, const int line_number)
@@ -93,46 +99,41 @@ void print_test_result(const std::string& test_name, const TestResult& result) {
     }
 }
 
+// Define the test list at namespace level
+const std::vector<TestInfo> tests = {
+    {"Basic Compilation", test_basic_compilation},
+    {"Complex Compilation", test_complex_compilation},
+    {"Validation Requirements", test_validation_requirements},
+    {"Phase 2 Features", test_phase2_features},
+    {"Template Management", test_template_management},
+    {"Template Inheritance", test_template_inheritance},
+    {"Template Validator", test_template_validator},
+    {"Query Examples", query_examples},
+    {"Phase 2 Example Compilation", test_phase2_example_compilation},
+    {"Architecture Patterns", test_architecture_patterns},
+    {"API Client", test_api_client},
+    {"Response Processor", test_response_processor},
+    {"API Integration", test_api_integration},
+    {"API Custom Base URL", test_api_custom_base_url},
+    {"API Error Handling", test_api_error_handling_and_retry},
+    {"API Streaming", test_api_streaming},
+    {"Configuration", test_configuration},
+    {"Examples Compilation", test_examples_compilation},
+    {"Lexer (Standalone)", test_lexer_standalone},
+    {"Parser (Standalone)", test_parser_standalone},
+    {"Compiler (Standalone)", test_compiler_standalone}
+};
+
 // run all tests
-bool run_tests(bool fail_fast) {
+bool run_tests(const bool fail_fast) {
     std::cout << "Running CQL Tests..." << std::endl;
     bool all_passed = true;
     
-    // define the test functions with their names
-    struct TestInfo {
-        std::string name;
-        std::function<TestResult()> test_func;
-    };
-    
-    std::vector<TestInfo> tests = {
-        {"Basic Compilation", test_basic_compilation},
-        {"Complex Compilation", test_complex_compilation},
-        {"Validation Requirements", test_validation_requirements},
-        {"Phase 2 Features", test_phase2_features},
-        {"Template Management", test_template_management},
-        {"Template Inheritance", test_template_inheritance},
-        {"Template Validator", test_template_validator},
-        {"Query Examples", query_examples},
-        {"Phase 2 Example Compilation", test_phase2_example_compilation},
-        {"Architecture Patterns", test_architecture_patterns},
-        {"API Client", test_api_client},
-        {"Response Processor", test_response_processor},
-        {"API Integration", test_api_integration},
-        {"API Custom Base URL", test_api_custom_base_url},
-        {"API Error Handling", test_api_error_handling_and_retry},
-        {"API Streaming", test_api_streaming},
-        {"Configuration", test_configuration},
-        {"Examples Compilation", test_examples_compilation},
-        {"Lexer (Standalone)", test_lexer_standalone},
-        {"Parser (Standalone)", test_parser_standalone},
-        {"Compiler (Standalone)", test_compiler_standalone}
-    };
-    
     // run each test
-    for (const auto& test : tests) {
+    for (const auto&[name, test_func] : tests) {
         try {
-            TestResult result = test.test_func();
-            print_test_result(test.name, result);
+            TestResult result = test_func();
+            print_test_result(name, result);
             
             if (!result.passed()) {
                 all_passed = false;
@@ -143,7 +144,7 @@ bool run_tests(bool fail_fast) {
             }
         } catch (const std::exception& e) {
             TestResult result = TestResult::fail("Uncaught exception: " + std::string(e.what()));
-            print_test_result(test.name, result);
+            print_test_result(name, result);
             all_passed = false;
             
             if (fail_fast) {
@@ -168,8 +169,8 @@ TestResult test_basic_compilation() {
     std::cout << "Testing basic compilation..." << std::endl;
     
     try {
-        std::string query = "@copyright \"MIT License\" \"2025 dbjwhs\"\n@language \"C++\"\n@description \"test compilation\"";
-        std::string result = QueryProcessor::compile(query);
+        const std::string query = "@copyright \"MIT License\" \"2025 dbjwhs\"\n@language \"C++\"\n@description \"test compilation\"";
+        const std::string result = QueryProcessor::compile(query);
         
         TEST_ASSERT(!result.empty(), "Compilation result should not be empty");
         TEST_ASSERT(result.find("MIT License") != std::string::npos, 
@@ -248,8 +249,7 @@ TestResult test_validation_requirements() {
         }
         
         // Test 2: Missing language directive
-        // We need to test the validation directly since the parser syntax errors
-        // would occur before validation
+        // We need to test the validation directly since the parser syntax errors would occur before validation
         {
             // Create a copyright node and description node manually, but skip language
             std::vector<std::unique_ptr<QueryNode>> nodes;
@@ -698,7 +698,7 @@ TestResult test_phase2_example_compilation() {
     
     try {
         // Example query with phase 2 features that was previously in main.cpp
-        std::string query =
+        const std::string query =
             "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
             "@language \"C++\"\n"
             "@description \"implement a thread-safe queue with a maximum size\"\n"
@@ -892,16 +892,16 @@ TestResult test_template_validator() {
             std::regex directive_regex("@([a-zA-Z_][a-zA-Z0-9_]*)");
             std::regex invalid_directive_regex("@([^a-zA-Z_]\\S*)");
 
-            std::smatch m;
+            std::smatch match;
             auto search_start(content.cbegin());
-            while (std::regex_search(search_start, content.cend(), m, invalid_directive_regex)) {
+            while (std::regex_search(search_start, content.cend(), match, invalid_directive_regex)) {
                 issues.emplace_back(
                     TemplateValidationLevel::ERROR,
-                    "Invalid directive name: " + m[1].str(),
+                    "Invalid directive name: " + match[1].str(),
                     std::nullopt,
-                    "@" + m[1].str()
+                    "@" + match[1].str()
                 );
-                search_start = m.suffix().first;
+                search_start = match.suffix().first;
             }
 
             // check for invalid variable names (should only contain letters, numbers, and underscores)
@@ -909,18 +909,16 @@ TestResult test_template_validator() {
             std::regex valid_var_name_regex("[a-zA-Z_][a-zA-Z0-9_]*");
 
             search_start = content.cbegin();
-            while (std::regex_search(search_start, content.cend(), m, variable_decl_regex)) {
-                std::string var_name = m[1].str();
-                if (!std::regex_match(var_name, valid_var_name_regex)) {
+            while (std::regex_search(search_start, content.cend(), match, variable_decl_regex)) {
+                if (std::string var_name = match[1].str(); !std::regex_match(var_name, valid_var_name_regex)) {
                     issues.emplace_back(
                         TemplateValidationLevel::ERROR,
                         "Invalid variable name: " + var_name,
                         var_name
                     );
                 }
-                search_start = m.suffix().first;
+                search_start = match.suffix().first;
             }
-
             return issues;
         });
 
@@ -961,6 +959,7 @@ TestResult test_api_client() {
     try {
         // Create a config for testing without real API calls
         Config config;
+
         // Set a valid-looking API key (at least 30 chars for validation)
         config.set_api_key("dummy_api_key_for_testing_12345678901234567890");
         config.set_model("claude-3-test-model");
@@ -1030,8 +1029,8 @@ TestResult test_response_processor() {
         TEST_ASSERT(empty_files.empty(), "Empty response should produce no files");
         
         // Test basic response with no code blocks
-        std::string text_only_response = "This is a response with no code blocks.";
-        auto text_only_files = processor.process_response(text_only_response);
+        const std::string text_only_response = "This is a response with no code blocks.";
+        const auto text_only_files = processor.process_response(text_only_response);
         TEST_ASSERT(text_only_files.empty(), "Response without code blocks should produce no files");
         
         // Test response with a single code block
@@ -1046,8 +1045,8 @@ TestResult test_response_processor() {
             "    int get_count() const { return m_count; }\n"
             "};\n"
             "```\n";
-        
-        auto single_block_files = processor.process_response(single_block_response);
+
+        const auto single_block_files = processor.process_response(single_block_response);
         TEST_ASSERT(single_block_files.size() == 1, "Response with one code block should produce one file");
         
         if (!single_block_files.empty()) {
@@ -1059,7 +1058,7 @@ TestResult test_response_processor() {
         }
         
         // Test response with multiple code blocks including a test
-        std::string multi_block_response = 
+        const std::string multi_block_response =
             "Here's an implementation of a Vector class:\n\n"
             "```cpp\n"
             "// vector.hpp\n"
@@ -1095,8 +1094,8 @@ TestResult test_response_processor() {
             "    assert(v.at(0) == 42);\n"
             "}\n"
             "```\n";
-        
-        auto multi_block_files = processor.process_response(multi_block_response);
+
+        const auto multi_block_files = processor.process_response(multi_block_response);
         TEST_ASSERT(multi_block_files.size() >= 2, "Response with multiple code blocks should produce at least 2 files");
         
         bool found_impl = false;
@@ -1348,34 +1347,34 @@ TestResult test_parser() {
             )";
 
             Parser parser(input);
-            auto nodes = parser.parse();
+            const auto nodes = parser.parse();
 
             TEST_ASSERT(nodes.size() == 5, "Should parse 5 nodes");
 
             // verify node types
-            auto* code_request = dynamic_cast<CodeRequestNode*>(nodes[0].get());
+            const auto* code_request = dynamic_cast<CodeRequestNode*>(nodes[0].get());
             TEST_ASSERT(code_request && code_request->language() == "C++",
                       "First node should be CodeRequestNode with language C++");
             TEST_ASSERT(code_request->description() == "implement a thread-safe queue",
                       "CodeRequestNode should have correct description");
 
-            auto* context = dynamic_cast<ContextNode*>(nodes[1].get());
+            const auto* context = dynamic_cast<ContextNode*>(nodes[1].get());
             TEST_ASSERT(context && context->context() == "Using Modern C++ features",
                       "Second node should be ContextNode with correct text");
 
-            auto* test = dynamic_cast<TestNode*>(nodes[2].get());
+            const auto* test = dynamic_cast<TestNode*>(nodes[2].get());
             TEST_ASSERT(test && test->test_cases().size() == 1,
                       "Third node should be TestNode with 1 test case");
             TEST_ASSERT(test->test_cases()[0] == "Test empty queue",
                       "TestNode should have correct test case");
 
-            auto* dependency = dynamic_cast<DependencyNode*>(nodes[3].get());
+            const auto* dependency = dynamic_cast<DependencyNode*>(nodes[3].get());
             TEST_ASSERT(dependency && dependency->dependencies().size() == 1,
                       "Fourth node should be DependencyNode with 1 dependency");
             TEST_ASSERT(dependency->dependencies()[0] == "std::mutex",
                       "DependencyNode should have correct dependency");
 
-            auto* performance = dynamic_cast<PerformanceNode*>(nodes[4].get());
+            const auto* performance = dynamic_cast<PerformanceNode*>(nodes[4].get());
             TEST_ASSERT(performance && performance->requirement() == "Handle 1M operations per second",
                       "Fifth node should be PerformanceNode with correct requirement");
         }
@@ -1484,6 +1483,22 @@ TestResult test_compiler_standalone() {
     
     // This function simply calls our new implementation
     return test_compiler();
+}
+
+// Implementation of list_tests function
+void list_tests() {
+    std::cout << "Available tests in the CQL test suite:" << std::endl;
+    std::cout << "------------------------------------" << std::endl;
+    
+    // Print each test name from the shared test list
+    for (size_t ndx = 0; ndx < tests.size(); ++ndx) {
+        std::cout << ndx + 1 << ". " << tests[ndx].name << std::endl;
+    }
+    
+    std::cout << std::endl;
+    std::cout << "Run a specific test with: cql --test \"Test Name\"" << std::endl;
+    std::cout << "Run all tests with: cql --test" << std::endl;
+    std::cout << "Run all tests without stopping on failure: cql --test --no-fail-fast" << std::endl;
 }
 
 } // namespace cql::test

@@ -18,6 +18,8 @@ void print_help() {
               << "Options:\n"
               << "  --help, -h              Show this help information\n"
               << "  --test, -t              Run the test suite\n"
+              << "  --test --list           List all available tests\n"
+              << "  --test --no-fail-fast   Continue running tests after failures\n"
               << "  --examples, -e          Show example queries\n"
               << "  --interactive, -i       Run in interactive mode\n"
               << "  --copyright             Show copyright example\n"
@@ -60,13 +62,21 @@ int main(int argc, char* argv[]) {
             } else if (arg1 == "--test" || arg1 == "-t") {
                 // run the test suite
                 bool fail_fast = true;
+                bool list_tests = false;
                 
-                // check for --no-fail-fast flag
+                // check for test options
                 for (int ndx = 2; ndx < argc; ndx++) {
-                    std::string option = argv[ndx];
-                    if (option == "--no-fail-fast") {
+                    if (std::string option = argv[ndx]; option == "--no-fail-fast") {
                         fail_fast = false;
+                    } else if (option == "--list") {
+                        list_tests = true;
                     }
+                }
+                
+                if (list_tests) {
+                    // list all available tests
+                    cql::test::list_tests();
+                    return 0;
                 }
                 
                 // run tests and return appropriate exit code

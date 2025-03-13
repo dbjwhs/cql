@@ -181,6 +181,12 @@ namespace test {
     bool run_tests(bool fail_fast = true);
     
     /**
+     * list all available tests
+     * @return list all avaialble tests
+     */
+    void list_tests();
+    
+    /**
      * test the lexer
      * @return testresult indicating pass/fail with error details
      */
