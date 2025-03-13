@@ -81,7 +81,6 @@ chmod +x build.sh
 
 ### Basic Task Scheduling
 
-{% raw %}
 ```cpp
 #include "scheduler_core.hpp"
 #include "worker_node.hpp"
@@ -126,7 +125,6 @@ int main() {
     return 0;
 }
 ```
-{% endraw %}
 
 ### Monitoring Worker Nodes
 
