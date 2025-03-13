@@ -63,6 +63,7 @@ int main(int argc, char* argv[]) {
                 // run the test suite
                 bool fail_fast = true;
                 bool list_tests = false;
+                std::string test_name;
                 
                 // check for test options
                 for (int ndx = 2; ndx < argc; ndx++) {
@@ -70,6 +71,9 @@ int main(int argc, char* argv[]) {
                         fail_fast = false;
                     } else if (option == "--list") {
                         list_tests = true;
+                    } else if (option[0] != '-') {
+                        // If it doesn't start with a dash, assume it's a test name
+                        test_name = option;
                     }
                 }
                 
@@ -80,7 +84,7 @@ int main(int argc, char* argv[]) {
                 }
                 
                 // run tests and return appropriate exit code
-                if (!cql::test::run_tests(fail_fast)) {
+                if (!cql::test::run_tests(fail_fast, test_name)) {
                     return 1;
                 }
             } else if (arg1 == "--examples" || arg1 == "-e") {

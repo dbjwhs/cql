@@ -174,11 +174,12 @@ namespace test {
     };
     
     /**
-     * run all tests
+     * run tests - either all tests or a specific test by name
      * @param fail_fast if true, stop testing after the first failure
+     * @param test_name name of specific test to run (empty to run all tests)
      * @return true if all tests passed, false otherwise
      */
-    bool run_tests(bool fail_fast = true);
+    bool run_tests(bool fail_fast = true, const std::string& test_name = "");
     
     /**
      * list all available tests

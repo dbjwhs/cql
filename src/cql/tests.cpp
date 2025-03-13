@@ -124,13 +124,26 @@ const std::vector<TestInfo> tests = {
     {"Compiler (Standalone)", test_compiler_standalone}
 };
 
-// run all tests
-bool run_tests(const bool fail_fast) {
-    std::cout << "Running CQL Tests..." << std::endl;
+// run tests - either all tests or a specific test by name
+bool run_tests(const bool fail_fast, const std::string& test_name) {
+    if (test_name.empty()) {
+        std::cout << "Running all CQL Tests..." << std::endl;
+    } else {
+        std::cout << "Running CQL Test: \"" << test_name << "\"" << std::endl;
+    }
+    
     bool all_passed = true;
+    bool found_test = test_name.empty(); // If no specific test is requested, we don't need to find it
     
     // run each test
     for (const auto&[name, test_func] : tests) {
+        // Skip tests that don't match the requested name
+        if (!test_name.empty() && name != test_name) {
+            continue;
+        }
+        
+        found_test = true; // We found the requested test
+        
         try {
             TestResult result = test_func();
             print_test_result(name, result);
@@ -152,6 +165,13 @@ bool run_tests(const bool fail_fast) {
                 break;
             }
         }
+    }
+    
+    // Handle case where the specified test wasn't found
+    if (!found_test) {
+        std::cerr << "Error: Test \"" << test_name << "\" not found!" << std::endl;
+        std::cerr << "Use --test --list to see available tests." << std::endl;
+        return false;
     }
     
     // print summary
