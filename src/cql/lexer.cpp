@@ -72,6 +72,24 @@ std::optional<Token> Lexer::next_token() {
     if (m_current >= m_input.length()) {
         return std::nullopt;
     }
+    
+    // Handle comment lines starting with #
+    if (m_input[m_current] == '#') {
+        // Skip everything until the end of line
+        while (m_current < m_input.length() && m_input[m_current] != '\n') {
+            advance();
+        }
+        
+        // If we reached a newline, process it but don't return a token for it
+        if (m_current < m_input.length() && m_input[m_current] == '\n') {
+            advance();
+            m_line++;
+            m_column = 1;
+        }
+        
+        // Continue to next token instead of returning the newline
+        return next_token();
+    }
 
     if (m_input[m_current] == '@') {
         return lex_keyword();
@@ -173,7 +191,8 @@ std::optional<Token> Lexer::lex_identifier() {
 
     while (m_current < m_input.length() &&
            !std::isspace(m_input[m_current]) &&
-           m_input[m_current] != '@') {
+           m_input[m_current] != '@' &&
+           m_input[m_current] != '#') {
         value += m_input[m_current];
         advance();
     }
