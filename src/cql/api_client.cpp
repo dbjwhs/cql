@@ -723,19 +723,19 @@ Config Config::load_from_default_locations() {
     Config config{};
     
     // Try to load from environment variables first
-    if (const char *api_key_env = std::getenv("CQL_API_KEY")) {
+    if (const char *api_key_env = std::getenv("LLM_API_KEY")) {
         config.m_api_key = api_key_env;
     }
 
-    if (const char *model_env = std::getenv("CQL_MODEL")) {
+    if (const char *model_env = std::getenv("LLM_MODEL")) {
         config.m_model = model_env;
     }
     
-    if (const char *base_url_env = std::getenv("CQL_API_BASE_URL")) {
+    if (const char *base_url_env = std::getenv("LLM_API_BASE_URL")) {
         config.m_api_base_url = base_url_env;
     }
 
-    if (const char *timeout_env = std::getenv("CQL_TIMEOUT")) {
+    if (const char *timeout_env = std::getenv("LLM_TIMEOUT")) {
         try {
             config.m_timeout = std::stoi(timeout_env);
         } catch (...) {
@@ -743,7 +743,7 @@ Config Config::load_from_default_locations() {
         }
     }
 
-    if (const char *max_retries_env = std::getenv("CQL_MAX_RETRIES")) {
+    if (const char *max_retries_env = std::getenv("LLM_MAX_RETRIES")) {
         try {
             config.m_max_retries = std::stoi(max_retries_env);
         } catch (...) {
@@ -751,7 +751,7 @@ Config Config::load_from_default_locations() {
         }
     }
 
-    if (const char *output_dir_env = std::getenv("CQL_OUTPUT_DIR")) {
+    if (const char *output_dir_env = std::getenv("LLM_OUTPUT_DIR")) {
         config.m_output_directory = output_dir_env;
     }
     
@@ -764,7 +764,7 @@ Config Config::load_from_default_locations() {
     }
 
     // Check if a config file exists
-    if (const std::string config_path = home_dir + "/.cql/config.json"; std::filesystem::exists(config_path)) {
+    if (const std::string config_path = home_dir + "/.llm/config.json"; std::filesystem::exists(config_path)) {
         try {
             config = load_from_file(config_path);
         } catch (const std::exception& e) {

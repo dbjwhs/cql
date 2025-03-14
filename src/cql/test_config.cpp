@@ -86,11 +86,11 @@ TestResult test_config_from_env_vars() {
     try {
         // Setup environment variables
         std::map<std::string, std::string> env_vars = {
-            {"CQL_API_KEY", "test_api_key_from_env"},
-            {"CQL_MODEL", "claude-3-haiku"},
-            {"CQL_TIMEOUT", "120"},
-            {"CQL_MAX_RETRIES", "5"},
-            {"CQL_OUTPUT_DIR", "./env_test_output"}
+            {"LLM_API_KEY", "test_api_key_from_env"},
+            {"LLM_MODEL", "claude-3-haiku"},
+            {"LLM_TIMEOUT", "120"},
+            {"LLM_MAX_RETRIES", "5"},
+            {"LLM_OUTPUT_DIR", "./env_test_output"}
         };
         
         // Set environment variables
@@ -116,8 +116,8 @@ TestResult test_config_from_env_vars() {
                   "Output directory should be loaded from environment variable");
         
         // Test error handling with invalid numeric values
-        env_vars["CQL_TIMEOUT"] = "not_a_number";
-        env_vars["CQL_MAX_RETRIES"] = "also_not_a_number";
+        env_vars["LLM_TIMEOUT"] = "not_a_number";
+        env_vars["LLM_MAX_RETRIES"] = "also_not_a_number";
         set_env_vars(env_vars);
         
         // Suppress error logs only for the specific part where we expect errors
@@ -134,12 +134,12 @@ TestResult test_config_from_env_vars() {
         }
         
         // Clean up
-        unset_env_vars({"CQL_API_KEY", "CQL_MODEL", "CQL_TIMEOUT", "CQL_MAX_RETRIES", "CQL_OUTPUT_DIR"});
+        unset_env_vars({"LLM_API_KEY", "LLM_MODEL", "LLM_TIMEOUT", "LLM_MAX_RETRIES", "LLM_OUTPUT_DIR"});
         
         return TestResult::pass();
     } catch (const std::exception& e) {
         // Clean up
-        unset_env_vars({"CQL_API_KEY", "CQL_MODEL", "CQL_TIMEOUT", "CQL_MAX_RETRIES", "CQL_OUTPUT_DIR"});
+        unset_env_vars({"LLM_API_KEY", "LLM_MODEL", "LLM_TIMEOUT", "LLM_MAX_RETRIES", "LLM_OUTPUT_DIR"});
         
         return TestResult::fail("Exception in test_config_from_env_vars: " + std::string(e.what()),
                               __FILE__, __LINE__);
@@ -283,24 +283,24 @@ TestResult test_config_override_precedence() {
         }
         setenv("HOME", temp_dir.c_str(), 1);
         
-        // Create .cql directory and config file
-        std::string cql_dir = temp_dir + "/.cql";
-        if (!std::filesystem::exists(cql_dir)) {
-            std::filesystem::create_directory(cql_dir);
+        // Create .llm directory and config file
+        std::string llm_dir = temp_dir + "/.llm";
+        if (!std::filesystem::exists(llm_dir)) {
+            std::filesystem::create_directory(llm_dir);
         }
         
-        bool cql_config_created = create_temp_config_file(cql_dir + "/config.json", config_json);
-        TEST_ASSERT(cql_config_created, "Should be able to create .cql/config.json file");
+        bool llm_config_created = create_temp_config_file(llm_dir + "/config.json", config_json);
+        TEST_ASSERT(llm_config_created, "Should be able to create .llm/config.json file");
         
         // Set some environment variables that should take precedence
         std::map<std::string, std::string> env_vars = {
-            {"CQL_API_KEY", "api_key_from_env"},
-            {"CQL_TIMEOUT", "120"}
+            {"LLM_API_KEY", "api_key_from_env"},
+            {"LLM_TIMEOUT", "120"}
         };
         set_env_vars(env_vars);
         
         // Create a local config first by loading from the config file directly
-        Config file_config = Config::load_from_file(cql_dir + "/config.json");
+        Config file_config = Config::load_from_file(llm_dir + "/config.json");
         TEST_ASSERT(file_config.get_api_key() == "api_key_from_file", 
                   "API key should be loaded from file");
         
@@ -325,7 +325,7 @@ TestResult test_config_override_precedence() {
                   "Max retries should be loaded from file when no env var is set");
         
         // Clean up
-        unset_env_vars({"CQL_API_KEY", "CQL_TIMEOUT"});
+        unset_env_vars({"LLM_API_KEY", "LLM_TIMEOUT"});
         
         // Restore HOME env var
         if (!home_backup.empty()) {
@@ -335,15 +335,15 @@ TestResult test_config_override_precedence() {
         }
         
         // Clean up files
-        std::filesystem::remove(cql_dir + "/config.json");
-        std::filesystem::remove(cql_dir);
+        std::filesystem::remove(llm_dir + "/config.json");
+        std::filesystem::remove(llm_dir);
         std::filesystem::remove(config_file);
         std::filesystem::remove(temp_dir);
         
         return TestResult::pass();
     } catch (const std::exception& e) {
         // Clean up
-        unset_env_vars({"CQL_API_KEY", "CQL_TIMEOUT"});
+        unset_env_vars({"LLM_API_KEY", "LLM_TIMEOUT"});
         
         // Restore HOME env var
         if (!home_backup.empty()) {
@@ -353,11 +353,11 @@ TestResult test_config_override_precedence() {
         }
         
         // Clean up files
-        if (std::filesystem::exists(temp_dir + "/.cql/config.json")) {
-            std::filesystem::remove(temp_dir + "/.cql/config.json");
+        if (std::filesystem::exists(temp_dir + "/.llm/config.json")) {
+            std::filesystem::remove(temp_dir + "/.llm/config.json");
         }
-        if (std::filesystem::exists(temp_dir + "/.cql")) {
-            std::filesystem::remove(temp_dir + "/.cql");
+        if (std::filesystem::exists(temp_dir + "/.llm")) {
+            std::filesystem::remove(temp_dir + "/.llm");
         }
         if (std::filesystem::exists(config_file)) {
             std::filesystem::remove(config_file);

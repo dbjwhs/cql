@@ -1184,16 +1184,16 @@ TestResult test_examples_compilation() {
         
         std::cout << "Examples directory found at: " << examples_dir << std::endl;
         
-        // Find all .cql files in the examples directory
+        // Find all .llm files in the examples directory
         std::vector<std::string> example_files;
         for (const auto& entry : fs::directory_iterator(examples_dir)) {
-            if (entry.is_regular_file() && entry.path().extension() == ".cql") {
+            if (entry.is_regular_file() && entry.path().extension() == ".llm") {
                 example_files.push_back(entry.path().string());
             }
         }
         
         if (example_files.empty()) {
-            return TestResult::fail("No .cql files found in examples directory",
+            return TestResult::fail("No .llm files found in examples directory",
                                    __FILE__, __LINE__);
         }
         

@@ -22,9 +22,9 @@ TemplateManager::TemplateManager() {
     // default templates directory is in the user's home directory
     const char* home_dir = getenv("HOME");
     if (home_dir) {
-        m_templates_dir = std::string(home_dir) + "/.cql/templates";
+        m_templates_dir = std::string(home_dir) + "/.llm/templates";
     } else {
-        m_templates_dir = "./cql_templates";
+        m_templates_dir = "./llm_templates";
     }
     ensure_templates_directory();
 }
@@ -70,8 +70,8 @@ void TemplateManager::save_template(const std::string& name, const std::string& 
     } else {
         // if no category specified, save to the user directory by default
         std::string filename = name;
-        if (filename.length() < 4 || filename.substr(filename.length() - 4) != ".cql") {
-            filename += ".cql";
+        if (filename.length() < 4 || filename.substr(filename.length() - 4) != ".llm") {
+            filename += ".llm";
         }
         
         template_path = m_templates_dir + "/user/" + filename;
@@ -170,7 +170,7 @@ std::vector<std::string> TemplateManager::list_templates() {
         // first get all templates from the common directory
         if (fs::exists(fs::path(m_templates_dir) / "common")) {
             for (const auto& entry : fs::recursive_directory_iterator(fs::path(m_templates_dir) / "common")) {
-                if (entry.is_regular_file() && entry.path().extension() == ".cql") {
+                if (entry.is_regular_file() && entry.path().extension() == ".llm") {
                     // format path as common/template
                     fs::path rel_path = entry.path().lexically_relative(m_templates_dir);
                     std::string template_name = rel_path.string();
@@ -183,7 +183,7 @@ std::vector<std::string> TemplateManager::list_templates() {
         // next get all templates from the user directory
         if (fs::exists(fs::path(m_templates_dir) / "user")) {
             for (const auto& entry : fs::recursive_directory_iterator(fs::path(m_templates_dir) / "user")) {
-                if (entry.is_regular_file() && entry.path().extension() == ".cql") {
+                if (entry.is_regular_file() && entry.path().extension() == ".llm") {
                     // format path as user/template
                     fs::path rel_path = entry.path().lexically_relative(m_templates_dir);
                     std::string template_name = rel_path.string();
@@ -195,7 +195,7 @@ std::vector<std::string> TemplateManager::list_templates() {
         
         // finally get templates from any other directories (legacy support)
         for (const auto& entry : fs::directory_iterator(m_templates_dir)) {
-            if (entry.is_regular_file() && entry.path().extension() == ".cql") {
+            if (entry.is_regular_file() && entry.path().extension() == ".llm") {
                 // add only if not an internal file
                 if (entry.path().filename().string() != "README.txt" && 
                     entry.path().filename().string()[0] != '.') {
@@ -212,7 +212,7 @@ std::vector<std::string> TemplateManager::list_templates() {
                       entry.path().filename() != "user") {
                 // handle custom categories (not common or user)
                 for (const auto& sub_entry : fs::recursive_directory_iterator(entry.path())) {
-                    if (sub_entry.is_regular_file() && sub_entry.path().extension() == ".cql") {
+                    if (sub_entry.is_regular_file() && sub_entry.path().extension() == ".llm") {
                         // format path as category/template
                         fs::path rel_path = sub_entry.path().lexically_relative(m_templates_dir);
                         std::string template_name = rel_path.string();
@@ -347,10 +347,10 @@ std::vector<std::string> TemplateManager::list_categories() {
 }
 
 std::string TemplateManager::get_template_path(const std::string& name) const {
-    // check if the name already has a .cql extension
+    // check if the name already has a .llm extension
     std::string filename = name;
-    if (filename.length() < 4 || filename.substr(filename.length() - 4) != ".cql") {
-        filename += ".cql";
+    if (filename.length() < 4 || filename.substr(filename.length() - 4) != ".llm") {
+        filename += ".llm";
     }
     
     // check if the name includes a category using category/template format
@@ -861,9 +861,9 @@ std::string TemplateManager::generate_all_template_documentation() {
             std::string anchor = templ;
             std::replace(anchor.begin(), anchor.end(), '/', '-');
             
-            // if template has .cql extension, remove it for display
+            // if template has .llm extension, remove it for display
             std::string display_name = templ;
-            if (display_name.length() > 4 && display_name.substr(display_name.length() - 4) == ".cql") {
+            if (display_name.length() > 4 && display_name.substr(display_name.length() - 4) == ".llm") {
                 display_name = display_name.substr(0, display_name.length() - 4);
             }
             
@@ -1126,13 +1126,13 @@ void TemplateManager::create_readme_file() {
     std::string readme_path = (fs::path(m_templates_dir) / "README.txt").string();
     std::ofstream readme(readme_path);
     if (readme.is_open()) {
-        readme << "CQL Template Directory Structure\n";
+        readme << "LLM Template Directory Structure\n";
         readme << "===============================\n\n";
-        readme << "This directory contains CQL templates organized as follows:\n\n";
-        readme << "- common/ : Standard templates that ship with CQL\n";
+        readme << "This directory contains LLM templates organized as follows:\n\n";
+        readme << "- common/ : Standard templates that ship with LLM\n";
         readme << "- user/   : User-created templates\n\n";
         readme << "You can also create your own categories as subdirectories.\n";
-        readme << "Each template should be a .cql file.\n";
+        readme << "Each template should be a .llm file.\n";
         readme.close();
     }
 }

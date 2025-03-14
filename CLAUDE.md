@@ -1,4 +1,4 @@
-# CQL Project Guide
+# LLM Project Guide
 
 ## Build Commands
 - Build project: `mkdir -p build && cd build && cmake .. && make`
@@ -6,8 +6,8 @@
 - Run specific test: `build/cql --test "Test Name"` (e.g., `build/cql --test "Template Validator"`)
 - Run examples: `build/cql --examples`
 - Interactive mode: `build/cql --interactive`
-- Process a file: `build/cql input.cql output.txt`
-- API integration: `build/cql --submit input.cql --output-dir ./output`
+- Process a file: `build/cql input.llm output.txt`
+- API integration: `build/cql --submit input.llm --output-dir ./output`
 
 ## Code Style Guidelines
 - Modern C++20 features preferred (concepts, ranges, string_view)

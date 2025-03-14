@@ -1,10 +1,10 @@
-# Claude Query Language (CQL)
+# Language Model Query Language (LLM)
 
-The Claude Query Language (CQL) is a domain-specific language and compiler designed to formalize and standardize the creation of technical queries for Large Language Models, specifically targeting Anthropic's Claude. CQL enables engineers to create structured, consistent prompts that consistently yield high-quality code generation from Claude.
+The Language Model Query Language (LLM) is a domain-specific language and compiler designed to formalize and standardize the creation of technical queries for Large Language Models, specifically targeting Anthropic's Claude. LLM enables engineers to create structured, consistent prompts that consistently yield high-quality code generation from Claude.
 
 ## Overview
 
-CQL addresses several critical challenges in prompt engineering for AI code generation:
+LLM addresses several critical challenges in prompt engineering for AI code generation:
 
 1. **Standardization**: Eliminates inconsistency in query structure through a standardized format with required elements
 2. **Efficiency**: Dramatically reduces the time engineers spend crafting detailed prompts
@@ -83,20 +83,20 @@ make
 ./cql --interactive
 
 # Process a query file
-./cql input.cql output.txt
+./cql input.llm output.txt
 ```
 
 ### API Integration Commands
 
 ```bash
 # Submit a query to Claude API
-./cql --submit input.cql
+./cql --submit input.llm
 
 # Submit with specific model selection
-./cql --submit input.cql --model claude-3-opus
+./cql --submit input.llm --model claude-3-opus
 
 # Submit and save generated files to a directory
-./cql --submit input.cql --output-dir ./output
+./cql --submit input.llm --output-dir ./output
 ```
 
 ### Template Commands
