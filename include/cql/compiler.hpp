@@ -9,6 +9,7 @@
 #include <vector>
 #include <iostream>
 #include "visitor.hpp"
+#include "../../third_party/include/nlohmann/json.hpp"
 
 namespace cql {
 

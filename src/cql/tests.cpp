@@ -18,6 +18,7 @@
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/response_processor.hpp"
 #include "../../include/cql/test_utils.hpp"
+#include "../../third_party/include/nlohmann/json.hpp"
 
 // note file exists in the cpp-snippets repo, you will need to check this out and have it and cql share the
 // same root directory
@@ -99,6 +100,9 @@ void print_test_result(const std::string& test_name, const TestResult& result) {
     }
 }
 
+// Forward declarations for new tests
+TestResult test_json_format_output();
+
 // Define the test list at namespace level
 const std::vector<TestInfo> tests = {
     {"Basic Compilation", test_basic_compilation},
@@ -121,7 +125,8 @@ const std::vector<TestInfo> tests = {
     {"Examples Compilation", test_examples_compilation},
     {"Lexer (Standalone)", test_lexer_standalone},
     {"Parser (Standalone)", test_parser_standalone},
-    {"Compiler (Standalone)", test_compiler_standalone}
+    {"Compiler (Standalone)", test_compiler_standalone},
+    {"JSON Format Output", test_json_format_output}
 };
 
 // run tests - either all tests or a specific test by name
@@ -1519,6 +1524,125 @@ void list_tests() {
     std::cout << "Run a specific test with: cql --test \"Test Name\"" << std::endl;
     std::cout << "Run all tests with: cql --test" << std::endl;
     std::cout << "Run all tests without stopping on failure: cql --test --no-fail-fast" << std::endl;
+}
+
+// Test JSON format output
+TestResult test_json_format_output() {
+    std::cout << "Testing JSON format output..." << std::endl;
+    
+    try {
+        // Test 1: Basic JSON output with minimal content
+        std::string basic_json_query = 
+            "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+            "@language \"C++\"\n"
+            "@description \"Simple test for JSON output\"\n"
+            "@format \"json\"\n";
+            
+        std::string basic_result = QueryProcessor::compile(basic_json_query);
+        
+        // Verify basic JSON structure
+        TEST_ASSERT(basic_result.find("{\n") == 0, "JSON output should start with opening brace");
+        TEST_ASSERT(basic_result.find("\n}\n") != std::string::npos, "JSON output should end with closing brace");
+        TEST_ASSERT(basic_result.find("\"query\":") != std::string::npos, "JSON output should contain query field");
+        TEST_ASSERT(basic_result.find("\"model\":") != std::string::npos, "JSON output should contain model field");
+        TEST_ASSERT(basic_result.find("\"format\": \"json\"") != std::string::npos, "JSON output should contain format field with json value");
+        
+        // Test 2: JSON output with special characters that need escaping
+        std::string special_chars_query = 
+            "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+            "@language \"C++\"\n"
+            "@description \"Test with special chars\"\n"
+            "@format \"json\"\n";
+            
+        std::string special_chars_result = QueryProcessor::compile(special_chars_query);
+        
+        // Just verify the result is valid and contains expected content
+        TEST_ASSERT(special_chars_result.find("\"query\"") != std::string::npos, 
+                   "JSON output should contain query field");
+        
+        // Test 3: JSON output with model parameters
+        std::string model_params_query = 
+            "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+            "@language \"C++\"\n"
+            "@description \"Test with model parameters\"\n"
+            "@format \"json\"\n"
+            "@model \"claude-3-custom\"\n"
+            "@max_tokens 80000\n"
+            "@temperature 0.5\n"
+            "@output_format \"multiple_files\"\n";
+            
+        std::string model_params_result = QueryProcessor::compile(model_params_query);
+        
+        // Verify model parameters included
+        TEST_ASSERT(model_params_result.find("\"model\": \"claude-3-custom\"") != std::string::npos, 
+                   "JSON output should contain specified model");
+        TEST_ASSERT(model_params_result.find("\"max_tokens\": 80000") != std::string::npos, 
+                   "JSON output should contain max_tokens parameter");
+        TEST_ASSERT(model_params_result.find("\"temperature\": 0.5") != std::string::npos, 
+                   "JSON output should contain temperature parameter");
+        TEST_ASSERT(model_params_result.find("\"output_format\": \"multiple_files\"") != std::string::npos, 
+                   "JSON output should contain output_format parameter");
+        
+        // Test 4: JSON output with complex content (multiline) 
+        std::string complex_query = 
+            "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+            "@language \"C++\"\n"
+            "@description \"Test with complex multiline content\"\n"
+            "@format \"json\"\n"
+            "@context \"Line 1 of context\"\n"
+            "@context \"Line 2 of context\"\n"
+            "@example \"Code Example\" \"class Example {\n"
+            "public:\n"
+            "    void method() {\n"
+            "        // Comment with quotes\n"
+            "        std::cout << \\\"Hello\\\\nWorld\\\" << std::endl;\n"
+            "    }\n"
+            "};\"\n";
+            
+        std::string complex_result = QueryProcessor::compile(complex_query);
+        
+        // Verify newlines and escaping in complex content
+        TEST_ASSERT(complex_result.find("\\n") != std::string::npos, 
+                   "JSON output should escape newlines");
+        // Check for quoted text
+        TEST_ASSERT(complex_result.find("quotes") != std::string::npos, 
+                   "JSON output should contain the word 'quotes'");
+        // Check for preserved escape sequences
+        TEST_ASSERT(complex_result.find("\\\\\\\"Hello\\\\\\\\nWorld\\\\\\\"") != std::string::npos 
+                    || complex_result.find("Hello\\\\nWorld") != std::string::npos,
+                   "JSON output should preserve escaped characters in the original text");
+                   
+        // Test 5: Validate JSON output using nlohmann/json parser
+        // For each test case, verify the output is valid JSON by parsing it
+        try {
+            auto parsed_basic = nlohmann::json::parse(basic_result);
+            TEST_ASSERT(parsed_basic.contains("query"), "Parsed JSON should contain 'query' field");
+            TEST_ASSERT(parsed_basic.contains("model"), "Parsed JSON should contain 'model' field");
+            TEST_ASSERT(parsed_basic.contains("format"), "Parsed JSON should contain 'format' field");
+            TEST_ASSERT(parsed_basic["format"] == "json", "Format field should be 'json'");
+            
+            auto parsed_special = nlohmann::json::parse(special_chars_result);
+            TEST_ASSERT(parsed_special.contains("query"), "Parsed JSON should contain 'query' field");
+            
+            auto parsed_model_params = nlohmann::json::parse(model_params_result);
+            TEST_ASSERT(parsed_model_params.contains("model"), "Parsed JSON should contain 'model' field");
+            TEST_ASSERT(parsed_model_params.contains("max_tokens"), "Parsed JSON should contain 'max_tokens' field");
+            TEST_ASSERT(parsed_model_params.contains("temperature"), "Parsed JSON should contain 'temperature' field");
+            TEST_ASSERT(parsed_model_params.contains("output_format"), "Parsed JSON should contain 'output_format' field");
+            
+            auto parsed_complex = nlohmann::json::parse(complex_result);
+            TEST_ASSERT(parsed_complex.contains("query"), "Parsed JSON should contain 'query' field");
+            TEST_ASSERT(parsed_complex["query"].is_string(), "Query field should be a string");
+        } catch (const nlohmann::json::parse_error& e) {
+            return TestResult::fail("JSON validation failed: " + std::string(e.what()) +
+                                  " - Invalid JSON generated", __FILE__, __LINE__);
+        }
+        
+        return TestResult::pass();
+    } catch (const std::exception& e) {
+        return TestResult::fail("Exception in test_json_format_output: " + std::string(e.what()),
+                              __FILE__, __LINE__);
+    }
 }
 
 } // namespace cql::test

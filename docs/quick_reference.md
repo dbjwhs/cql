@@ -2,37 +2,38 @@
 
 ## Core Directives
 
-| Directive | Description | Example |
-|-----------|-------------|---------|
-| `@copyright` | Specifies license and copyright holder | `@copyright "MIT License" "2025 Author"` |
-| `@language` | Target programming language | `@language "C++"` |
-| `@description` | Description of the code to generate | `@description "implement a thread-safe queue"` |
-| `@context` | Additional context for generation | `@context "Using C++20 features"` |
-| `@dependency` | Required libraries or dependencies | `@dependency "std::mutex, std::condition_variable"` |
-| `@test` | Test cases to be supported | `@test "Test concurrent push operations"` |
-| `@variable` | Define template variables | `@variable "max_size" "1000"` |
-| `@inherit` | Inherit from another template | `@inherit "base_template"` |
-| `@architecture` | Specifies architectural pattern | `@architecture component "factory_method" "options"` |
-| `@constraint` | Defines implementation constraints | `@constraint "Thread-safe for concurrent access"` |
-| `@security` | Security requirements | `@security "Prevent data races and deadlocks"` |
-| `@complexity` | Performance complexity goals | `@complexity "O(1) for push and pop operations"` |
-| `@example` | Usage examples with optional title | `@example "Basic Usage" "..."` |
+| Directive       | Description                            | Example                                              |
+|-----------------|----------------------------------------|------------------------------------------------------|
+| `@copyright`    | Specifies license and copyright holder | `@copyright "MIT License" "2025 Author"`             |
+| `@language`     | Target programming language            | `@language "C++"`                                    |
+| `@description`  | Description of the code to generate    | `@description "implement a thread-safe queue"`       |
+| `@context`      | Additional context for generation      | `@context "Using C++20 features"`                    |
+| `@dependency`   | Required libraries or dependencies     | `@dependency "std::mutex, std::condition_variable"`  |
+| `@test`         | Test cases to be supported             | `@test "Test concurrent push operations"`            |
+| `@variable`     | Define template variables              | `@variable "max_size" "1000"`                        |
+| `@inherit`      | Inherit from another template          | `@inherit "base_template"`                           |
+| `@architecture` | Specifies architectural pattern        | `@architecture component "factory_method" "options"` |
+| `@constraint`   | Defines implementation constraints     | `@constraint "Thread-safe for concurrent access"`    |
+| `@security`     | Security requirements                  | `@security "Prevent data races and deadlocks"`       |
+| `@complexity`   | Performance complexity goals           | `@complexity "O(1) for push and pop operations"`     |
+| `@example`      | Usage examples with optional title     | `@example "Basic Usage" "..."`                       |
 
 ## Model Control Directives
 
-| Directive | Description | Example |
-|-----------|-------------|---------|
-| `@model` | Specifies which Claude model to use | `@model "claude-3-opus"` |
-| `@max_tokens` | Sets maximum response length | `@max_tokens 100000` |
-| `@temperature` | Controls randomness (0.0-1.0) | `@temperature 0.7` |
-| `@output_format` | How to format the output | `@output_format "multiple_files"` |
+| Directive        | Description                         | Example                           |
+|------------------|-------------------------------------|-----------------------------------|
+| `@model`         | Specifies which Claude model to use | `@model "claude-3-opus"`          |
+| `@format`        | Output format (markdown or json)    | `@format "json"`                  |
+| `@max_tokens`    | Sets maximum response length        | `@max_tokens 100000`              |
+| `@temperature`   | Controls randomness (0.0-1.0)       | `@temperature 0.7`                |
+| `@output_format` | How to format the output            | `@output_format "multiple_files"` |
 
 ## Project Structure Directives
 
-| Directive | Description | Example |
-|-----------|-------------|---------|
-| `@pattern` | Specifies design patterns to use | `@pattern "Observer pattern for notifications"` |
-| `@structure` | Defines file structure | `@structure "include/core.hpp: Core interface"` |
+| Directive    | Description                      | Example                                         |
+|--------------|----------------------------------|-------------------------------------------------|
+| `@pattern`   | Specifies design patterns to use | `@pattern "Observer pattern for notifications"` |
+| `@structure` | Defines file structure           | `@structure "include/core.hpp: Core interface"` |
 
 ## Variable Syntax
 
@@ -164,10 +165,10 @@ To generate a REST API handler for products:
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Template not found | Check template name and directory structure |
-| Circular inheritance | Remove circular references between templates |
-| Undeclared variable | Define variables before using with `@variable` |
-| Validation warnings | Address unused variables or incomplete directives |
-| Compilation failures | Verify syntax and required directives |
+| Issue                | Solution                                          |
+|----------------------|---------------------------------------------------|
+| Template not found   | Check template name and directory structure       |
+| Circular inheritance | Remove circular references between templates      |
+| Undeclared variable  | Define variables before using with `@variable`    |
+| Validation warnings  | Address unused variables or incomplete directives |
+| Compilation failures | Verify syntax and required directives             |

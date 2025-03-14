@@ -265,11 +265,12 @@ struct ApiClient::Impl {
     ApiResponse process_successful_response(ApiResponse& response) {
         m_status = ApiClientStatus::Ready;
         response.m_success = true;
-        response.m_raw_response = m_response_buffer;
         
         try {
             // Parse JSON response
             nlohmann::json json_response = nlohmann::json::parse(m_response_buffer);
+            
+            // Extract content from response
             if (json_response.contains("content") && json_response["content"].is_array()) {
                 // Extract content from response
                 for (const auto& content : json_response["content"]) {
@@ -278,12 +279,23 @@ struct ApiClient::Impl {
                         break;
                     }
                 }
+            } else {
+                // If we can't find content in the expected format, extract just the response content
+                // without including metadata like query or model information
+                if (json_response.contains("completion") && json_response["completion"].is_string()) {
+                    response.m_raw_response = json_response["completion"];
+                } else {
+                    // Default to empty string if we can't extract proper content
+                    // This prevents metadata leakage
+                    response.m_raw_response = "{}";
+                    Logger::getInstance().log(LogLevel::ERROR, "Cannot extract content from API response");
+                }
             }
             Logger::getInstance().log(LogLevel::INFO, "API request successful");
         } catch (const std::exception& e) {
             Logger::getInstance().log(LogLevel::ERROR, "Error parsing API response: ", e.what());
-            // Still mark as success since we got a valid HTTP response,
-            // The response processor will handle extracting code blocks
+            // Set to empty JSON object instead of raw buffer to prevent metadata leakage
+            response.m_raw_response = "{}";
         }
         
         return response;

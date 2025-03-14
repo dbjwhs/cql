@@ -271,25 +271,84 @@ std::string QueryCompiler::get_compiled_query() const {
 
     // format the output appropriately
     if (m_output_format == "json") {
-        // convert to json format (simplified)
-        std::string json_output = "{\n";
-        json_output += "  \"query\": " + std::string(query_string.empty() ? "\"\"" : "\"" + query_string + "\"") + ",\n";
-        json_output += "  \"model\": \"" + m_target_model + "\",\n";
-        json_output += "  \"format\": \"" + m_output_format + "\"";
-        
-        // Add new parameters if they exist
-        if (!m_api_output_format.empty()) {
-            json_output += ",\n  \"output_format\": \"" + m_api_output_format + "\"";
+        try {
+            // Create a JSON object using nlohmann/json
+            nlohmann::json json_obj;
+
+            // Set up JSON object with proper multi-line formatting for the query
+            json_obj["query"] = query_string;
+            json_obj["model"] = m_target_model;
+            json_obj["format"] = m_output_format;
+            
+            // Add optional parameters if they exist
+            if (!m_api_output_format.empty()) {
+                json_obj["output_format"] = m_api_output_format;
+            }
+            if (!m_max_tokens.empty()) {
+                // Convert max_tokens to integer if possible
+                try {
+                    json_obj["max_tokens"] = std::stoi(m_max_tokens);
+                } catch (const std::exception&) {
+                    json_obj["max_tokens"] = m_max_tokens;
+                }
+            }
+            if (!m_temperature.empty()) {
+                // Convert temperature to float if possible
+                try {
+                    json_obj["temperature"] = std::stof(m_temperature);
+                } catch (const std::exception&) {
+                    json_obj["temperature"] = m_temperature;
+                }
+            }
+            
+            // Convert to properly formatted JSON with indentation
+            return json_obj.dump(2) + "\n";
+        } catch (const nlohmann::json::exception& e) {
+            // If JSON creation fails, fall back to manual string building with proper escaping
+            std::string json_output = "{\n";
+            
+            // Properly escape quotes and newlines in query_string
+            std::string escaped_query = query_string;
+            
+            // Replace backslashes first (important to do this first)
+            size_t pos = 0;
+            while ((pos = escaped_query.find("\\", pos)) != std::string::npos) {
+                escaped_query.replace(pos, 1, "\\\\");
+                pos += 2; // Skip the replacement
+            }
+            
+            // Replace quotes
+            pos = 0;
+            while ((pos = escaped_query.find("\"", pos)) != std::string::npos) {
+                escaped_query.replace(pos, 1, "\\\"");
+                pos += 2; // Skip the replacement
+            }
+            
+            // Replace newlines
+            pos = 0;
+            while ((pos = escaped_query.find('\n', pos)) != std::string::npos) {
+                escaped_query.replace(pos, 1, "\\n");
+                pos += 2; // Skip the replacement
+            }
+            
+            json_output += "  \"query\": " + (escaped_query.empty() ? "\"\"" : "\"" + escaped_query + "\"") + ",\n";
+            json_output += R"(  "model": ")" + m_target_model + "\",\n";
+            json_output += R"(  "format": ")" + m_output_format + "\"";
+            
+            // Add new parameters if they exist
+            if (!m_api_output_format.empty()) {
+                json_output += ",\n  \"output_format\": \"" + m_api_output_format + "\"";
+            }
+            if (!m_max_tokens.empty()) {
+                json_output += ",\n  \"max_tokens\": " + m_max_tokens;
+            }
+            if (!m_temperature.empty()) {
+                json_output += ",\n  \"temperature\": " + m_temperature;
+            }
+            
+            json_output += "\n}\n";
+            return json_output;
         }
-        if (!m_max_tokens.empty()) {
-            json_output += ",\n  \"max_tokens\": " + m_max_tokens;
-        }
-        if (!m_temperature.empty()) {
-            json_output += ",\n  \"temperature\": " + m_temperature;
-        }
-        
-        json_output += "\n}\n";
-        return json_output;
     }
     
     // process template variables
