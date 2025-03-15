@@ -1225,9 +1225,9 @@ TestResult test_examples_compilation() {
                     std::string result = QueryProcessor::compile(content);
                 }
                 
-                std::cout << "PASSED" << std::endl;
+                print_test_result(file_name, TestResult::pass());
             } catch (const std::exception& e) {
-                std::cout << "FAILED" << std::endl;
+                print_test_result(file_name, TestResult::fail(e.what()));
                 std::string error = e.what();
                 
                 // Check if this is a parser error or validation error
