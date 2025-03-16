@@ -115,7 +115,11 @@ public:
 };
 
 /**
- * test framework
+ * Minimal test interface for examples
+ * 
+ * Note: Most test functionality has been moved to the dedicated test executable.
+ * Only the TestResult class and query_examples function are maintained here
+ * for backwards compatibility with the examples feature.
  */
 namespace test {
     /**
@@ -174,102 +178,10 @@ namespace test {
     };
     
     /**
-     * run tests - either all tests or a specific test by name
-     * @param fail_fast if true, stop testing after the first failure
-     * @param test_name name of specific test to run (empty to run all tests)
-     * @return true if all tests passed, false otherwise
-     */
-    bool run_tests(bool fail_fast = true, const std::string& test_name = "");
-    
-    /**
-     * list all available tests
-     * @return list all avaialble tests
-     */
-    void list_tests();
-    
-    /**
-     * test the lexer
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_lexer();
-    
-    /**
-     * test the parser
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_parser();
-    
-    /**
-     * test the compiler
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_compiler();
-    
-    /**
-     * test basic compilation
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_basic_compilation();
-    
-    /**
-     * test complex compilation
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_complex_compilation();
-    
-    /**
-     * test validation requirements
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_validation_requirements();
-    
-    /**
-     * test phase 2 features
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_phase2_features();
-    
-    /**
-     * test the template manager
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_template_manager();
-    
-    /**
-     * test template management
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_template_management();
-    
-    /**
-     * test template inheritance
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_template_inheritance();
-    
-    /**
-     * test template validator
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_template_validator();
-    
-    /**
      * example queries
      * @return testresult indicating pass/fail with error details
      */
     TestResult query_examples();
-    
-    /**
-     * test the phase 2 comprehensive example compilation
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_phase2_example_compilation();
-    
-    /**
-     * test architecture patterns functionality
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult test_architecture_patterns();
 }
 
 /**

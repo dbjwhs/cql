@@ -17,10 +17,6 @@ void print_help() {
               << "Usage: cql [OPTIONS] [INPUT_FILE] [OUTPUT_FILE]\n\n"
               << "Options:\n"
               << "  --help, -h              Show this help information\n"
-              << "  --test, -t              Run the test suite\n"
-              << "  --test --list           List all available tests\n"
-              << "  --test --no-fail-fast   Continue running tests after failures\n"
-              << "  --gtest, -g             Run tests using Google Test\n"
               << "  --examples, -e          Show example queries\n"
               << "  --interactive, -i       Run in interactive mode\n"
               << "  --copyright             Show copyright example\n"
@@ -60,41 +56,11 @@ int main(int argc, char* argv[]) {
             if (arg1 == "--help" || arg1 == "-h") {
                 // show help information
                 print_help();
-            } else if (arg1 == "--test" || arg1 == "-t") {
-                // run the test suite
-                bool fail_fast = true;
-                bool list_tests = false;
-                std::string test_name;
-                
-                // check for test options
-                for (int ndx = 2; ndx < argc; ndx++) {
-                    if (std::string option = argv[ndx]; option == "--no-fail-fast") {
-                        fail_fast = false;
-                    } else if (option == "--list") {
-                        list_tests = true;
-                    } else if (option[0] != '-') {
-                        // If it doesn't start with a dash, assume it's a test name
-                        test_name = option;
-                    }
-                }
-                
-                if (list_tests) {
-                    // list all available tests
-                    cql::test::list_tests();
-                    return 0;
-                }
-                
-                // run tests and return appropriate exit code
-                if (!cql::test::run_tests(fail_fast, test_name)) {
-                    return 1;
-                }
-            } else if (arg1 == "--gtest" || arg1 == "-g") {
-                // Print information about using a Google Test version
-                std::cout << "To run tests with Google Test, use the separate cql_test executable." << std::endl;
+            } else if (arg1 == "--test" || arg1 == "-t" || arg1 == "--gtest" || arg1 == "-g") {
+                // Print information about using a separate test executable
+                std::cout << "Testing functionality has been removed from the main application." << std::endl;
+                std::cout << "Please use the dedicated test executable instead." << std::endl;
                 std::cout << "For example: ./build/cql_test" << std::endl;
-                std::cout << "You can also use Google Test command line options:" << std::endl;
-                std::cout << "  ./build/cql_test --gtest_filter=CQLTest.BasicCompilation" << std::endl;
-                std::cout << "  ./build/cql_test --gtest_list_tests" << std::endl;
                 return 0;
             } else if (arg1 == "--examples" || arg1 == "-e") {
                 // show example queries
@@ -513,8 +479,8 @@ int main(int argc, char* argv[]) {
             std::cout << "No arguments provided. Please use --help to see available options." << std::endl;
             print_help();
             
-            // Suggest test command
-            std::cout << "\nTo run tests, use: cql --test" << std::endl;
+            // Suggest using executable
+            std::cout << "\nTo run the application with a file, use: cql input.llm output.txt" << std::endl;
             return 0;
         }
     } catch (const std::exception& e) {
