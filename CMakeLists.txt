@@ -22,25 +22,44 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/../..
 )
 
-# Define source files
-set(CQL_SOURCES
-    src/cql/main.cpp
+# Google Test integration
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+# Define source files by category
+set(CQL_CORE_SOURCES
     src/cql/nodes.cpp
     src/cql/lexer.cpp
     src/cql/parser.cpp
     src/cql/compiler.cpp
     src/cql/util.cpp
-    src/cql/cli.cpp
-    src/cql/tests.cpp
     src/cql/validator.cpp
     src/cql/template_manager.cpp
     src/cql/template_validator.cpp
     src/cql/template_validator_schema.cpp
     src/cql/pattern_compatibility.cpp
-    src/cql/test_architecture_patterns.cpp
     src/cql/api_client.cpp
     src/cql/response_processor.cpp
     src/cql/mock_server.cpp
+    src/cql/stubs.cpp  # Include stubs.cpp in core sources
+)
+
+set(CQL_MAIN_SOURCES
+    src/cql/main.cpp
+    src/cql/cli.cpp
+)
+
+# Define test source files
+set(CQL_TEST_SOURCES
+    src/cql/main_test.cpp
+    src/cql/tests.cpp
+    src/cql/test_architecture_patterns.cpp
     src/cql/test_api_integration.cpp
     src/cql/test_config.cpp
 )
@@ -70,20 +89,47 @@ endif()
 add_library(nlohmann_json INTERFACE)
 target_include_directories(nlohmann_json INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include)
 
-# Add executable
-add_executable(cql ${CQL_SOURCES})
+# Create a core library with shared code
+add_library(cql_lib OBJECT ${CQL_CORE_SOURCES})
+set_property(TARGET cql_lib PROPERTY POSITION_INDEPENDENT_CODE 1)
+target_link_libraries(cql_lib PUBLIC CURL::libcurl nlohmann_json)
 
-# Link libraries
+# Add main executable
+add_executable(cql ${CQL_MAIN_SOURCES} $<TARGET_OBJECTS:cql_lib>)
 target_link_libraries(cql PRIVATE CURL::libcurl nlohmann_json)
+
+# Create test executable with properly defined object files
+add_library(cql_lib_test OBJECT ${CQL_CORE_SOURCES})
+set_property(TARGET cql_lib_test PROPERTY POSITION_INDEPENDENT_CODE 1)
+target_compile_definitions(cql_lib_test PUBLIC CQL_TESTING=1)
+target_link_libraries(cql_lib_test PUBLIC CURL::libcurl nlohmann_json)
+target_include_directories(cql_lib_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/googletest-src/googletest/include)
+
+# Link tests with the test-specific version of the library
+add_executable(cql_test ${CQL_TEST_SOURCES} $<TARGET_OBJECTS:cql_lib_test>)
+target_compile_definitions(cql_test PRIVATE CQL_TESTING=1)
+target_link_libraries(cql_test PRIVATE 
+    CURL::libcurl 
+    nlohmann_json
+    GTest::gtest_main 
+    GTest::gtest
+)
 
 # Installation
 install(TARGETS cql DESTINATION bin)
 install(FILES LICENSE DESTINATION share/doc/cql)
 
-
 # Enable testing
 enable_testing()
-add_test(NAME cql_tests COMMAND cql --test)
+include(GoogleTest)
+gtest_discover_tests(cql_test)
+
+# Add a custom target for running tests
+add_custom_target(run_tests
+    COMMAND cql_test
+    DEPENDS cql_test
+    COMMENT "Running CQL tests with GoogleTest"
+)
 
 # Add a custom target for documentation
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")

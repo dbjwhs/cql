@@ -20,6 +20,7 @@ void print_help() {
               << "  --test, -t              Run the test suite\n"
               << "  --test --list           List all available tests\n"
               << "  --test --no-fail-fast   Continue running tests after failures\n"
+              << "  --gtest, -g             Run tests using Google Test\n"
               << "  --examples, -e          Show example queries\n"
               << "  --interactive, -i       Run in interactive mode\n"
               << "  --copyright             Show copyright example\n"
@@ -87,6 +88,14 @@ int main(int argc, char* argv[]) {
                 if (!cql::test::run_tests(fail_fast, test_name)) {
                     return 1;
                 }
+            } else if (arg1 == "--gtest" || arg1 == "-g") {
+                // Print information about using a Google Test version
+                std::cout << "To run tests with Google Test, use the separate cql_test executable." << std::endl;
+                std::cout << "For example: ./build/cql_test" << std::endl;
+                std::cout << "You can also use Google Test command line options:" << std::endl;
+                std::cout << "  ./build/cql_test --gtest_filter=CQLTest.BasicCompilation" << std::endl;
+                std::cout << "  ./build/cql_test --gtest_list_tests" << std::endl;
+                return 0;
             } else if (arg1 == "--examples" || arg1 == "-e") {
                 // show example queries
                 auto result = cql::test::query_examples();
