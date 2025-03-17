@@ -1,0 +1,45 @@
+Starting CQL Compiler v1.0...
+2025-03-17 05:47:15.402 UTC [INFO] [Thread:0x20607c840] Claude Query Language (CQL) Compiler v1.0
+Parsing command line arguments...
+Received argument: examples/variables.llm
+2025-03-17 05:47:15.402 UTC [INFO] [Thread:0x20607c840] Processing file: examples/variables.llm
+Processing file: examples/variables.llm
+
+Compiled Query
+==============
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT
+// Copyright (c) dbjwhs
+```
+
+Please generate C++ code that:
+Implement ThreadSafeQueue class with the specified interfaces
+
+Context:
+- Modern C++20 implementation
+
+Please reference these examples:
+Example - Usage:
+```
+
+// Create a queue with limited capacity
+ThreadSafeQueue<int> queue(1000);
+
+// Basic operations
+queue.push(42);
+auto value = queue.try_pop();
+
+```
+
+Please include tests for the following cases:
+- Test with 1000 elements
+- Empty queue behavior
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

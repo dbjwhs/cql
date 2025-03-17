@@ -1,0 +1,77 @@
+Starting CQL Compiler v1.0...
+2025-03-17 05:47:15.446 UTC [INFO] [Thread:0x20607c840] Claude Query Language (CQL) Compiler v1.0
+Parsing command line arguments...
+Received argument: examples/api_advanced_example.llm
+2025-03-17 05:47:15.446 UTC [INFO] [Thread:0x20607c840] Processing file: examples/api_advanced_example.llm
+Processing file: examples/api_advanced_example.llm
+
+Compiled Query
+==============
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 CQL Project Contributors
+```
+
+Please generate C++ code that:
+implement a distributed task scheduler with worker nodes and a central coordinator
+
+Context:
+- Modern C++20 implementation with concepts and coroutines
+- Designed for cloud deployment
+
+Architecture Requirements:
+- Message-based architecture
+- Fault-tolerant with node failure recovery
+- Horizontally scalable with dynamic worker addition/removal
+- Load balancing across worker nodes
+
+Dependencies:
+- Networking library (e.g., Boost.Asio)
+- JSON serialization (e.g., nlohmann/json)
+- Message queue protocol
+
+Performance Requirements:
+- Handle 100k+ tasks per second
+- Low latency task distribution (<5ms)
+
+Security Requirements:
+- Secure communication between nodes with JWT
+- Protection against message tampering
+
+Model Parameters:
+- Max Tokens: 100000
+- Temperature: 0.7
+- Output Format: multiple_files
+
+Design Patterns:
+- Observer pattern for task status updates
+- Factory pattern for task creation
+- Strategy pattern for scheduling algorithms
+
+File Structure:
+- include/scheduler_core.hpp: Core scheduler interface and data structures
+- include/worker_node.hpp: Worker node implementation
+- include/message_queue.hpp: Message queue interface
+- include/security_manager.hpp: Security and authentication
+- src/scheduler_implementation.cpp: Scheduler implementation
+- src/worker_implementation.cpp: Worker implementation
+- src/message_queue.cpp: Message queue implementation
+- src/security_implementation.cpp: Security implementation
+- tests/tests.cpp: Comprehensive test suite
+
+Please include tests for the following cases:
+- Test worker node registration and heartbeat
+- Test task submission and completion
+- Test fault tolerance with worker node failure
+- Test load balancing across workers
+- Test scaling with multiple workers
+- Test security with authentication and authorization
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

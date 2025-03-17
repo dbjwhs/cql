@@ -1,0 +1,60 @@
+Starting CQL Compiler v1.0...
+2025-03-17 05:47:15.351 UTC [INFO] [Thread:0x20607c840] Claude Query Language (CQL) Compiler v1.0
+Parsing command line arguments...
+Received argument: examples/behavioral_patterns.llm
+2025-03-17 05:47:15.351 UTC [INFO] [Thread:0x20607c840] Processing file: examples/behavioral_patterns.llm
+Processing file: examples/behavioral_patterns.llm
+2025-03-17 05:47:15.352 UTC [NORMAL] [Thread:0x20607c840] Validation WARNING: Architecture pattern compatibility issues found: Incompatible patterns: interaction:chain (handlers: ["AuthenticationHandler", "ValidationHandler", "ProcessingHandler", "NotificationHandler"]) and interaction:state (states: ["Draft", "InProgress", "UnderReview", "Completed", "Cancelled"]); Incompatible patterns: interaction:chain (handlers: ["AuthenticationHandler", "ValidationHandler", "ProcessingHandler", "NotificationHandler"]) and interaction:strategy (strategies: ["DefaultPrioritization", "DeadlinePrioritization", "CostPrioritization"]); Incompatible patterns: interaction:chain (handlers: ["AuthenticationHandler", "ValidationHandler", "ProcessingHandler", "NotificationHandler"]) and interaction:memento (state_attributes: ["taskAssignments", "currentState", "completedSteps"]); Incompatible patterns: interaction:chain (handlers: ["AuthenticationHandler", "ValidationHandler", "ProcessingHandler", "NotificationHandler"]) and interaction:visitor (visitable_elements: ["Task", "Workflow", "User", "Notification"]); Incompatible patterns: interaction:command (commands: ["CreateWorkflow", "AssignTask", "CompleteTask", "CancelWorkflow"]) and interaction:visitor (visitable_elements: ["Task", "Workflow", "User", "Notification"]); Incompatible patterns: interaction:observer (events: ["workflowCreated", "taskAssigned", "taskCompleted", "workflowCancelled"]) and interaction:memento (state_attributes: ["taskAssignments", "currentState", "completedSteps"]); Incompatible patterns: interaction:observer (events: ["workflowCreated", "taskAssigned", "taskCompleted", "workflowCancelled"]) and interaction:visitor (visitable_elements: ["Task", "Workflow", "User", "Notification"]); Incompatible patterns: interaction:state (states: ["Draft", "InProgress", "UnderReview", "Completed", "Cancelled"]) and interaction:visitor (visitable_elements: ["Task", "Workflow", "User", "Notification"]); Incompatible patterns: interaction:strategy (strategies: ["DefaultPrioritization", "DeadlinePrioritization", "CostPrioritization"]) and interaction:mediator (colleagues: ["WorkflowManager", "UserManager", "NotificationService"]); Incompatible patterns: interaction:strategy (strategies: ["DefaultPrioritization", "DeadlinePrioritization", "CostPrioritization"]) and interaction:memento (state_attributes: ["taskAssignments", "currentState", "completedSteps"]); Incompatible patterns: interaction:strategy (strategies: ["DefaultPrioritization", "DeadlinePrioritization", "CostPrioritization"]) and interaction:visitor (visitable_elements: ["Task", "Workflow", "User", "Notification"]); Incompatible patterns: interaction:mediator (colleagues: ["WorkflowManager", "UserManager", "NotificationService"]) and interaction:memento (state_attributes: ["taskAssignments", "currentState", "completedSteps"]); Incompatible patterns: interaction:mediator (colleagues: ["WorkflowManager", "UserManager", "NotificationService"]) and interaction:visitor (visitable_elements: ["Task", "Workflow", "User", "Notification"]); Incompatible patterns: interaction:memento (state_attributes: ["taskAssignments", "currentState", "completedSteps"]) and interaction:visitor (visitable_elements: ["Task", "Workflow", "User", "Notification"])
+
+Compiled Query
+==============
+
+Target Model: claude-3-sonnet
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate C++ code that:
+Implement a flexible workflow engine using behavioral patterns
+
+Context:
+- Modern C++20 implementation with event-driven architecture
+
+Architecture Requirements:
+- foundation "event_driven" "Components communicate through events and message handlers"
+- interaction "chain" "handlers: ["AuthenticationHandler", "ValidationHandler", "ProcessingHandler", "NotificationHandler"]"
+- interaction "command" "commands: ["CreateWorkflow", "AssignTask", "CompleteTask", "CancelWorkflow"]"
+- interaction "observer" "events: ["workflowCreated", "taskAssigned", "taskCompleted", "workflowCancelled"]"
+- interaction "state" "states: ["Draft", "InProgress", "UnderReview", "Completed", "Cancelled"]"
+- interaction "strategy" "strategies: ["DefaultPrioritization", "DeadlinePrioritization", "CostPrioritization"]"
+- interaction "mediator" "colleagues: ["WorkflowManager", "UserManager", "NotificationService"]"
+- interaction "memento" "state_attributes: ["taskAssignments", "currentState", "completedSteps"]"
+- interaction "visitor" "visitable_elements: ["Task", "Workflow", "User", "Notification"]"
+- component "factory_method" "products: ["Workflow", "Task", "User", "Notification"]"
+- component "composite" "component_type: "WorkflowStep""
+
+Please reference these examples:
+Example - Workflow Execution:
+```
+auto workflow = WorkflowFactory::createWorkflow("Approval"); workflow->addStep(std::make_shared<ApprovalStep>("Initial Review")); workflow->addStep(std::make_shared<ApprovalStep>("Manager Approval")); workflow->addStep(std::make_shared<ApprovalStep>("Final Verification")); workflow->attachObserver(std::make_shared<NotificationObserver>()); workflow->attachObserver(std::make_shared<AuditLogObserver>()); auto checkpoint = workflow->createMemento(); CommandProcessor::execute(std::make_shared<AssignTaskCommand>(workflow, "Initial Review", user)); RequestHandler::process(workflowRequest); workflow->setPrioritizationStrategy(std::make_shared<DeadlinePrioritization>()); WorkflowReportVisitor visitor; workflow->accept(visitor);
+```
+
+Please include tests for the following cases:
+- Chain of Responsibility routes requests through proper handler sequence
+- Command pattern correctly encapsulates operations on workflows
+- Observer pattern properly notifies relevant components of workflow changes
+- State pattern transitions workflow through its lifecycle states
+- Strategy pattern applies different prioritization algorithms
+- Mediator coordinates communication between workflow components
+- Memento captures and restores workflow state for undo/redo functionality
+- Visitor permits operations across different workflow element types
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

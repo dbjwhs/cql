@@ -1,0 +1,47 @@
+Starting CQL Compiler v1.0...
+2025-03-17 05:47:15.497 UTC [INFO] [Thread:0x20607c840] Claude Query Language (CQL) Compiler v1.0
+Parsing command line arguments...
+Received argument: examples/default_values.llm
+2025-03-17 05:47:15.497 UTC [INFO] [Thread:0x20607c840] Processing file: examples/default_values.llm
+Processing file: examples/default_values.llm
+
+Compiled Query
+==============
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate C++ code that:
+implement a queue class with thread-safety
+
+Context:
+- Using C++20 features and RAII principles
+- Must be exception-safe
+
+Architecture Requirements:
+- Thread-safe implementation with mutex and condition variables
+
+Dependencies:
+- std::mutex, std::condition_variable
+
+Performance Requirements:
+- Support 100k operations per second
+
+Security Requirements:
+- Prevent data races through proper synchronization
+
+Please include tests for the following cases:
+- Test concurrent push operations
+- Test concurrent pop operations
+- Test boundary conditions (empty/full)
+- Test exception safety guarantees
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

@@ -1,0 +1,92 @@
+Starting CQL Compiler v1.0...
+2025-03-17 05:47:15.456 UTC [INFO] [Thread:0x20607c840] Claude Query Language (CQL) Compiler v1.0
+Parsing command line arguments...
+Received argument: examples/creational_patterns.llm
+2025-03-17 05:47:15.457 UTC [INFO] [Thread:0x20607c840] Processing file: examples/creational_patterns.llm
+Processing file: examples/creational_patterns.llm
+2025-03-17 05:47:15.457 UTC [NORMAL] [Thread:0x20607c840] Validation WARNING: Architecture pattern compatibility issues found: Incompatible patterns: component:singleton and component:prototype; Incompatible patterns: component:builder and component:prototype
+
+Compiled Query
+==============
+
+Target Model: claude-3-sonnet
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate C++ code that:
+Implement a document processing system with pluggable document formats
+
+Context:
+- Modern C++20 implementation with type-erasure patterns
+
+Architecture Requirements:
+- factory_method(products: ["PdfDocument", "WordDocument", "TextDocument"])
+- singleton(thread_safe: true, name: "DocumentManager")
+- builder(steps: ["Header", "Content", "Footer", "Metadata"])
+- abstract_factory(product_families: ["Viewers", "Editors", "Converters"])
+- prototype(deep_copy: true)
+
+Please reference these examples:
+Example - Factory Method Usage:
+```
+
+class DocumentFactory {
+public:
+    static std::unique_ptr<Document> createDocument(const std::string& filename) {
+        if (ends_with(filename, ".pdf")) {
+            return std::make_unique<PdfDocument>();
+        } else if (ends_with(filename, ".docx")) {
+            return std::make_unique<WordDocument>();
+        } else {
+            return std::make_unique<TextDocument>();
+        }
+    }
+};
+
+```
+
+Example - Singleton Pattern:
+```
+
+class DocumentManager {
+private:
+    DocumentManager() = default;
+    static std::mutex s_mutex;
+    static std::unique_ptr<DocumentManager> s_instance;
+    
+public:
+    static DocumentManager& getInstance() {
+        std::lock_guard<std::mutex> lock(s_mutex);
+        if (!s_instance) {
+            s_instance = std::unique_ptr<DocumentManager>(new DocumentManager());
+        }
+        return *s_instance;
+    }
+    
+    // Prevent cloning
+    DocumentManager(const DocumentManager&) = delete;
+    DocumentManager& operator=(const DocumentManager&) = delete;
+};
+
+std::mutex DocumentManager::s_mutex;
+std::unique_ptr<DocumentManager> DocumentManager::s_instance = nullptr;
+
+```
+
+Please include tests for the following cases:
+- Factory method creates correct document type based on file extension
+- Builder constructs documents in the correct order
+- Singleton ensures only one DocumentManager exists
+- Abstract factory creates compatible document tools
+- Prototype cloning preserves all document properties
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

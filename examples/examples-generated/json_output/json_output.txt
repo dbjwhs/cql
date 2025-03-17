@@ -1,0 +1,16 @@
+Starting CQL Compiler v1.0...
+2025-03-17 05:47:15.390 UTC [INFO] [Thread:0x20607c840] Claude Query Language (CQL) Compiler v1.0
+Parsing command line arguments...
+Received argument: examples/json_output.llm
+2025-03-17 05:47:15.391 UTC [INFO] [Thread:0x20607c840] Processing file: examples/json_output.llm
+Processing file: examples/json_output.llm
+
+Compiled Query
+==============
+
+{
+  "format": "json",
+  "model": "claude-3-sonnet",
+  "query": "Target Model: claude-3-sonnet\n\nPlease include the following copyright header at the top of all generated files:\n```\n// MIT\n// Copyright (c) dbjwhs\n```\n\nPlease generate C++ code that:\nSimple hello world program for testing JSON output\n\nContext:\n- Minimal example\n\nPlease include tests for the following cases:\n- Verify output\n\nQuality Assurance Requirements:\n- All code must be well-documented with comments\n- Follow modern C++ best practices\n- Ensure proper error handling\n- Optimize for readability and maintainability\n"
+}
+

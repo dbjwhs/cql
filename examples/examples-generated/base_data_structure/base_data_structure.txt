@@ -1,0 +1,40 @@
+Starting CQL Compiler v1.0...
+2025-03-17 05:47:15.487 UTC [INFO] [Thread:0x20607c840] Claude Query Language (CQL) Compiler v1.0
+Parsing command line arguments...
+Received argument: examples/base_data_structure.llm
+2025-03-17 05:47:15.487 UTC [INFO] [Thread:0x20607c840] Processing file: examples/base_data_structure.llm
+Processing file: examples/base_data_structure.llm
+
+Compiled Query
+==============
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT
+// Copyright (c) dbjwhs
+```
+
+Please generate C++ code that:
+Base template for common data structure features
+
+Context:
+- Implementation in C++
+
+Architecture Requirements:
+- Supports random access: false
+
+Performance Requirements:
+- Time complexity: Insert O(n), Remove O(n), Search O(n)
+- Space complexity: O(n)
+
+Please include tests for the following cases:
+- Test empty structure behavior
+- Test with large datasets
+- Validate all operations maintain invariants
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

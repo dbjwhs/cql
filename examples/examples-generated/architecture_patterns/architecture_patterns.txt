@@ -1,0 +1,53 @@
+Starting CQL Compiler v1.0...
+2025-03-17 05:47:15.425 UTC [INFO] [Thread:0x20607c840] Claude Query Language (CQL) Compiler v1.0
+Parsing command line arguments...
+Received argument: examples/architecture_patterns.llm
+2025-03-17 05:47:15.425 UTC [INFO] [Thread:0x20607c840] Processing file: examples/architecture_patterns.llm
+Processing file: examples/architecture_patterns.llm
+
+Compiled Query
+==============
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate C++ code that:
+Implement a document processing system with proper architecture patterns
+
+Context:
+- Modern C++20 implementation with type-erasure patterns
+
+Architecture Requirements:
+- foundation "microservices" "Components communicate via message queues"
+- component "factory_method" "products: ["PdfDocument", "WordDocument", "TextDocument"]"
+- component "singleton" "name: "DocumentManager", thread_safe: true"
+- component "builder" "steps: ["Header", "Content", "Footer", "Metadata"]"
+- component "abstract_factory" "product_families: ["Viewers", "Editors", "Converters"]"
+- interaction "observer" "events: ["documentChanged", "documentSaved", "documentLoaded"]"
+- interaction "strategy" "strategies: ["TextFormatting", "ImageRendering", "TableLayout"]"
+
+Dependencies:
+- message queue library
+
+Please reference these examples:
+Example - Document Processing:
+```
+auto document = DocumentFactory::createDocument("report.pdf"); DocumentBuilder builder; builder.buildHeader("Quarterly Report").buildContent(content_data).buildFooter("Confidential").buildMetadata({"author": "Jane Doe", "created": "2025-02-28"}); auto doc = builder.getDocument(); DocumentManager::getInstance().registerDocument(doc); auto documentTools = ToolFactory::createToolsFor(doc->getType()); doc->applyFormatting(TextFormattingStrategy::create("corporate")); doc->attachObserver(std::make_shared<AutoSaveObserver>()); doc->attachObserver(std::make_shared<ValidationObserver>()); doc->updateContent(new_content);
+```
+
+Please include tests for the following cases:
+- Factory method creates correct document type based on file extension
+- Builder constructs documents in the correct order
+- Singleton ensures only one DocumentManager exists
+- Abstract factory creates compatible document tools
+- Observer pattern properly notifies all registered components on document changes
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

@@ -1,0 +1,58 @@
+Starting CQL Compiler v1.0...
+2025-03-17 05:47:15.435 UTC [INFO] [Thread:0x20607c840] Claude Query Language (CQL) Compiler v1.0
+Parsing command line arguments...
+Received argument: examples/structural_patterns.llm
+2025-03-17 05:47:15.436 UTC [INFO] [Thread:0x20607c840] Processing file: examples/structural_patterns.llm
+Processing file: examples/structural_patterns.llm
+2025-03-17 05:47:15.436 UTC [NORMAL] [Thread:0x20607c840] Validation WARNING: Architecture pattern compatibility issues found: Incompatible patterns: component:adapter (interface: "DatabaseInterface", adaptee: "LegacyDatabase") and component:composite (component_type: "UIComponent"); Incompatible patterns: component:adapter (interface: "DatabaseInterface", adaptee: "LegacyDatabase") and component:flyweight (shared_state: ["Theme", "FontFamily"], unique_state: ["Text", "Position"]); Incompatible patterns: component:bridge (implementors: ["WindowsRenderer", "MacOSRenderer", "LinuxRenderer"]) and component:composite (component_type: "UIComponent"); Incompatible patterns: component:bridge (implementors: ["WindowsRenderer", "MacOSRenderer", "LinuxRenderer"]) and component:facade (subsystems: ["Networking", "DataStorage", "Authentication"]); Incompatible patterns: component:bridge (implementors: ["WindowsRenderer", "MacOSRenderer", "LinuxRenderer"]) and component:flyweight (shared_state: ["Theme", "FontFamily"], unique_state: ["Text", "Position"]); Incompatible patterns: component:composite (component_type: "UIComponent") and component:facade (subsystems: ["Networking", "DataStorage", "Authentication"]); Incompatible patterns: component:composite (component_type: "UIComponent") and component:proxy (proxy_type: "LazyLoadingProxy"); Incompatible patterns: component:decorator (decorations: ["Border", "Shadow", "ScrollBar"]) and component:facade (subsystems: ["Networking", "DataStorage", "Authentication"]); Incompatible patterns: component:decorator (decorations: ["Border", "Shadow", "ScrollBar"]) and component:flyweight (shared_state: ["Theme", "FontFamily"], unique_state: ["Text", "Position"]); Incompatible patterns: component:facade (subsystems: ["Networking", "DataStorage", "Authentication"]) and component:flyweight (shared_state: ["Theme", "FontFamily"], unique_state: ["Text", "Position"])
+
+Compiled Query
+==============
+
+Target Model: claude-3-sonnet
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate C++ code that:
+Implement a flexible UI component system with structural patterns
+
+Context:
+- Modern C++20 implementation with component-based design
+
+Architecture Requirements:
+- foundation "layered" "Separate UI components from business logic and data sources"
+- component "adapter" "interface: "DatabaseInterface", adaptee: "LegacyDatabase""
+- component "bridge" "implementors: ["WindowsRenderer", "MacOSRenderer", "LinuxRenderer"]"
+- component "composite" "component_type: "UIComponent""
+- component "decorator" "decorations: ["Border", "Shadow", "ScrollBar"]"
+- component "facade" "subsystems: ["Networking", "DataStorage", "Authentication"]"
+- component "flyweight" "shared_state: ["Theme", "FontFamily"], unique_state: ["Text", "Position"]"
+- component "proxy" "proxy_type: "LazyLoadingProxy""
+- component "factory_method" "products: ["Button", "TextField", "Panel", "Dialog"]"
+- interaction "observer" "events: ["click", "focus", "resize", "dataChange"]"
+
+Please reference these examples:
+Example - Composite UI Components:
+```
+auto panel = ComponentFactory::createComponent("Panel"); panel->addChild(ComponentFactory::createComponent("Button")); panel->addChild(ComponentFactory::createComponent("TextField")); auto decoratedPanel = std::make_shared<BorderDecorator>(panel); decoratedPanel = std::make_shared<ShadowDecorator>(decoratedPanel); decoratedPanel->setRenderer(RendererFactory::createRenderer()); decoratedPanel->render(); ThemeManager::getInstance().applyTheme(decoratedPanel, "DarkTheme"); decoratedPanel->addObserver(std::make_shared<ComponentResizeObserver>());
+```
+
+Please include tests for the following cases:
+- Adapter successfully connects legacy database to modern interface
+- Bridge separates component abstraction from platform-specific renderers
+- Composite allows building complex UI hierarchies
+- Decorator dynamically adds visual effects to components
+- Facade simplifies complex subsystem interactions
+- Flyweight reduces memory usage for repeated UI elements
+- Proxy provides lazy loading for expensive UI components
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

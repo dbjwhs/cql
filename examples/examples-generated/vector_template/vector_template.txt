@@ -1,0 +1,39 @@
+Starting CQL Compiler v1.0...
+2025-03-17 05:47:15.467 UTC [INFO] [Thread:0x20607c840] Claude Query Language (CQL) Compiler v1.0
+Parsing command line arguments...
+Received argument: examples/vector_template.llm
+2025-03-17 05:47:15.467 UTC [INFO] [Thread:0x20607c840] Processing file: examples/vector_template.llm
+Processing file: examples/vector_template.llm
+2025-03-17 05:47:15.467 UTC [NORMAL] [Thread:0x20607c840] Validation WARNING: Directive @ARCHITECTURE works best with @CONTEXT.
+
+Compiled Query
+==============
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT
+// Copyright (c) dbjwhs
+```
+
+Please generate C++ code that:
+Vector data structure template with standard operations
+
+Architecture Requirements:
+- Memory model: contiguous
+
+Performance Requirements:
+- Optimized for sequential access and back insertions
+
+Security Requirements:
+- Bounds checking on element access
+
+Please include tests for the following cases:
+- Test vector resize operations
+- Test vector capacity management
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+
