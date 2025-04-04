@@ -196,7 +196,7 @@ public:
      * @brief Constructor with template manager
      * @param template_manager Reference to a TemplateManager for loading templates
      */
-    explicit TemplateValidator(const TemplateManager& template_manager);
+    explicit TemplateValidator(TemplateManager  template_manager);
 
     /**
      * @brief Validate a template by name
@@ -260,15 +260,15 @@ private:
      * @param content The template content to check
      * @return Vector of issues related to directives
      */
-    std::vector<TemplateValidationIssue> check_directives(const std::string& content);
-    
+    static std::vector<TemplateValidationIssue> check_directives(const std::string& content);
+
     /**
      * @brief Check for circular dependencies in template inheritance
      *
      * @param template_name The template name to check
      * @return Vector of issues related to inheritance cycles
      */
-    std::vector<TemplateValidationIssue> check_inheritance_cycle(const std::string& template_name);
+    [[nodiscard]] std::vector<TemplateValidationIssue> check_inheritance_cycle(const std::string& template_name) const;
     
     /**
      * @brief Extract all declared variables from template content
@@ -276,7 +276,7 @@ private:
      * @param content The template content to analyze
      * @return Set of declared variable names
      */
-    std::set<std::string> extract_declared_variables(const std::string& content);
+    static std::set<std::string> extract_declared_variables(const std::string& content);
     
     /**
      * @brief Extract all referenced variables from template content
@@ -292,7 +292,7 @@ private:
      * @param content The template content to analyze
      * @return Set of directive names
      */
-    std::set<std::string> extract_directives(const std::string& content);
+    static std::set<std::string> extract_directives(const std::string& content);
 };
 
 } // namespace cql

@@ -9,11 +9,11 @@
 #include <sstream>
 #include <algorithm>
 #include <unordered_set>
+#include <utility>
 #include "../../include/cql/cql.hpp" // for util namespace
 
 namespace cql {
 
-// templatevalidationissue implementation
 std::string TemplateValidationIssue::to_string() const {
     std::stringstream ss;
     
@@ -46,7 +46,6 @@ std::string TemplateValidationIssue::to_string() const {
     return ss.str();
 }
 
-// templatevalidationresult implementation
 void TemplateValidationResult::add_issue(TemplateValidationIssue issue) {
     m_issues.push_back(std::move(issue));
 }
@@ -54,19 +53,19 @@ void TemplateValidationResult::add_issue(TemplateValidationIssue issue) {
 std::vector<TemplateValidationIssue> TemplateValidationResult::get_issues(TemplateValidationLevel level) const {
     std::vector<TemplateValidationIssue> filtered;
     
-    std::copy_if(m_issues.begin(), m_issues.end(), std::back_inserter(filtered),
-                [level](const TemplateValidationIssue& issue) {
-                    return issue.get_level() == level;
-                });
+    std::ranges::copy_if(m_issues, std::back_inserter(filtered),
+                         [level](const TemplateValidationIssue& issue) {
+                             return issue.get_level() == level;
+                         });
     
     return filtered;
 }
 
 bool TemplateValidationResult::has_issues(TemplateValidationLevel min_level) const {
-    return std::any_of(m_issues.begin(), m_issues.end(),
-                      [min_level](const TemplateValidationIssue& issue) {
-                          return static_cast<int>(issue.get_level()) >= static_cast<int>(min_level);
-                      });
+    return std::ranges::any_of(m_issues,
+                               [min_level](const TemplateValidationIssue& issue) {
+                                   return static_cast<int>(issue.get_level()) >= static_cast<int>(min_level);
+                               });
 }
 
 TemplateValidationLevel TemplateValidationResult::get_highest_level() const {
@@ -74,10 +73,10 @@ TemplateValidationLevel TemplateValidationResult::get_highest_level() const {
         return TemplateValidationLevel::INFO;
     }
     
-    return std::max_element(m_issues.begin(), m_issues.end(),
-                           [](const TemplateValidationIssue& a, const TemplateValidationIssue& b) {
-                               return static_cast<int>(a.get_level()) < static_cast<int>(b.get_level());
-                           })->get_level();
+    return std::ranges::max_element(m_issues,
+                                    [](const TemplateValidationIssue& a, const TemplateValidationIssue& b) {
+                                        return static_cast<int>(a.get_level()) < static_cast<int>(b.get_level());
+                                    })->get_level();
 }
 
 size_t TemplateValidationResult::count_errors() const {
@@ -94,10 +93,10 @@ size_t TemplateValidationResult::count_infos() const {
 
 std::string TemplateValidationResult::get_summary() const {
     std::stringstream ss;
-    
-    size_t error_count = count_errors();
-    size_t warning_count = count_warnings();
-    size_t info_count = count_infos();
+
+    const size_t error_count = count_errors();
+    const size_t warning_count = count_warnings();
+    const size_t info_count = count_infos();
     
     ss << "Template validation summary: ";
     
@@ -131,22 +130,20 @@ std::string TemplateValidationResult::get_summary() const {
     return ss.str();
 }
 
-// templatevalidator implementation
-TemplateValidator::TemplateValidator(const TemplateManager& template_manager)
-    : m_template_manager(template_manager) {
+TemplateValidator::TemplateValidator(TemplateManager  template_manager)
+    : m_template_manager(std::move(template_manager)) {
 }
 
 TemplateValidationResult TemplateValidator::validate_template(const std::string& template_name) {
     try {
         // load template content
-        std::string content = m_template_manager.load_template(template_name);
+        const std::string content = m_template_manager.load_template(template_name);
         
         // start with content validation
         TemplateValidationResult result = validate_content(content);
         
         // add inheritance validation if applicable
-        auto inheritance_result = validate_inheritance(template_name);
-        for (const auto& issue : inheritance_result.get_issues()) {
+        for (const auto inheritance_result = validate_inheritance(template_name); const auto& issue : inheritance_result.get_issues()) {
             result.add_issue(issue);
         }
         
@@ -194,11 +191,9 @@ TemplateValidationResult TemplateValidator::validate_inheritance(const std::stri
     
     // get inheritance chain
     try {
-        auto chain = m_template_manager.get_inheritance_chain(template_name);
-        
         // validate each template in the chain
-        if (chain.size() > 1) {
-            // add info about inheritance chain
+        if (auto chain = m_template_manager.get_inheritance_chain(template_name); chain.size() > 1) {
+            // add info about an inheritance chain
             std::stringstream chain_info;
             chain_info << "Template inherits from " << (chain.size() - 1) << " parent template(s): ";
             for (size_t i = 0; i < chain.size() - 1; ++i) {
@@ -270,23 +265,23 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_variables(const st
     
     // check for undeclared variables
     for (const auto& var : referenced_vars) {
-        if (declared_vars.find(var) == declared_vars.end()) {
-            issues.push_back(TemplateValidationIssue(
+        if (!declared_vars.contains(var)) {
+            issues.emplace_back(
                 TemplateValidationLevel::WARNING,
                 "Referenced variable is not declared in the template",
                 var
-            ));
+            );
         }
     }
     
     // check for unused variables
     for (const auto& var : declared_vars) {
-        if (referenced_vars.find(var) == referenced_vars.end()) {
-            issues.push_back(TemplateValidationIssue(
+        if (!referenced_vars.contains(var)) {
+            issues.emplace_back(
                 TemplateValidationLevel::WARNING,
                 "Declared variable is not used in the template",
                 var
-            ));
+            );
         }
     }
     
@@ -305,13 +300,13 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_directives(const s
     };
     
     for (const auto& directive : essential_directives) {
-        if (directives.find(directive) == directives.end()) {
-            issues.push_back(TemplateValidationIssue(
+        if (!directives.contains(directive)) {
+            issues.emplace_back(
                 TemplateValidationLevel::WARNING,
                 "Essential directive is missing",
                 std::nullopt,
                 directive
-            ));
+            );
         }
     }
     
@@ -323,35 +318,33 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_directives(const s
     };
     
     for (const auto& directive : directives) {
-        if (common_directives.find(directive) == common_directives.end()) {
-            issues.push_back(TemplateValidationIssue(
+        if (!common_directives.contains(directive)) {
+            issues.emplace_back(
                 TemplateValidationLevel::ERROR,
                 "Invalid directive found: " + directive,
                 std::nullopt,
                 directive
-            ));
+            );
         }
     }
     
     return issues;
 }
 
-std::vector<TemplateValidationIssue> TemplateValidator::check_inheritance_cycle(const std::string& template_name) {
+std::vector<TemplateValidationIssue> TemplateValidator::check_inheritance_cycle(const std::string& template_name) const {
     std::vector<TemplateValidationIssue> issues;
     
     try {
-        // try to get inheritance chain, which will throw if there's a cycle
-        m_template_manager.get_inheritance_chain(template_name);
+        // try to get an inheritance chain, which will throw if there's a cycle
+        static_cast<void>(m_template_manager.get_inheritance_chain(template_name));
     } catch (const std::exception& e) {
-        std::string error_msg = e.what();
-        
         // check if it's a circular inheritance error
-        if (error_msg.find("circular") != std::string::npos || 
-            error_msg.find("cycle") != std::string::npos) {
-            issues.push_back(TemplateValidationIssue(
+        if (const std::string error_msg = e.what(); error_msg.find("circular")
+            != std::string::npos || error_msg.find("cycle") != std::string::npos) {
+            issues.emplace_back(
                 TemplateValidationLevel::ERROR,
                 "Circular inheritance detected: " + error_msg
-            ));
+            );
         }
     }
     
@@ -359,27 +352,15 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_inheritance_cycle(
 }
 
 std::set<std::string> TemplateValidator::extract_declared_variables(const std::string& content) {
-    return cql::util::extract_regex_group_values(
-        content,
-        "@variable\\s+\"([^\"]*)\"\\s+\"[^\"]*\"",
-        1
-    );
+    return cql::util::extract_regex_group_values(content, "@variable\\s+\"([^\"]*)\"\\s+\"[^\"]*\"", 1);
 }
 
 std::set<std::string> TemplateValidator::extract_referenced_variables(const std::string& content) {
-    return cql::util::extract_regex_group_values(
-        content,
-        "\\$\\{([^}]+)\\}",
-        1
-    );
+    return cql::util::extract_regex_group_values(content, R"(\$\{([^}]+)\})", 1);
 }
 
 std::set<std::string> TemplateValidator::extract_directives(const std::string& content) {
-    return cql::util::extract_regex_group_values(
-        content,
-        "^(@[a-zA-Z_]+)\\s+",
-        1
-    );
+    return cql::util::extract_regex_group_values(content, "^(@[a-zA-Z_]+)\\s+", 1);
 }
 
 } // namespace cql

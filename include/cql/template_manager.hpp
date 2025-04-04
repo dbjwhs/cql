@@ -31,7 +31,7 @@ namespace cql {
  * - Template inheritance (child templates can inherit from parents)
  * - Variable substitution (templates can include variables for customization)
  * - Metadata extraction (description, variables, inheritance relationships)
- * - Documentation generation (markdown format)
+ * - Documentation generation (Markdown format)
  * - Category organization
  */
 class TemplateManager {
@@ -49,7 +49,7 @@ public:
      *
      * @param template_dir The directory path where templates will be stored
      */
-    explicit TemplateManager(const std::string& template_dir);
+    explicit TemplateManager(std::string template_dir);
 
     /**
      * @brief Save a template to the templates directory
@@ -58,7 +58,7 @@ public:
      * @param content The template content
      * @throws std::runtime_error If the template cannot be saved
      */
-    void save_template(const std::string& name, const std::string& content);
+    void save_template(const std::string& name, const std::string& content) const;
     
     /**
      * @brief Load a template by name
@@ -67,7 +67,7 @@ public:
      * @return The template content as a string
      * @throws std::runtime_error If the template cannot be found or loaded
      */
-    std::string load_template(const std::string& name);
+    [[nodiscard]] std::string load_template(const std::string& name) const;
     
     /**
      * @struct TemplateMetadata
@@ -88,12 +88,12 @@ public:
      * @return TemplateMetadata struct with template information
      * @throws std::runtime_error If the template cannot be found or analyzed
      */
-    TemplateMetadata get_template_metadata(const std::string& name);
+    [[nodiscard]] TemplateMetadata get_template_metadata(const std::string& name) const;
     
     /**
      * @brief Generate documentation for a single template
      *
-     * Creates markdown documentation including:
+     * Creates markdown documentation including
      * - Template name and description
      * - List of variables with descriptions
      * - Inheritance relationships
@@ -103,14 +103,14 @@ public:
      * @return Markdown formatted documentation string
      * @throws std::runtime_error If the template cannot be found
      */
-    std::string generate_template_documentation(const std::string& name);
+    [[nodiscard]] std::string generate_template_documentation(const std::string& name) const;
     
     /**
      * @brief Generate documentation for all available templates
      *
      * @return Markdown formatted documentation covering all templates
      */
-    std::string generate_all_template_documentation();
+    [[nodiscard]] std::string generate_all_template_documentation() const;
     
     /**
      * @brief Export documentation to a file
@@ -119,22 +119,22 @@ public:
      * @param format The output format (currently supports "markdown" only)
      * @return true if documentation was successfully exported, false otherwise
      */
-    bool export_documentation(const std::string& output_path, const std::string& format = "markdown");
+    [[nodiscard]] bool export_documentation(const std::string& output_path, const std::string& format = "markdown") const;
     
     /**
      * @brief List all available templates
      *
      * @return Vector of template names (in format "category/template_name")
      */
-    std::vector<std::string> list_templates();
+    [[nodiscard]] std::vector<std::string> list_templates() const;
     
     /**
      * @brief Delete a template
      *
      * @param name The template name to delete
-     * @return true if template was successfully deleted, false otherwise
+     * @return true if the template was successfully deleted, false otherwise
      */
-    bool delete_template(const std::string& name);
+    [[nodiscard]] bool delete_template(const std::string& name) const;
     
     /**
      * @brief Create a template instance with variable substitutions
@@ -144,15 +144,15 @@ public:
      * @return Instantiated template content with variables replaced
      * @throws std::runtime_error If the template cannot be found or variables are missing
      */
-    std::string instantiate_template(const std::string& name, 
-                                   const std::map<std::string, std::string>& variables);
+    [[nodiscard]] std::string instantiate_template(const std::string& name,
+                                   const std::map<std::string, std::string>& variables) const;
     
     /**
      * @brief Get the current templates directory
      *
      * @return Path to the templates directory
      */
-    std::string get_templates_directory() const;
+    [[nodiscard]] std::string get_templates_directory() const;
     
     /**
      * @brief Set a new templates directory
@@ -168,14 +168,14 @@ public:
      * @param category The category name
      * @return true if category was successfully created, false otherwise
      */
-    bool create_category(const std::string& category);
+    [[nodiscard]] bool create_category(const std::string& category) const;
     
     /**
      * @brief List all template categories
      *
      * @return Vector of category names
      */
-    std::vector<std::string> list_categories();
+    [[nodiscard]] std::vector<std::string> list_categories() const;
     
     //------------------------------------------------------------------------------
     // Template inheritance methods
@@ -190,7 +190,7 @@ public:
      * @throws std::runtime_error If the parent template cannot be found
      */
     void create_inherited_template(const std::string& name, const std::string& parent_name, 
-                                  const std::string& content);
+                                  const std::string& content) const;
     
     /**
      * @brief Load a template with all inherited content merged in
@@ -202,16 +202,16 @@ public:
      * @return The fully merged template content
      * @throws std::runtime_error If any template in the inheritance chain cannot be found
      */
-    std::string load_template_with_inheritance(const std::string& name);
+    [[nodiscard]] std::string load_template_with_inheritance(const std::string& name) const;
     
     /**
      * @brief Get the full inheritance chain for a template
      *
      * @param name The template name
-     * @return Vector of template names in inheritance order (base to derived)
+     * @return Vector of template names in inheritance order (base to derive)
      * @throws std::runtime_error If the template cannot be found
      */
-    std::vector<std::string> get_inheritance_chain(const std::string& name);
+    [[nodiscard]] std::vector<std::string> get_inheritance_chain(const std::string& name) const;
 
 private:
     std::string m_templates_dir;  ///< Directory where templates are stored
@@ -222,50 +222,50 @@ private:
      * @param name The template name
      * @return Full file path
      */
-    std::string get_template_path(const std::string& name) const;
+    [[nodiscard]] std::string get_template_path(const std::string& name) const;
     
     /**
      * @brief Create templates directory if it doesn't exist and validate structure
      */
-    void ensure_templates_directory();
+    void ensure_templates_directory() const;
     
     /**
      * @brief Validate the template directory structure and permissions
      *
      * @return true if directory structure is valid, false otherwise
      */
-    bool validate_template_directory() const;
+    [[nodiscard]] bool validate_template_directory() const;
     
     /**
      * @brief Initialize standard directory structure for templates
      */
-    void initialize_template_structure();
+    void initialize_template_structure() const;
     
     /**
      * @brief Repair template directory structure if it's damaged
      *
      * @return true if repair was successful, false otherwise
      */
-    bool repair_template_directory();
+    [[nodiscard]] bool repair_template_directory() const;
     
     /**
      * @brief Create README file with usage instructions
      */
-    void create_readme_file();
+    void create_readme_file() const;
     
     /**
      * @brief Ensure standard directories (common/ and user/) exist
      */
-    void ensure_standard_directories();
+    void ensure_standard_directories() const;
     
     /**
-     * @brief Format template metadata as markdown documentation
+     * @brief Format template metadata as Markdown documentation
      *
      * @param metadata The template metadata
      * @param content The template content
      * @return Formatted markdown string
      */
-    std::string format_template_markdown(const TemplateMetadata& metadata, const std::string& content);
+    [[nodiscard]] std::string format_template_markdown(const TemplateMetadata& metadata, const std::string& content) const;
     
     /**
      * @brief Extract variable names from template content
@@ -273,7 +273,7 @@ private:
      * @param content The template content
      * @return Vector of variable names
      */
-    std::vector<std::string> extract_variables(const std::string& content);
+    static std::vector<std::string> extract_variables(const std::string& content);
     
     /**
      * @brief Extract description from template content
@@ -283,7 +283,7 @@ private:
      * @param content The template content
      * @return Description string
      */
-    std::string extract_description(const std::string& content);
+    static std::string extract_description(const std::string& content);
     
     /**
      * @brief Replace variable references with their values
@@ -292,7 +292,7 @@ private:
      * @param variables Map of variable names to values
      * @return Content with variables replaced
      */
-    std::string replace_variables(const std::string& content, 
+    static std::string replace_variables(const std::string& content,
                                   const std::map<std::string, std::string>& variables);
     
     /**
@@ -303,7 +303,7 @@ private:
      * @param content The template content
      * @return Optional containing parent name if found, empty otherwise
      */
-    std::optional<std::string> extract_parent_template(const std::string& content);
+    static std::optional<std::string> extract_parent_template(const std::string& content);
     
     /**
      * @brief Merge parent template content with child template content
@@ -317,7 +317,7 @@ private:
      * @param child_content The child template content
      * @return Merged content
      */
-    std::string merge_template_content(const std::string& parent_content, 
+    static std::string merge_template_content(const std::string& parent_content,
                                       const std::string& child_content);
                                       
     /**
@@ -326,7 +326,7 @@ private:
      * @param content The template content
      * @return Example usage string
      */
-    std::string extract_example(const std::string& content);
+    static std::string extract_example(const std::string& content);
 
 public: // Exposed for direct access from CLI
     /**
@@ -337,7 +337,7 @@ public: // Exposed for direct access from CLI
      * @param content The template content
      * @return Map of variable names to default values
      */
-    std::map<std::string, std::string> collect_variables(const std::string& content);
+    static std::map<std::string, std::string> collect_variables(const std::string& content);
 };
 
 } // namespace cql

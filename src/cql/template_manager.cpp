@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <sstream>
 #include <set>
+#include <utility>
 
 namespace fs = std::filesystem;
 
@@ -20,8 +21,7 @@ namespace cql {
 
 TemplateManager::TemplateManager() {
     // default templates directory is in the user's home directory
-    const char* home_dir = getenv("HOME");
-    if (home_dir) {
+    if (const char* home_dir = getenv("HOME")) {
         m_templates_dir = std::string(home_dir) + "/.llm/templates";
     } else {
         m_templates_dir = "./llm_templates";
@@ -29,12 +29,12 @@ TemplateManager::TemplateManager() {
     ensure_templates_directory();
 }
 
-TemplateManager::TemplateManager(const std::string& template_dir) 
-    : m_templates_dir(template_dir) {
+TemplateManager::TemplateManager(std::string template_dir)
+    : m_templates_dir(std::move(template_dir)) {
     ensure_templates_directory();
 }
 
-void TemplateManager::save_template(const std::string& name, const std::string& content) {
+void TemplateManager::save_template(const std::string& name, const std::string& content) const {
     // ensure the template has a valid name
     if (name.empty()) {
         throw std::runtime_error("Template name cannot be empty");
@@ -52,11 +52,10 @@ void TemplateManager::save_template(const std::string& name, const std::string& 
     // check if the name contains a category specification with category/template format
     if (name.find('/') != std::string::npos) {
         // split the name into category and template name
-        std::string category = name.substr(0, name.find('/'));
+        const std::string category = name.substr(0, name.find('/'));
         
         // ensure the category directory exists
-        fs::path category_path = fs::path(m_templates_dir) / category;
-        if (!fs::exists(category_path)) {
+        if (fs::path category_path = fs::path(m_templates_dir) / category; !fs::exists(category_path)) {
             try {
                 fs::create_directory(category_path);
                 Logger::getInstance().log(LogLevel::INFO, "Created category directory: ", category);
@@ -79,8 +78,7 @@ void TemplateManager::save_template(const std::string& name, const std::string& 
     
     try {
         // ensure parent directory exists (for nested categories)
-        fs::path parent_dir = fs::path(template_path).parent_path();
-        if (!fs::exists(parent_dir)) {
+        if (const fs::path parent_dir = fs::path(template_path).parent_path(); !fs::exists(parent_dir)) {
             fs::create_directories(parent_dir);
         }
         
@@ -92,9 +90,9 @@ void TemplateManager::save_template(const std::string& name, const std::string& 
     }
 }
 
-std::string TemplateManager::load_template(const std::string& name) {
+std::string TemplateManager::load_template(const std::string& name) const {
     // get the full path
-    std::string template_path = get_template_path(name);
+    const std::string template_path = get_template_path(name);
     
     // check if the template exists
     if (!fs::exists(template_path)) {
@@ -111,7 +109,7 @@ std::string TemplateManager::load_template(const std::string& name) {
     }
 }
 
-TemplateManager::TemplateMetadata TemplateManager::get_template_metadata(const std::string& name) {
+TemplateManager::TemplateMetadata TemplateManager::get_template_metadata(const std::string& name) const {
     // get the full path
     std::string template_path = get_template_path(name);
     
@@ -151,10 +149,10 @@ TemplateManager::TemplateMetadata TemplateManager::get_template_metadata(const s
     }
 }
 
-std::vector<std::string> TemplateManager::list_templates() {
+std::vector<std::string> TemplateManager::list_templates() const {
     std::vector<std::string> templates;
     
-    // ensure templates directory is valid
+    // ensure the templates directory is valid
     if (!validate_template_directory()) {
         if (!repair_template_directory()) {
             Logger::getInstance().log(LogLevel::ERROR, 
@@ -167,11 +165,11 @@ std::vector<std::string> TemplateManager::list_templates() {
         // create a set to keep track of added templates
         std::set<std::string> added_templates;
         
-        // first get all templates from the common directory
+        // first, get all templates from the common directory
         if (fs::exists(fs::path(m_templates_dir) / "common")) {
             for (const auto& entry : fs::recursive_directory_iterator(fs::path(m_templates_dir) / "common")) {
                 if (entry.is_regular_file() && entry.path().extension() == ".llm") {
-                    // format path as common/template
+                    // format a path as common/template
                     fs::path rel_path = entry.path().lexically_relative(m_templates_dir);
                     std::string template_name = rel_path.string();
                     templates.push_back(template_name);
@@ -180,11 +178,11 @@ std::vector<std::string> TemplateManager::list_templates() {
             }
         }
         
-        // next get all templates from the user directory
+        // next, get all templates from the user directory
         if (fs::exists(fs::path(m_templates_dir) / "user")) {
             for (const auto& entry : fs::recursive_directory_iterator(fs::path(m_templates_dir) / "user")) {
                 if (entry.is_regular_file() && entry.path().extension() == ".llm") {
-                    // format path as user/template
+                    // format a path as user/template
                     fs::path rel_path = entry.path().lexically_relative(m_templates_dir);
                     std::string template_name = rel_path.string();
                     templates.push_back(template_name);
@@ -193,16 +191,14 @@ std::vector<std::string> TemplateManager::list_templates() {
             }
         }
         
-        // finally get templates from any other directories (legacy support)
+        // finally, get templates from any other directories (legacy support)
         for (const auto& entry : fs::directory_iterator(m_templates_dir)) {
             if (entry.is_regular_file() && entry.path().extension() == ".llm") {
                 // add only if not an internal file
                 if (entry.path().filename().string() != "README.txt" && 
                     entry.path().filename().string()[0] != '.') {
-                    std::string template_name = entry.path().filename().string();
-                    
                     // add only if we haven't encountered this template yet
-                    if (added_templates.find(template_name) == added_templates.end()) {
+                    if (std::string template_name = entry.path().filename().string(); !added_templates.contains(template_name)) {
                         templates.push_back(template_name);
                         added_templates.insert(template_name);
                     }
@@ -213,12 +209,12 @@ std::vector<std::string> TemplateManager::list_templates() {
                 // handle custom categories (not common or user)
                 for (const auto& sub_entry : fs::recursive_directory_iterator(entry.path())) {
                     if (sub_entry.is_regular_file() && sub_entry.path().extension() == ".llm") {
-                        // format path as category/template
+                        // format a path as category/template
                         fs::path rel_path = sub_entry.path().lexically_relative(m_templates_dir);
                         std::string template_name = rel_path.string();
                         
                         // add only if we haven't encountered this template yet
-                        if (added_templates.find(template_name) == added_templates.end()) {
+                        if (!added_templates.contains(template_name)) {
                             templates.push_back(template_name);
                             added_templates.insert(template_name);
                         }
@@ -228,10 +224,10 @@ std::vector<std::string> TemplateManager::list_templates() {
         }
         
         // sort the templates alphabetically
-        std::sort(templates.begin(), templates.end(), [](const std::string& a, const std::string& b) {
+        std::ranges::sort(templates, [](const std::string& a, const std::string& b) {
             // first sort by category, then by template name
-            std::string a_category = a.find('/') != std::string::npos ? a.substr(0, a.find('/')) : "";
-            std::string b_category = b.find('/') != std::string::npos ? b.substr(0, b.find('/')) : "";
+            const std::string a_category = a.find('/') != std::string::npos ? a.substr(0, a.find('/')) : "";
+            const std::string b_category = b.find('/') != std::string::npos ? b.substr(0, b.find('/')) : "";
             
             // put common category first, then user, then others alphabetically
             if (a_category == "common" && b_category != "common") return true;
@@ -241,8 +237,8 @@ std::vector<std::string> TemplateManager::list_templates() {
             
             // if categories are the same, sort by template name
             if (a_category == b_category) {
-                std::string a_name = a.find('/') != std::string::npos ? a.substr(a.find('/') + 1) : a;
-                std::string b_name = b.find('/') != std::string::npos ? b.substr(b.find('/') + 1) : b;
+                const std::string a_name = a.find('/') != std::string::npos ? a.substr(a.find('/') + 1) : a;
+                const std::string b_name = b.find('/') != std::string::npos ? b.substr(b.find('/') + 1) : b;
                 return a_name < b_name;
             }
             
@@ -253,13 +249,13 @@ std::vector<std::string> TemplateManager::list_templates() {
         return templates;
     } catch (const std::exception& e) {
         Logger::getInstance().log(LogLevel::ERROR, "Failed to list templates: ", e.what());
-        return templates; // return empty list on error
+        return templates; // return an empty list on error
     }
 }
 
-bool TemplateManager::delete_template(const std::string& name) {
+bool TemplateManager::delete_template(const std::string& name) const {
     // get the full path
-    std::string template_path = get_template_path(name);
+    const std::string template_path = get_template_path(name);
     
     // check if the template exists
     if (!fs::exists(template_path)) {
@@ -281,7 +277,7 @@ bool TemplateManager::delete_template(const std::string& name) {
 std::string TemplateManager::instantiate_template(
     const std::string& name, 
     const std::map<std::string, std::string>& variables
-) {
+) const {
     // load the template content with inheritance support
     std::string content = load_template_with_inheritance(name);
     
@@ -311,7 +307,7 @@ void TemplateManager::set_templates_directory(const std::string& dir) {
     ensure_templates_directory();
 }
 
-bool TemplateManager::create_category(const std::string& category) {
+bool TemplateManager::create_category(const std::string& category) const {
     // create a directory for the category
     std::string category_path = m_templates_dir + "/" + category;
     
@@ -325,7 +321,7 @@ bool TemplateManager::create_category(const std::string& category) {
     }
 }
 
-std::vector<std::string> TemplateManager::list_categories() {
+std::vector<std::string> TemplateManager::list_categories() const {
     std::vector<std::string> categories;
     
     try {
@@ -337,12 +333,12 @@ std::vector<std::string> TemplateManager::list_categories() {
         }
         
         // sort the categories alphabetically
-        std::sort(categories.begin(), categories.end());
+        std::ranges::sort(categories);
         
         return categories;
     } catch (const std::exception& e) {
         Logger::getInstance().log(LogLevel::ERROR, "Failed to list categories: ", e.what());
-        return categories; // return empty list on error
+        return categories; // return an empty list on error
     }
 }
 
@@ -359,7 +355,7 @@ std::string TemplateManager::get_template_path(const std::string& name) const {
         return m_templates_dir + "/" + filename;
     }
     
-    // first check in user directory (most common case)
+    // first check in user directory (the most common case)
     std::string user_path = m_templates_dir + "/user/" + filename;
     if (fs::exists(user_path)) {
         return user_path;
@@ -381,7 +377,7 @@ std::string TemplateManager::get_template_path(const std::string& name) const {
     return m_templates_dir + "/user/" + filename;
 }
 
-void TemplateManager::ensure_templates_directory() {
+void TemplateManager::ensure_templates_directory() const {
     try {
         // create the templates directory if it doesn't exist
         if (!fs::exists(m_templates_dir)) {
@@ -408,10 +404,9 @@ void TemplateManager::ensure_templates_directory() {
 }
 
 bool TemplateManager::validate_template_directory() const {
-    bool valid = true;
-    
     try {
-        // check if directory exists
+        bool valid = true;
+        // check if the directory exists
         if (!fs::exists(m_templates_dir)) {
             Logger::getInstance().log(LogLevel::ERROR, "Template directory does not exist: ", m_templates_dir);
             return false;
@@ -426,8 +421,7 @@ bool TemplateManager::validate_template_directory() const {
         // check if it's writable
         fs::path test_file = fs::path(m_templates_dir) / ".write_test";
         try {
-            std::ofstream test(test_file);
-            if (!test.is_open()) {
+            if (std::ofstream test(test_file); !test.is_open()) {
                 Logger::getInstance().log(LogLevel::ERROR, "Template directory is not writable: ", m_templates_dir);
                 valid = false;
             } else {
@@ -459,12 +453,12 @@ bool TemplateManager::validate_template_directory() const {
     }
 }
 
-void TemplateManager::initialize_template_structure() {
+void TemplateManager::initialize_template_structure() const {
     try {
         // create standard directory structure
         ensure_standard_directories();
         
-        // create readme file
+        // create a readme file
         create_readme_file();
         Logger::getInstance().log(LogLevel::INFO, "Created template directory structure");
     } catch (const std::exception& e) {
@@ -472,7 +466,7 @@ void TemplateManager::initialize_template_structure() {
     }
 }
 
-bool TemplateManager::repair_template_directory() {
+bool TemplateManager::repair_template_directory() const {
     try {
         // ensure main directory exists
         if (!fs::exists(m_templates_dir)) {
@@ -505,11 +499,7 @@ std::vector<std::string> TemplateManager::extract_variables(const std::string& c
     );
     
     // get all referenced variables
-    auto referenced_vars = cql::util::extract_regex_group_values(
-        content,
-        "\\$\\{([^}]+)\\}",
-        1
-    );
+    const auto referenced_vars = cql::util::extract_regex_group_values(content, R"(\$\{([^}]+)\})", 1);
     
     // combine both sets into a vector
     std::vector<std::string> variables;
@@ -517,7 +507,7 @@ std::vector<std::string> TemplateManager::extract_variables(const std::string& c
     
     // add referenced variables that aren't already in the list
     for (const auto& var : referenced_vars) {
-        if (declared_vars.find(var) == declared_vars.end()) {
+        if (!declared_vars.contains(var)) {
             variables.push_back(var);
         }
     }
@@ -527,19 +517,13 @@ std::vector<std::string> TemplateManager::extract_variables(const std::string& c
 
 std::string TemplateManager::extract_description(const std::string& content) {
     // try to extract a description from @description directive
-    auto descriptions = cql::util::extract_regex_group_values(
-        content,
-        "@description\\s+\"([^\"]*)\"",
-        1
-    );
-    
-    if (!descriptions.empty()) {
+
+    if (auto descriptions = cql::util::extract_regex_group_values(content, "@description\\s+\"([^\"]*)\"", 1); !descriptions.empty()) {
         return *descriptions.begin();
     }
     
     // if no description directive found, return the first line as a fallback
-    size_t eol = content.find('\n');
-    if (eol != std::string::npos) {
+    if (const size_t eol = content.find('\n'); eol != std::string::npos) {
         return content.substr(0, eol);
     }
     
@@ -548,12 +532,11 @@ std::string TemplateManager::extract_description(const std::string& content) {
 
 std::string TemplateManager::replace_variables(
     const std::string& content,
-    const std::map<std::string, std::string>& variables
-) {
-    std::string result = content;
-    std::regex variable_ref_regex("\\$\\{([^}]+)\\}");
+    const std::map<std::string, std::string>& variables) {
+    const std::string& result = content;
+    const std::regex variable_ref_regex(R"(\$\{([^}]+)\})");
     
-    // first collect all variables from the content (declared with @variable)
+    // first, collect all variables from the content (declared with @variable)
     auto all_variables = collect_variables(content);
     
     // add or override with provided variables
@@ -579,7 +562,7 @@ std::string TemplateManager::replace_variables(
         output.append(result.substr(last_pos, start_pos - last_pos));
         
         // append the variable value or the original reference if not found
-        if (all_variables.find(var_name) != all_variables.end()) {
+        if (all_variables.contains(var_name)) {
             output.append(all_variables[var_name]);
             Logger::getInstance().log(LogLevel::INFO, "Replaced variable: ", var_name, " with: ", all_variables[var_name]);
         } else {
@@ -605,16 +588,13 @@ std::map<std::string, std::string> TemplateManager::collect_variables(const std:
     std::map<std::string, std::string> variables;
     
     // extract all @variable declarations with their values
-    auto variable_matches = cql::util::extract_regex_matches(
-        content,
-        "@variable\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"",
-        2
-    );
+    const auto variable_matches = cql::util::extract_regex_matches(content
+        , "@variable\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"", 2);
     
     for (const auto& match : variable_matches) {
         if (match.size() > 2) {
-            std::string name = match[1];
-            std::string value = match[2];
+            const std::string& name = match[1];
+            const std::string& value = match[2];
             variables[name] = value;
             Logger::getInstance().log(LogLevel::INFO, "Found variable declaration: ", name, "=", value);
         }
@@ -625,13 +605,7 @@ std::map<std::string, std::string> TemplateManager::collect_variables(const std:
 
 // extract parent template name if this template inherits from another
 std::optional<std::string> TemplateManager::extract_parent_template(const std::string& content) {
-    auto parents = cql::util::extract_regex_group_values(
-        content,
-        "@inherit\\s+\"([^\"]*)\"",
-        1
-    );
-    
-    if (!parents.empty()) {
+    if (const auto parents = cql::util::extract_regex_group_values(content, "@inherit\\s+\"([^\"]*)\"", 1); !parents.empty()) {
         std::string parent = *parents.begin();
         Logger::getInstance().log(LogLevel::INFO, "Found parent template: ", parent);
         return parent;
@@ -641,17 +615,14 @@ std::optional<std::string> TemplateManager::extract_parent_template(const std::s
 }
 
 // create a new template that inherits from another
-void TemplateManager::create_inherited_template(const std::string& name, 
-                                               const std::string& parent_name, 
-                                               const std::string& content) {
+void TemplateManager::create_inherited_template(const std::string& name, const std::string& parent_name, const std::string& content) const {
     // verify parent template exists
-    std::string parent_path = get_template_path(parent_name);
-    if (!fs::exists(parent_path)) {
+    if (const std::string parent_path = get_template_path(parent_name); !fs::exists(parent_path)) {
         throw std::runtime_error("Parent template not found: " + parent_name);
     }
     
     // add inheritance directive if not already present
-    std::regex inherit_regex("@inherit\\s+\"([^\"]*)\"");
+    const std::regex inherit_regex("@inherit\\s+\"([^\"]*)\"");
     std::string modified_content = content;
     
     if (!std::regex_search(content, inherit_regex)) {
@@ -661,12 +632,11 @@ void TemplateManager::create_inherited_template(const std::string& name,
     
     // save the template
     save_template(name, modified_content);
-    Logger::getInstance().log(LogLevel::INFO, "Created template '", name, 
-                              "' inheriting from '", parent_name, "'");
+    Logger::getInstance().log(LogLevel::INFO, "Created template '", name, "' inheriting from '", parent_name, "'");
 }
 
 // get a list of parent templates (inheritance chain)
-std::vector<std::string> TemplateManager::get_inheritance_chain(const std::string& name) {
+std::vector<std::string> TemplateManager::get_inheritance_chain(const std::string& name) const {
     std::vector<std::string> chain;
     std::set<std::string> visited; // to detect circular inheritance
     
@@ -685,13 +655,13 @@ std::vector<std::string> TemplateManager::get_inheritance_chain(const std::strin
             // extract parent template name
             auto parent = extract_parent_template(content);
             if (!parent.has_value() || parent.value().empty()) {
-                break; // no parent, end of chain
+                break; // no parent, end of a chain
             }
             
             current = parent.value();
             
             // check for circular inheritance
-            if (visited.find(current) != visited.end()) {
+            if (visited.contains(current)) {
                 std::string cycle = "Inheritance cycle: ";
                 for (const auto& templ : visited) {
                     cycle += templ + " -> ";
@@ -714,14 +684,14 @@ std::vector<std::string> TemplateManager::get_inheritance_chain(const std::strin
     }
     
     // reverse to get base template first, followed by derived templates
-    std::reverse(chain.begin(), chain.end());
+    std::ranges::reverse(chain);
     return chain;
 }
 
 // load a template and merge in inherited content from parent templates
-std::string TemplateManager::load_template_with_inheritance(const std::string& name) {
+std::string TemplateManager::load_template_with_inheritance(const std::string& name) const {
     // get the inheritance chain
-    std::vector<std::string> chain = get_inheritance_chain(name);
+    const std::vector<std::string> chain = get_inheritance_chain(name);
     
     if (chain.empty()) {
         throw std::runtime_error("Failed to resolve inheritance chain for template: " + name);
@@ -747,8 +717,7 @@ std::string TemplateManager::load_template_with_inheritance(const std::string& n
 }
 
 // merge parent template content with child template content
-std::string TemplateManager::merge_template_content(const std::string& parent_content, 
-                                                  const std::string& child_content) {
+std::string TemplateManager::merge_template_content(const std::string& parent_content, const std::string& child_content) {
     // strip @inherit directive from child content
     std::regex inherit_regex("@inherit\\s+\"[^\"]*\"\\s*\n?");
     std::string stripped_child = std::regex_replace(child_content, inherit_regex, "");
@@ -783,7 +752,7 @@ std::string TemplateManager::merge_template_content(const std::string& parent_co
 // extract example usage from template content
 std::string TemplateManager::extract_example(const std::string& content) {
     // look for @example directive in the content
-    std::regex example_regex("@example\\s+\"([^\"]*)\"");
+    const std::regex example_regex("@example\\s+\"([^\"]*)\"");
     std::smatch match;
     
     if (std::regex_search(content, match, example_regex) && match.size() > 1) {
@@ -792,7 +761,7 @@ std::string TemplateManager::extract_example(const std::string& content) {
     
     // if no explicit example is found, try to extract the first query in the content
     std::regex query_regex("(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|WITH)[^;]+;");
-    if (std::regex_search(content, match, query_regex) && match.size() > 0) {
+    if (std::regex_search(content, match, query_regex) && !match.empty()) {
         return match[0].str();
     }
     
@@ -800,13 +769,13 @@ std::string TemplateManager::extract_example(const std::string& content) {
 }
 
 // generate documentation for a template
-std::string TemplateManager::generate_template_documentation(const std::string& name) {
+std::string TemplateManager::generate_template_documentation(const std::string& name) const {
     try {
         // get the template metadata
-        TemplateMetadata metadata = get_template_metadata(name);
+        const TemplateMetadata metadata = get_template_metadata(name);
         
         // load the template content
-        std::string content = load_template(name);
+        const std::string content = load_template(name);
         
         // format the template documentation using common helper
         return format_template_markdown(metadata, content);
@@ -816,7 +785,7 @@ std::string TemplateManager::generate_template_documentation(const std::string& 
 }
 
 // generate documentation for all templates
-std::string TemplateManager::generate_all_template_documentation() {
+std::string TemplateManager::generate_all_template_documentation() const {
     try {
         // get all templates
         std::vector<std::string> templates = list_templates();
@@ -859,9 +828,9 @@ std::string TemplateManager::generate_all_template_documentation() {
         for (const auto& templ : templates) {
             // create anchor for template name - replace slashes with dashes for anchors
             std::string anchor = templ;
-            std::replace(anchor.begin(), anchor.end(), '/', '-');
+            std::ranges::replace(anchor, '/', '-');
             
-            // if template has .llm extension, remove it for display
+            // if the template has .llm extension, remove it for display
             std::string display_name = templ;
             if (display_name.length() > 4 && display_name.substr(display_name.length() - 4) == ".llm") {
                 display_name = display_name.substr(0, display_name.length() - 4);
@@ -911,7 +880,7 @@ std::string TemplateManager::generate_all_template_documentation() {
 }
 
 // export documentation to a file
-bool TemplateManager::export_documentation(const std::string& output_path, const std::string& format) {
+bool TemplateManager::export_documentation(const std::string& output_path, const std::string& format) const {
     try {
         // generate the documentation
         std::string doc_content = generate_all_template_documentation();
@@ -925,7 +894,7 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
             final_content = doc_content;
             extension = ".md";
         } else if (format == "html") {
-            // simple markdown to html conversion
+            // simple markdown to HTML conversion
             std::stringstream html;
             
             // html header
@@ -948,7 +917,7 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
                  << "</head>\n"
                  << "<body>\n";
             
-            // simple markdown to html conversion for common elements
+            // simple markdown to HTML conversion for common elements
             std::string line;
             std::istringstream doc_stream(doc_content);
             bool in_code_block = false;
@@ -968,7 +937,7 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
                 }
                 
                 if (in_code_block) {
-                    // escape html in code blocks
+                    // escape HTML in code blocks
                     std::string escaped = line;
                     escaped = std::regex_replace(escaped, std::regex("&"), "&amp;");
                     escaped = std::regex_replace(escaped, std::regex("<"), "&lt;");
@@ -986,13 +955,13 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
                     html << "<h3>" << line.substr(4) << "</h3>\n";
                 } 
                 // tables
-                else if (line.find("|") == 0) {
+                else if (line.find('|') == 0) {
                     if (!in_table) {
                         html << "<table>\n";
                         in_table = true;
                     }
                     
-                    // convert markdown table row to html
+                    // convert Markdown table row to HTML
                     html << "  <tr>\n";
                     
                     // split by pipe and process each cell
@@ -1000,7 +969,7 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
                     size_t start = 1; // skip first pipe
                     std::string cell;
                     
-                    while ((pos = line.find("|", start)) != std::string::npos) {
+                    while ((pos = line.find('|', start)) != std::string::npos) {
                         cell = line.substr(start, pos - start);
                         
                         // skip separator rows (---|---)
@@ -1033,9 +1002,9 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
                     in_table = false;
                 }
                 // links
-                else if (line.find("[") != std::string::npos && line.find("](") != std::string::npos) {
+                else if (line.find('[') != std::string::npos && line.find("](") != std::string::npos) {
                     std::string processed = line;
-                    std::regex link_regex("\\[([^\\]]*)\\]\\(([^\\)]*)\\)");
+                    std::regex link_regex(R"(\[([^\]]*)\]\(([^\)]*)\))");
                     processed = std::regex_replace(processed, link_regex, "<a href=\"$2\">$1</a>");
                     html << "<p>" << processed << "</p>\n";
                 }
@@ -1048,8 +1017,8 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
                     if (!line.empty()) {
                         // check for bold/italic text
                         std::string processed = line;
-                        processed = std::regex_replace(processed, std::regex("\\*\\*([^\\*]*)\\*\\*"), "<strong>$1</strong>");
-                        processed = std::regex_replace(processed, std::regex("\\*([^\\*]*)\\*"), "<em>$1</em>");
+                        processed = std::regex_replace(processed, std::regex(R"(\*\*([^\*]*)\*\*)"), "<strong>$1</strong>");
+                        processed = std::regex_replace(processed, std::regex(R"(\*([^\*]*)\*)"), "<em>$1</em>");
                         
                         html << "<p>" << processed << "</p>\n";
                     } else {
@@ -1066,7 +1035,7 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
                 html << "</table>\n";
             }
             
-            // html footer
+            // HTML footer
             html << "</body>\n</html>";
             
             final_content = html.str();
@@ -1075,17 +1044,17 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
             // simple markdown to plain text conversion
             std::string processed = doc_content;
             
-            // remove markdown formatting
+            // remove Markdown formatting
             processed = std::regex_replace(processed, std::regex("#+\\s+"), ""); // headers
-            processed = std::regex_replace(processed, std::regex("\\*\\*([^\\*]*)\\*\\*"), "$1"); // bold
-            processed = std::regex_replace(processed, std::regex("\\*([^\\*]*)\\*"), "$1"); // italic
+            processed = std::regex_replace(processed, std::regex(R"(\*\*([^\*]*)\*\*)"), "$1"); // bold
+            processed = std::regex_replace(processed, std::regex(R"(\*([^\*]*)\*)"), "$1"); // italic
             processed = std::regex_replace(processed, std::regex("```[^`]*```"), ""); // code blocks
-            processed = std::regex_replace(processed, std::regex("\\[([^\\]]*)\\]\\([^\\)]*\\)"), "$1"); // links
+            processed = std::regex_replace(processed, std::regex(R"(\[([^\]]*)\]\([^\)]*\))"), "$1"); // links
             
             final_content = processed;
             extension = ".txt";
         } else {
-            // unsupported format, default to markdown
+            // unsupported format, default to Markdown
             Logger::getInstance().log(LogLevel::ERROR, 
                 "unsupported documentation format '", format, "', defaulting to markdown");
             final_content = doc_content;
@@ -1099,8 +1068,7 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
         }
         
         // create the directory if it doesn't exist
-        fs::path output_dir = fs::path(final_path).parent_path();
-        if (!output_dir.empty() && !fs::exists(output_dir)) {
+        if (fs::path output_dir = fs::path(final_path).parent_path(); !output_dir.empty() && !fs::exists(output_dir)) {
             fs::create_directories(output_dir);
         }
         
@@ -1122,10 +1090,9 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
     }
 }
 
-void TemplateManager::create_readme_file() {
-    std::string readme_path = (fs::path(m_templates_dir) / "README.txt").string();
-    std::ofstream readme(readme_path);
-    if (readme.is_open()) {
+void TemplateManager::create_readme_file() const {
+    const std::string readme_path = (fs::path(m_templates_dir) / "README.txt").string();
+    if (std::ofstream readme(readme_path); readme.is_open()) {
         readme << "LLM Template Directory Structure\n";
         readme << "===============================\n\n";
         readme << "This directory contains LLM templates organized as follows:\n\n";
@@ -1137,7 +1104,7 @@ void TemplateManager::create_readme_file() {
     }
 }
 
-void TemplateManager::ensure_standard_directories() {
+void TemplateManager::ensure_standard_directories() const {
     // create common subdirectory if it doesn't exist
     if (!fs::exists(fs::path(m_templates_dir) / "common") || 
         !fs::is_directory(fs::path(m_templates_dir) / "common")) {
@@ -1151,8 +1118,8 @@ void TemplateManager::ensure_standard_directories() {
     }
 }
 
-// format template documentation as markdown
-std::string TemplateManager::format_template_markdown(const TemplateMetadata& metadata, const std::string& content) {
+// format template documentation as Markdown
+std::string TemplateManager::format_template_markdown(const TemplateMetadata& metadata, const std::string& content) const {
     // extract example
     std::string example = extract_example(content);
     
@@ -1182,11 +1149,8 @@ std::string TemplateManager::format_template_markdown(const TemplateMetadata& me
         doc << "|------|-------------|\n";
         
         // extract variable descriptions from content if available
-        auto var_desc_matches = cql::util::extract_regex_matches(
-            content,
-            "@variable_description\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"",
-            2
-        );
+        auto var_desc_matches = cql::util::extract_regex_matches(content
+            , "@variable_description\\s+\"([^\"]*)\"\\s+\"([^\"]*)\"", 2);
         
         std::map<std::string, std::string> var_descriptions;
         for (const auto& match : var_desc_matches) {
@@ -1196,9 +1160,10 @@ std::string TemplateManager::format_template_markdown(const TemplateMetadata& me
         }
         
         for (const auto& var : metadata.variables) {
-            std::string desc = var_descriptions.count(var) > 0 ? 
-                              var_descriptions[var] : "No description available";
-            doc << "| " << var << " | " << desc << " |\n";
+            std::string desc = var_descriptions.contains(var)
+                ?
+                    var_descriptions[var] : "No description available";
+                    doc << "| " << var << " | " << desc << " |\n";
         }
         doc << "\n";
     }
