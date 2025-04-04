@@ -31,7 +31,7 @@ int handle_file_processing(const std::string& input_file, const std::string& out
  * @brief Print the help message with usage information
  */
 void print_help() {
-    std::cout << "Claude Query Language (CQL) Compiler v1.0\n"
+    std::cout << "Claude Query Language (CQL) Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")\n"
               << "Usage: cql [OPTIONS] [INPUT_FILE] [OUTPUT_FILE]\n\n"
               << "Options:\n"
               << "  --help, -h              Show this help information\n"
@@ -564,8 +564,8 @@ int handle_file_processing(const std::string& input_file, const std::string& out
 int main(int argc, char* argv[]) {
     // Initialize logger
     auto& logger = Logger::getInstance();
-    std::cout << "Starting CQL Compiler v1.0..." << std::endl;
-    logger.log(LogLevel::INFO, "Claude Query Language (CQL) Compiler v1.0");
+    std::cout << "Starting CQL Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")..." << std::endl;
+    logger.log(LogLevel::INFO, "Claude Query Language (CQL) Compiler v", CQL_VERSION_STRING, " (", CQL_BUILD_TIMESTAMP, ")");
 
     try {
         std::cout << "Parsing command line arguments..." << std::endl;

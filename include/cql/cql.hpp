@@ -15,6 +15,13 @@
  * this file provides the main public interface for the cql library.
  */
 
+// Version information
+#define CQL_VERSION_MAJOR 0
+#define CQL_VERSION_MINOR 1
+#define CQL_VERSION_PATCH 0
+#define CQL_VERSION_STRING "0.1.0"
+#define CQL_BUILD_TIMESTAMP __DATE__ " " __TIME__
+
 #include <string>
 #include <string_view>
 #include <vector>
