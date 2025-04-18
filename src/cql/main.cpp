@@ -587,8 +587,7 @@ int main(int argc, char* argv[]) {
             std::cout << "For example: ./build/cql_test" << std::endl;
             return 0;
         } else if (arg1 == "--examples" || arg1 == "-e") {
-            auto result = cql::test::query_examples();
-            if (!result.passed()) {
+            if (const auto result = cql::test::query_examples(); !result.passed()) {
                 std::cerr << "\nError running examples: " << result.get_error_message() << std::endl;
                 return 1;
             }
