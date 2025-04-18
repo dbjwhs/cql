@@ -148,8 +148,7 @@ std::map<std::string, std::string> process_template_variables(int argc, char* ar
  */
 bool has_force_flag(int argc, char* argv[], int start_index) {
     for (int ndx = start_index; ndx < argc; ndx++) {
-        std::string arg = argv[ndx];
-        if (arg == "--force" || arg == "-f") {
+        if (std::string arg = argv[ndx]; arg == "--force" || arg == "-f") {
             return true;
         }
     }
