@@ -107,8 +107,8 @@ void list_templates() {
  */
 cql::TemplateValidator initialize_template_validator(const cql::TemplateManager& manager) {
     cql::TemplateValidator validator(manager);
-    auto schema = cql::TemplateValidatorSchema::create_default_schema();
-    for (const auto& [name, rule] : schema.get_validation_rules()) {
+    for (const auto schema = cql::TemplateValidatorSchema::create_default_schema();
+        const auto &rule: schema.get_validation_rules() | std::views::values) {
         validator.add_validation_rule(rule);
     }
     return validator;
