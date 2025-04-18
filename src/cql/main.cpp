@@ -213,8 +213,7 @@ std::vector<std::string> handle_missing_variables(const cql::TemplateValidationR
     std::vector<std::string> missing_vars;
     
     // Extract variables from validation issues
-    auto var_issues = validation_result.get_issues(cql::TemplateValidationLevel::WARNING);
-    for (const auto& issue : var_issues) {
+    for (const auto var_issues = validation_result.get_issues(cql::TemplateValidationLevel::WARNING); const auto& issue : var_issues) {
         if (issue.get_variable_name().has_value() && 
             issue.to_string().find("not declared") != std::string::npos) {
             std::string var_name = issue.get_variable_name().value();
