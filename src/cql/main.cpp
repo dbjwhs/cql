@@ -149,7 +149,7 @@ int handle_submit_command(const int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "Error: Input file required for --submit" << std::endl;
         std::cerr << "Usage: cql --submit INPUT_FILE [options]" << std::endl;
-        return 1;
+        return CQL_ERROR;
     }
 
     const std::string input_file = argv[2];
@@ -178,9 +178,9 @@ int handle_submit_command(const int argc, char* argv[]) {
     
     // Process submission
     if (!cql::cli::process_submit_command(input_file, output_dir, model, overwrite, create_dirs, no_save)) {
-        return 1;
+        return CQL_ERROR;
     }
-    return 0;
+    return CQL_NO_ERROR;
 }
 
 /**
@@ -229,7 +229,7 @@ int handle_template_command(int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "Error: Template name required" << std::endl;
         std::cerr << "Usage: cql --template TEMPLATE_NAME [VAR1=VALUE1 VAR2=VALUE2 ...]" << std::endl;
-        return 1;
+        return CQL_ERROR;
     }
     
     std::string template_name = argv[2];
@@ -252,7 +252,7 @@ int handle_template_command(int argc, char* argv[]) {
             
             if (!force) {
                 std::cerr << "Validation failed. Use --force to ignore errors." << std::endl;
-                return 1;
+                return CQL_ERROR;
             } else {
                 std::cerr << "Proceeding despite validation errors (--force specified)." << std::endl;
             }
@@ -275,9 +275,9 @@ int handle_template_command(int argc, char* argv[]) {
         std::cout << compiled << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "Error using template: " << e.what() << std::endl;
-        return 1;
+        return CQL_ERROR;
     }
-    return 0;
+    return CQL_NO_ERROR;
 }
 
 /**
@@ -334,7 +334,7 @@ int handle_validate_command(const int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "Error: Template name required" << std::endl;
         std::cerr << "Usage: cql --validate TEMPLATE_NAME" << std::endl;
-        return 1;
+        return CQL_ERROR;
     }
 
     const std::string template_name = argv[2];
@@ -350,9 +350,9 @@ int handle_validate_command(const int argc, char* argv[]) {
         display_validation_results(result, template_name);
     } catch (const std::exception& e) {
         std::cerr << "Error validating template: " << e.what() << std::endl;
-        return 1;
+        return CQL_ERROR;
     }
-    return 0;
+    return CQL_NO_ERROR;
 }
 
 /**
@@ -368,7 +368,7 @@ int handle_validate_all_command() {
         
         if (templates.empty()) {
             std::cout << "No templates found to validate." << std::endl;
-            return 0;
+            return CQL_NO_ERROR;
         }
         
         std::cout << "Validating " << templates.size() << " templates..." << std::endl;
@@ -424,7 +424,7 @@ int handle_validate_all_command() {
         // Print status message
         if (error_count > 0) {
             std::cerr << "Validation found errors." << std::endl;
-            return 1;
+            return CQL_ERROR;
         } else if (warning_count > 0) {
             std::cout << "Validation successful, but found warnings." << std::endl;
         } else {
@@ -432,9 +432,9 @@ int handle_validate_all_command() {
         }
     } catch (const std::exception& e) {
         std::cerr << "Error validating templates: " << e.what() << std::endl;
-        return 1;
+        return CQL_ERROR;
     }
-    return 0;
+    return CQL_NO_ERROR;
 }
 
 /**
@@ -448,7 +448,7 @@ int handle_docs_command(const int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "error: template name required" << std::endl;
         std::cerr << "usage: cql --docs TEMPLATE_NAME" << std::endl;
-        return 1;
+        return CQL_ERROR;
     }
     
     std::string template_name = argv[2];
@@ -459,9 +459,9 @@ int handle_docs_command(const int argc, char* argv[]) {
         std::cout << docs << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "error generating template documentation: " << e.what() << std::endl;
-        return 1;
+        return CQL_ERROR;
     }
-    return 0;
+    return CQL_NO_ERROR;
 }
 
 /**
@@ -476,9 +476,9 @@ int handle_docs_all_command() {
         std::cout << docs << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "error generating template documentation: " << e.what() << std::endl;
-        return 1;
+        return CQL_ERROR;
     }
-    return 0;
+    return CQL_NO_ERROR;
 }
 
 /**
@@ -492,7 +492,7 @@ int handle_export_command(int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "error: output path required" << std::endl;
         std::cerr << "usage: cql --export OUTPUT_PATH [FORMAT]" << std::endl;
-        return 1;
+        return CQL_ERROR;
     }
     
     std::string output_path = argv[2];
@@ -511,13 +511,13 @@ int handle_export_command(int argc, char* argv[]) {
                       << " in " << format << " format" << std::endl;
         } else {
             std::cerr << "failed to export template documentation" << std::endl;
-            return 1;
+            return CQL_ERROR;
         }
     } catch (const std::exception& e) {
         std::cerr << "error exporting template documentation: " << e.what() << std::endl;
-        return 1;
+        return CQL_ERROR;
     }
-    return 0;
+    return CQL_NO_ERROR;
 }
 
 /**
@@ -543,19 +543,19 @@ int handle_file_processing(const std::string& input_file,
             } else {
                 std::cerr << "Failed to copy to clipboard" << std::endl;
                 Logger::getInstance().log(LogLevel::ERROR, "Failed to copy to clipboard");
-                return 1;
+                return CQL_ERROR;
             }
-            return 0;
+            return CQL_NO_ERROR;
         } catch (const std::exception& e) {
             std::cerr << "Error processing file: " << e.what() << std::endl;
             Logger::getInstance().log(LogLevel::ERROR, "Error processing file: ", e.what());
-            return 1;
+            return CQL_ERROR;
         }
     }
     if (!cql::cli::process_file(input_file, output_file)) {
-        return 1;
+        return CQL_ERROR;
     }
-    return 0;
+    return CQL_NO_ERROR;
 }
 
 /**
@@ -579,7 +579,7 @@ int main(const int argc, char* argv[]) {
             std::cout << "No arguments provided. Please use --help to see available options." << std::endl;
             print_help();
             std::cout << "\nTo run the application with a file, use: cql input.llm output.txt" << std::endl;
-            return 0;
+            return CQL_NO_ERROR;
         }
         
         // Parse first argument
@@ -593,11 +593,11 @@ int main(const int argc, char* argv[]) {
             std::cout << "Testing functionality has been removed from the main application." << std::endl;
             std::cout << "Please use the dedicated test executable instead." << std::endl;
             std::cout << "For example: ./build/cql_test" << std::endl;
-            return 0;
+            return CQL_NO_ERROR;
         } else if (arg1 == "--examples" || arg1 == "-e") {
             if (const auto result = cql::test::query_examples(); !result.passed()) {
                 std::cerr << "\nError running examples: " << result.get_error_message() << std::endl;
-                return 1;
+                return CQL_ERROR;
             }
         } else if (arg1 == "--interactive" || arg1 == "-i") {
             cql::cli::run_interactive();
@@ -622,7 +622,7 @@ int main(const int argc, char* argv[]) {
         } else if (arg1 == "--clipboard" || arg1 == "-c") {
             if (argc < 3) {
                 std::cerr << "Error: Input file required when using --clipboard option" << std::endl;
-                return 1;
+                return CQL_ERROR;
             }
             return handle_file_processing(argv[2], "", true);
         } else if (arg1.substr(0, 2) == "--") {
@@ -630,7 +630,7 @@ int main(const int argc, char* argv[]) {
             std::cerr << "Error: Unknown option: " << arg1 << std::endl;
             std::cerr << "Available options:" << std::endl;
             print_help();
-            return 1;
+            return CQL_ERROR;
         } else {
             // Assume it's an input file
             std::string output_file;
@@ -651,8 +651,8 @@ int main(const int argc, char* argv[]) {
         }
     } catch (const std::exception& e) {
         logger.log(LogLevel::ERROR, "Fatal error: ", e.what());
-        return 1;
+        return CQL_ERROR;
     }
     
-    return 0;
+    return CQL_NO_ERROR;
 }

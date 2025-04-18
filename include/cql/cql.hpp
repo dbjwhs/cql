@@ -22,6 +22,10 @@
 #define CQL_VERSION_STRING "0.1.0"
 #define CQL_BUILD_TIMESTAMP __DATE__ " " __TIME__
 
+// Return code definitions
+#define CQL_NO_ERROR 0  // Success return code
+#define CQL_ERROR 1     // Error return code
+
 #include <string>
 #include <string_view>
 #include <vector>
