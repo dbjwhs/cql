@@ -127,8 +127,7 @@ std::map<std::string, std::string> process_template_variables(int argc, char* ar
     
     for (int ndx = start_index; ndx < argc; ndx++) {
         std::string arg = argv[ndx];
-        size_t pos = arg.find('=');
-        if (pos != std::string::npos) {
+        if (const size_t pos = arg.find('='); pos != std::string::npos) {
             std::string name = arg.substr(0, pos);
             std::string value = arg.substr(pos + 1);
             variables[name] = value;
