@@ -28,6 +28,8 @@ void write_file(const std::string& filepath, const std::string& content) {
     file << content;
 }
 
+// Implementation delegated to clipboard namespace
+
 bool contains(const std::string& str, const std::string& substr) {
     return str.find(substr) != std::string::npos;
 }

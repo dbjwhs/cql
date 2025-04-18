@@ -7,25 +7,9 @@
 #include "../../include/cql/template_validator_schema.hpp"
 #include "../../include/cql/api_client.hpp"
 
-// note file exists in the cpp-snippets repo, you will need to check this out and have it and cql share the
+// note the file exists in the cpp-snippets repo, you will need to check this out and have it and cql share the
 // same root directory
 #include "../../cpp-snippets/headers/project_utils.hpp"
-
-// Forward declarations
-void print_help();
-void show_copyright_example();
-void list_templates();
-cql::TemplateValidator initialize_template_validator(const cql::TemplateManager& manager);
-std::map<std::string, std::string> process_template_variables(int argc, char* argv[], int start_index);
-bool has_force_flag(int argc, char* argv[], int start_index);
-int handle_submit_command(int argc, char* argv[]);
-int handle_template_command(int argc, char* argv[]);
-int handle_validate_command(int argc, char* argv[]);
-int handle_validate_all_command();
-int handle_docs_command(int argc, char* argv[]);
-int handle_docs_all_command();
-int handle_export_command(int argc, char* argv[]);
-int handle_file_processing(const std::string& input_file, const std::string& output_file);
 
 /**
  * @brief Print the help message with usage information
@@ -38,6 +22,7 @@ void print_help() {
               << "  --examples, -e          Show example queries\n"
               << "  --interactive, -i       Run in interactive mode\n"
               << "  --copyright             Show copyright example\n"
+              << "  --clipboard, -c         Copy output to clipboard instead of writing to a file\n"
               << "  --templates, -l         List all available templates\n"
               << "  --template NAME, -T     Use a specific template\n"
               << "  --template NAME --force Use template even with validation errors\n"
@@ -55,7 +40,8 @@ void print_help() {
               << "  --create-dirs           Create missing directories for output files\n"
               << "  --no-save               Display generated code but don't save to files\n\n"
               << "If INPUT_FILE is provided, it will be processed as a CQL query.\n"
-              << "If OUTPUT_FILE is also provided, the compiled query will be written to it.\n";
+              << "If OUTPUT_FILE is also provided, the compiled query will be written to it.\n"
+              << "If --clipboard option is used, the output will be copied to the clipboard.\n";
 }
 
 /**
@@ -63,14 +49,14 @@ void print_help() {
  */
 void show_copyright_example() {
     auto& logger = Logger::getInstance();
-    std::string copyright_example =
+    const std::string copyright_example =
         "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
         "@language \"C++\"\n"
         "@description \"implement a thread-safe queue\"\n";
 
     logger.log(LogLevel::INFO, "Copyright Example DSL:\n", copyright_example);
-    
-    std::string result = cql::QueryProcessor::compile(copyright_example);
+
+    const std::string result = cql::QueryProcessor::compile(copyright_example);
     logger.log(LogLevel::INFO, "\n=== Compiled Query with Copyright ===\n\n", 
               result, "\n===================");
 }
@@ -80,9 +66,8 @@ void show_copyright_example() {
  */
 void list_templates() {
     cql::TemplateManager manager;
-    auto templates = manager.list_templates();
-    
-    if (templates.empty()) {
+
+    if (const auto templates = manager.list_templates(); templates.empty()) {
         std::cout << "No templates found in " << manager.get_templates_directory() << std::endl;
     } else {
         std::cout << "Available templates:" << std::endl;
@@ -122,18 +107,17 @@ cql::TemplateValidator initialize_template_validator(const cql::TemplateManager&
  * @param start_index Starting index in argv
  * @return std::map<std::string, std::string> Map of variable names to values
  */
-std::map<std::string, std::string> process_template_variables(int argc, char* argv[], int start_index) {
+std::map<std::string, std::string> process_template_variables(const int argc, char* argv[], const int start_index) {
     std::map<std::string, std::string> variables;
     
     for (int ndx = start_index; ndx < argc; ndx++) {
         std::string arg = argv[ndx];
         if (const size_t pos = arg.find('='); pos != std::string::npos) {
             std::string name = arg.substr(0, pos);
-            std::string value = arg.substr(pos + 1);
+            const std::string value = arg.substr(pos + 1);
             variables[name] = value;
         }
     }
-    
     return variables;
 }
 
@@ -145,7 +129,7 @@ std::map<std::string, std::string> process_template_variables(int argc, char* ar
  * @param start_index Starting index in argv
  * @return bool True if --force flag is present
  */
-bool has_force_flag(int argc, char* argv[], int start_index) {
+bool has_force_flag(const int argc, char* argv[], const int start_index) {
     for (int ndx = start_index; ndx < argc; ndx++) {
         if (std::string arg = argv[ndx]; arg == "--force" || arg == "-f") {
             return true;
@@ -161,14 +145,14 @@ bool has_force_flag(int argc, char* argv[], int start_index) {
  * @param argv Argument values
  * @return int Return code (0 for success, 1 for error)
  */
-int handle_submit_command(int argc, char* argv[]) {
+int handle_submit_command(const int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "Error: Input file required for --submit" << std::endl;
         std::cerr << "Usage: cql --submit INPUT_FILE [options]" << std::endl;
         return 1;
     }
-    
-    std::string input_file = argv[2];
+
+    const std::string input_file = argv[2];
     std::string output_dir;
     std::string model;
     bool overwrite = false;
@@ -281,7 +265,7 @@ int handle_template_command(int argc, char* argv[]) {
         
         // Check for missing variables
         std::string template_content = manager.load_template(template_name);
-        auto template_vars = manager.collect_variables(template_content);
+        auto template_vars = cql::TemplateManager::collect_variables(template_content);
         handle_missing_variables(validation_result, template_vars, variables);
         
         // Instantiate and compile template
@@ -346,21 +330,21 @@ void display_validation_results(const cql::TemplateValidationResult& result, con
  * @param argv Argument values
  * @return int Return code (0 for success, 1 for error)
  */
-int handle_validate_command(int argc, char* argv[]) {
+int handle_validate_command(const int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "Error: Template name required" << std::endl;
         std::cerr << "Usage: cql --validate TEMPLATE_NAME" << std::endl;
         return 1;
     }
-    
-    std::string template_name = argv[2];
+
+    const std::string template_name = argv[2];
     
     try {
         cql::TemplateManager manager;
         auto validator = initialize_template_validator(manager);
         
         // Validate the template
-        auto result = validator.validate_template(template_name);
+        const auto result = validator.validate_template(template_name);
         
         // Display validation results
         display_validation_results(result, template_name);
@@ -380,7 +364,7 @@ int handle_validate_all_command() {
     try {
         cql::TemplateManager manager;
         auto validator = initialize_template_validator(manager);
-        auto templates = manager.list_templates();
+        const auto templates = manager.list_templates();
         
         if (templates.empty()) {
             std::cout << "No templates found to validate." << std::endl;
@@ -460,7 +444,7 @@ int handle_validate_all_command() {
  * @param argv Argument values
  * @return int Return code (0 for success, 1 for error)
  */
-int handle_docs_command(int argc, char* argv[]) {
+int handle_docs_command(const int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "error: template name required" << std::endl;
         std::cerr << "usage: cql --docs TEMPLATE_NAME" << std::endl;
@@ -471,7 +455,7 @@ int handle_docs_command(int argc, char* argv[]) {
     
     try {
         cql::TemplateManager manager;
-        std::string docs = manager.generate_template_documentation(template_name);
+        const std::string docs = manager.generate_template_documentation(template_name);
         std::cout << docs << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "error generating template documentation: " << e.what() << std::endl;
@@ -488,7 +472,7 @@ int handle_docs_command(int argc, char* argv[]) {
 int handle_docs_all_command() {
     try {
         cql::TemplateManager manager;
-        std::string docs = manager.generate_all_template_documentation();
+        const std::string docs = manager.generate_all_template_documentation();
         std::cout << docs << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "error generating template documentation: " << e.what() << std::endl;
@@ -537,13 +521,37 @@ int handle_export_command(int argc, char* argv[]) {
 }
 
 /**
- * @brief Process a file with optional output
+ * @brief Process a file with an optional output
  * 
  * @param input_file Input file path
  * @param output_file Output file path (optional)
+ * @param use_clipboard Copy buffer to clipboard
  * @return int Return code (0 for success, 1 for error)
  */
-int handle_file_processing(const std::string& input_file, const std::string& output_file) {
+int handle_file_processing(const std::string& input_file,
+    const std::string& output_file,
+    const bool use_clipboard = false) {
+    if (use_clipboard) {
+        try {
+            Logger::getInstance().log(LogLevel::INFO, "Processing file: ", input_file);
+            std::cout << "Processing file: " << input_file << std::endl;
+
+            // Copy to clipboard
+            if (const std::string result = cql::QueryProcessor::compile_file(input_file); cql::util::copy_to_clipboard(result)) {
+                std::cout << "Compiled query copied to clipboard" << std::endl;
+                Logger::getInstance().log(LogLevel::INFO, "Compiled query copied to clipboard");
+            } else {
+                std::cerr << "Failed to copy to clipboard" << std::endl;
+                Logger::getInstance().log(LogLevel::ERROR, "Failed to copy to clipboard");
+                return 1;
+            }
+            return 0;
+        } catch (const std::exception& e) {
+            std::cerr << "Error processing file: " << e.what() << std::endl;
+            Logger::getInstance().log(LogLevel::ERROR, "Error processing file: ", e.what());
+            return 1;
+        }
+    }
     if (!cql::cli::process_file(input_file, output_file)) {
         return 1;
     }
@@ -557,7 +565,7 @@ int handle_file_processing(const std::string& input_file, const std::string& out
  * @param argv Argument values
  * @return int Return code (0 for success, 1 for error)
  */
-int main(int argc, char* argv[]) {
+int main(const int argc, char* argv[]) {
     // Initialize logger
     auto& logger = Logger::getInstance();
     std::cout << "Starting CQL Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")..." << std::endl;
@@ -578,7 +586,7 @@ int main(int argc, char* argv[]) {
         std::string arg1 = argv[1];
         std::cout << "Received argument: " << arg1 << std::endl;
 
-        // Dispatch to appropriate handler based on first argument
+        // Dispatch to the appropriate handler based on the first argument
         if (arg1 == "--help" || arg1 == "-h") {
             print_help();
         } else if (arg1 == "--test" || arg1 == "-t" || arg1 == "--gtest" || arg1 == "-g") {
@@ -611,6 +619,12 @@ int main(int argc, char* argv[]) {
             return handle_docs_all_command();
         } else if (arg1 == "--export") {
             return handle_export_command(argc, argv);
+        } else if (arg1 == "--clipboard" || arg1 == "-c") {
+            if (argc < 3) {
+                std::cerr << "Error: Input file required when using --clipboard option" << std::endl;
+                return 1;
+            }
+            return handle_file_processing(argv[2], "", true);
         } else if (arg1.substr(0, 2) == "--") {
             // Unknown option starting with "--"
             std::cerr << "Error: Unknown option: " << arg1 << std::endl;
@@ -620,10 +634,20 @@ int main(int argc, char* argv[]) {
         } else {
             // Assume it's an input file
             std::string output_file;
-            if (argc > 2) {
-                output_file = argv[2];
+            bool use_clipboard = false;
+            
+            // Check if any of the arguments is --clipboard/-c
+            for (int i = 2; i < argc; ++i) {
+                if (std::string arg = argv[i]; arg == "--clipboard" || arg == "-c") {
+                    use_clipboard = true;
+                    break;
+                } else if (output_file.empty() && arg.substr(0, 2) != "--") {
+                    // If we have a non-option argument and output_file is empty, treat it as the output file
+                    output_file = arg;
+                }
             }
-            return handle_file_processing(arg1, output_file);
+            
+            return handle_file_processing(arg1, output_file, use_clipboard);
         }
     } catch (const std::exception& e) {
         logger.log(LogLevel::ERROR, "Fatal error: ", e.what());

@@ -52,6 +52,9 @@ namespace util {
     // write content to a file
     void write_file(const std::string& filepath, const std::string& content);
     
+    // copy content to clipboard
+    bool copy_to_clipboard(const std::string& content);
+    
     // check if a string contains a substring
     bool contains(const std::string& str, const std::string& substr);
     

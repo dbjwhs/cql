@@ -83,7 +83,7 @@ private:
     void write_log_message(const LogLevel level, const std::string& message) {
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        // write to file if file logging is enabled for this level
+        // write to a file if file logging is enabled for this level
         if (is_level_enabled(level) && m_file_output_enabled) {
             m_log_file << message;
             m_log_file.flush();
@@ -303,5 +303,25 @@ private:
         return ss.str();
     }
 };
+
+/**
+ * Platform-specific clipboard operations
+ */
+namespace clipboard {
+    /**
+     * Copy text to the system clipboard
+     * 
+     * @param text Text to copy to clipboard
+     * @return True if the operation was successful
+     */
+    bool copy_to_clipboard(const std::string& text);
+    
+    /**
+     * Get text from the system clipboard
+     * 
+     * @return Clipboard content as string
+     */
+    std::string get_from_clipboard();
+}
 
 #endif // CQL_PROJECT_UTILS_HPP

@@ -1,12 +1,14 @@
 # LLM Project Guide
 
 ## Build Commands
-- Build project: `mkdir -p build && cd build && cmake .. && make`
+- Build project (with warnings): `mkdir -p build && cd build && cmake .. && make`
+- Build project (without warnings): `mkdir -p build && cd build && cmake .. 2>/dev/null && make 2>/dev/null`
 - Run all tests: `build/cql --test`
 - Run specific test: `build/cql --test "Test Name"` (e.g., `build/cql --test "Template Validator"`)
 - Run examples: `build/cql --examples`
 - Interactive mode: `build/cql --interactive`
 - Process a file: `build/cql input.llm output.txt`
+- Copy output to clipboard: `build/cql input.llm --clipboard` or `build/cql --clipboard input.llm`
 - API integration: `build/cql --submit input.llm --output-dir ./output`
 
 ## Code Style Guidelines

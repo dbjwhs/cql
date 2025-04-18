@@ -84,6 +84,11 @@ make
 
 # Process a query file
 ./cql input.llm output.txt
+
+# Process a query file and copy output to clipboard
+./cql input.llm --clipboard
+# or
+./cql --clipboard input.llm
 ```
 
 ### API Integration Commands
