@@ -216,8 +216,7 @@ std::vector<std::string> handle_missing_variables(const cql::TemplateValidationR
     for (const auto var_issues = validation_result.get_issues(cql::TemplateValidationLevel::WARNING); const auto& issue : var_issues) {
         if (issue.get_variable_name().has_value() && 
             issue.to_string().find("not declared") != std::string::npos) {
-            std::string var_name = issue.get_variable_name().value();
-            if (!variables.contains(var_name) && !template_vars.contains(var_name)) {
+            if (std::string var_name = issue.get_variable_name().value(); !variables.contains(var_name) && !template_vars.contains(var_name)) {
                 missing_vars.push_back(var_name);
             }
         }
