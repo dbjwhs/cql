@@ -37,9 +37,8 @@ std::string get_from_clipboard() {
         // Convert to C++ string
         if (nsString) {
             return {[nsString UTF8String]};
-        } else {
-            return "";
         }
+        return "";
     }
 }
 
