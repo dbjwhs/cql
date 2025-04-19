@@ -12,23 +12,23 @@ namespace cql {
 // helper function to get token type for a node
 TokenType get_node_type(const QueryNode* node) {
     if (dynamic_cast<const CodeRequestNode*>(node)) {
-        // coderequestnode represents both language and description
+        // CodeRequestNode represents both language and description
         // for validation, we need to count it as both
-        return TokenType::LANGUAGE; // we'll handle description separately
+        return TokenType::LANGUAGE; // we'll handle the description separately
     }
-    if (dynamic_cast<const ContextNode*>(node)) return TokenType::CONTEXT;
-    if (dynamic_cast<const TestNode*>(node)) return TokenType::TEST;
-    if (dynamic_cast<const DependencyNode*>(node)) return TokenType::DEPENDENCY;
-    if (dynamic_cast<const PerformanceNode*>(node)) return TokenType::PERFORMANCE;
-    if (dynamic_cast<const CopyrightNode*>(node)) return TokenType::COPYRIGHT;
+    if (dynamic_cast<const ContextNode*>(node))      return TokenType::CONTEXT;
+    if (dynamic_cast<const TestNode*>(node))         return TokenType::TEST;
+    if (dynamic_cast<const DependencyNode*>(node))   return TokenType::DEPENDENCY;
+    if (dynamic_cast<const PerformanceNode*>(node))  return TokenType::PERFORMANCE;
+    if (dynamic_cast<const CopyrightNode*>(node))    return TokenType::COPYRIGHT;
     if (dynamic_cast<const ArchitectureNode*>(node)) return TokenType::ARCHITECTURE;
-    if (dynamic_cast<const ConstraintNode*>(node)) return TokenType::CONSTRAINT;
-    if (dynamic_cast<const ExampleNode*>(node)) return TokenType::EXAMPLE;
-    if (dynamic_cast<const SecurityNode*>(node)) return TokenType::SECURITY;
-    if (dynamic_cast<const ComplexityNode*>(node)) return TokenType::COMPLEXITY;
-    if (dynamic_cast<const ModelNode*>(node)) return TokenType::MODEL;
-    if (dynamic_cast<const FormatNode*>(node)) return TokenType::FORMAT;
-    if (dynamic_cast<const VariableNode*>(node)) return TokenType::VARIABLE;
+    if (dynamic_cast<const ConstraintNode*>(node))   return TokenType::CONSTRAINT;
+    if (dynamic_cast<const ExampleNode*>(node))      return TokenType::EXAMPLE;
+    if (dynamic_cast<const SecurityNode*>(node))     return TokenType::SECURITY;
+    if (dynamic_cast<const ComplexityNode*>(node))   return TokenType::COMPLEXITY;
+    if (dynamic_cast<const ModelNode*>(node))        return TokenType::MODEL;
+    if (dynamic_cast<const FormatNode*>(node))       return TokenType::FORMAT;
+    if (dynamic_cast<const VariableNode*>(node))     return TokenType::VARIABLE;
     
     // default fallback
     return TokenType::IDENTIFIER;
@@ -56,8 +56,12 @@ QueryValidator::QueryValidator() {
     // example incompatibility: example and constraint don't make sense together
     // (this is just for demonstration)
     //m_incompatibility_rules.emplace_back(tokentype::example, tokentype::constraint);
+
+    // the add_custome_rule() methods adds a custom validation rule that checks if any test nodes exist in the query node
+    // list returns a warning ValidationIssue if no test cases are found, suggesting to add @test directives
+    // Returns std::nullopt (no issue) if at least one TestNode is present
     
-    // add a custom rule to check if at least one test is specified
+    // add a custom rule to check if at least one test is specified...
     add_custom_rule([](const std::vector<std::unique_ptr<QueryNode>>& nodes) -> std::optional<ValidationIssue> {
         bool has_test = false;
         for (const auto& node : nodes) {
@@ -99,9 +103,9 @@ QueryValidator::QueryValidator() {
         // Return a validation issue if incompatibilities are found
         if (!issues.empty()) {
             std::string message = "Architecture pattern compatibility issues found: ";
-            for (size_t i = 0; i < issues.size(); ++i) {
-                if (i > 0) message += "; ";
-                message += issues[i].to_string();
+            for (size_t ndx = 0; ndx < issues.size(); ++ndx) {
+                if (ndx > 0) message += "; ";
+                message += issues[ndx].to_string();
             }
             
             return ValidationIssue(
@@ -118,7 +122,7 @@ std::map<TokenType, int> QueryValidator::count_directives(const std::vector<std:
     std::map<TokenType, int> counts;
     
     for (const auto& node : nodes) {
-        // special handling for coderequestnode which contains both language and description
+        // special handling for CodeRequestNode which contains both language and description
         if (auto* code_node = dynamic_cast<const CodeRequestNode*>(node.get())) {
             // Only count language if it's not empty
             if (!code_node->language().empty()) {
@@ -134,11 +138,11 @@ std::map<TokenType, int> QueryValidator::count_directives(const std::vector<std:
     return counts;
 }
 
-std::vector<ValidationIssue> QueryValidator::check_required(const std::map<TokenType, int>& counts) {
+std::vector<ValidationIssue> QueryValidator::check_required(const std::map<TokenType, int>& counts) const {
     std::vector<ValidationIssue> issues;
     
     for (auto directive : m_required_directives) {
-        if (counts.find(directive) == counts.end() || counts.at(directive) == 0) {
+        if (!counts.contains(directive) || counts.at(directive) == 0) {
             issues.emplace_back(
                 ValidationSeverity::ERROR,
                 "Required directive @" + token_type_to_string(directive) + " is missing."
@@ -149,11 +153,11 @@ std::vector<ValidationIssue> QueryValidator::check_required(const std::map<Token
     return issues;
 }
 
-std::vector<ValidationIssue> QueryValidator::check_exclusive(const std::map<TokenType, int>& counts) {
+std::vector<ValidationIssue> QueryValidator::check_exclusive(const std::map<TokenType, int>& counts) const {
     std::vector<ValidationIssue> issues;
     
     for (auto directive : m_exclusive_directives) {
-        if (counts.find(directive) != counts.end() && counts.at(directive) > 1) {
+        if (counts.contains(directive) && counts.at(directive) > 1) {
             issues.emplace_back(
                 ValidationSeverity::WARNING,
                 "Multiple @" + token_type_to_string(directive) + " directives found. Only the last one will be used."
@@ -168,8 +172,8 @@ std::vector<ValidationIssue> QueryValidator::check_dependencies(const std::map<T
     std::vector<ValidationIssue> issues;
     
     for (const auto& [dependent, dependency] : m_dependency_rules) {
-        if (counts.find(dependent) != counts.end() && counts.at(dependent) > 0) {
-            if (counts.find(dependency) == counts.end() || counts.at(dependency) == 0) {
+        if (counts.contains(dependent) && counts.at(dependent) > 0) {
+            if (!counts.contains(dependency) || counts.at(dependency) == 0) {
                 issues.emplace_back(
                     ValidationSeverity::WARNING,
                     "Directive @" + token_type_to_string(dependent) + 
@@ -186,8 +190,8 @@ std::vector<ValidationIssue> QueryValidator::check_incompatibilities(const std::
     std::vector<ValidationIssue> issues;
     
     for (const auto& [directive_a, directive_b] : m_incompatibility_rules) {
-        if (counts.find(directive_a) != counts.end() && counts.at(directive_a) > 0 &&
-            counts.find(directive_b) != counts.end() && counts.at(directive_b) > 0) {
+        if (counts.contains(directive_a) && counts.at(directive_a) > 0 &&
+            counts.contains(directive_b) && counts.at(directive_b) > 0) {
             issues.emplace_back(
                 ValidationSeverity::WARNING,
                 "Directives @" + token_type_to_string(directive_a) + 
@@ -200,12 +204,11 @@ std::vector<ValidationIssue> QueryValidator::check_incompatibilities(const std::
     return issues;
 }
 
-std::vector<ValidationIssue> QueryValidator::run_custom_rules(const std::vector<std::unique_ptr<QueryNode>>& nodes) {
+std::vector<ValidationIssue> QueryValidator::run_custom_rules(const std::vector<std::unique_ptr<QueryNode>>& nodes) const {
     std::vector<ValidationIssue> issues;
     
     for (const auto& rule : m_custom_rules) {
-        std::optional<ValidationIssue> issue = rule(nodes);
-        if (issue) {
+        if (std::optional<ValidationIssue> issue = rule(nodes)) {
             issues.push_back(*issue);
         }
     }
@@ -231,7 +234,7 @@ std::vector<ValidationIssue> QueryValidator::validate(const std::vector<std::uni
     std::vector<ValidationIssue> issues;
     
     // Count directive occurrences - this handles empty nodes gracefully
-    std::map<TokenType, int> counts = count_directives(nodes);
+    const std::map<TokenType, int> counts = count_directives(nodes);
     
     // Run all validation checks
     auto required_issues = check_required(counts);

@@ -108,7 +108,7 @@ std::string QueryProcessor::compile(const std::string_view query_str) {
     std::optional<std::string> parser_error;
     std::vector<std::unique_ptr<QueryNode>> nodes;
     
-    // Try to parse the query string, but catch parser errors
+    // Try to parse the query string but catch parser errors
     try {
         Parser parser(query_str);
         nodes = parser.parse();
