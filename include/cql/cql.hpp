@@ -99,7 +99,7 @@ public:
      * @return The compiled query as a string
      * @throws std::runtime_error for validation or parsing errors
      */
-    static std::string compile(const std::string_view query_str);
+    static std::string compile(std::string_view query_str);
     
     /**
      * Compile a CQL file to a structured query
@@ -115,7 +115,7 @@ public:
      * @param filepath Path to save the compiled output
      * @throws std::runtime_error for file I/O, validation, or parsing errors
      */
-    static void save_compiled(const std::string_view query_str, const std::string& filepath);
+    static void save_compiled(std::string_view query_str, const std::string& filepath);
     
     /**
      * Compile a template with variable substitutions
@@ -160,25 +160,25 @@ namespace test {
          * check if the test passed
          * @return true if the test passed, false otherwise
          */
-        bool passed() const;
+        [[nodiscard]] bool passed() const;
         
         /**
          * get the error message for a failing test
          * @return the error message
          */
-        const std::string& get_error_message() const;
+        [[nodiscard]] const std::string& get_error_message() const;
         
         /**
          * get the source file where the failure occurred
          * @return the source file name
          */
-        const std::string& get_file_name() const;
+        [[nodiscard]] const std::string& get_file_name() const;
         
         /**
          * get the line number where the failure occurred
          * @return the line number
          */
-        int get_line_number() const;
+        [[nodiscard]] int get_line_number() const;
         
     private:
         bool m_passed;
@@ -187,7 +187,7 @@ namespace test {
         int m_line_number;
         
         // private constructor used by static factory methods
-        TestResult(bool passed, std::string  error_message = "",
+        explicit TestResult(bool passed, std::string  error_message = "",
                   std::string  file_name = "", int line_number = 0);
     };
     
