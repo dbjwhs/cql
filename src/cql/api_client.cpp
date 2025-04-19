@@ -66,8 +66,8 @@ struct ApiClient::Impl {
     }
 
     // Callback function for CURL to write response data
-    static size_t write_callback(void* contents, size_t size, size_t nmemb, std::string* buffer) {
-        size_t real_size = size * nmemb;
+    static size_t write_callback(void* contents, const size_t size, const size_t nmemb, std::string* buffer) {
+        const size_t real_size = size * nmemb;
         buffer->append(static_cast<char*>(contents), real_size);
         return real_size;
     }
@@ -102,8 +102,8 @@ struct ApiClient::Impl {
                         final_response.m_is_streaming = true;
                         final_response.m_is_complete = true;
                         
-                        // Call callback with final chunk (marked as last)
-                        self->m_streaming_callback(final_response, false, true);
+                        // Call callback with the final chunk (marked as last)
+                        return self->m_streaming_callback(final_response, false, true);
                     }
                     continue;
                 }
@@ -148,7 +148,7 @@ struct ApiClient::Impl {
     }
 
     // Prepare the request for the Claude API
-    struct curl_slist* prepare_request(const std::string& query, std::string& request_data, bool streaming = false) {
+    struct curl_slist* prepare_request(const std::string& query, std::string& request_data, const bool streaming = false) {
         // Construct the request JSON
         nlohmann::json request_json = {
             {"model", m_config.get_model()},
@@ -170,9 +170,9 @@ struct ApiClient::Impl {
         request_data = request_json.dump();
         
         // Construct the full URL by combining base URL and endpoint
-        std::string api_url = m_config.get_api_base_url() + "/v1/messages";
+        const std::string api_url = m_config.get_api_base_url() + "/v1/messages";
         
-        // Set up CURL request
+        // Set up a CURL request
         curl_easy_setopt(m_curl, CURLOPT_URL, api_url.c_str());
         curl_easy_setopt(m_curl, CURLOPT_WRITEFUNCTION, write_callback);
         curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, &m_response_buffer);
@@ -203,7 +203,7 @@ struct ApiClient::Impl {
     }
 
     // Process the API response
-    ApiResponse process_response(CURLcode curl_result, const ApiResponse& partial_response) {
+    ApiResponse process_response(const CURLcode curl_result, const ApiResponse& partial_response) {
         ApiResponse response = partial_response;
         
         // Check for CURL errors
@@ -269,7 +269,7 @@ struct ApiClient::Impl {
         try {
             // Parse JSON response
             nlohmann::json json_response = nlohmann::json::parse(m_response_buffer);
-            
+
             // Extract content from response
             if (json_response.contains("content") && json_response["content"].is_array()) {
                 // Extract content from response
@@ -285,7 +285,7 @@ struct ApiClient::Impl {
                 if (json_response.contains("completion") && json_response["completion"].is_string()) {
                     response.m_raw_response = json_response["completion"];
                 } else {
-                    // Default to empty string if we can't extract proper content
+                    // Default to empty string if we can't extract proper content,
                     // This prevents metadata leakage
                     response.m_raw_response = "{}";
                     Logger::getInstance().log(LogLevel::ERROR, "Cannot extract content from API response");
@@ -294,7 +294,7 @@ struct ApiClient::Impl {
             Logger::getInstance().log(LogLevel::INFO, "API request successful");
         } catch (const std::exception& e) {
             Logger::getInstance().log(LogLevel::ERROR, "Error parsing API response: ", e.what());
-            // Set to empty JSON object instead of raw buffer to prevent metadata leakage
+            // Set to an empty JSON object instead of raw buffer to prevent metadata leakage
             response.m_raw_response = "{}";
         }
         
@@ -311,7 +311,7 @@ struct ApiClient::Impl {
     }
     
     // Process an error API response (status code >= 400, except 429)
-    ApiResponse process_error_response(ApiResponse& response, long status_code) {
+    ApiResponse process_error_response(ApiResponse& response, const long status_code) {
         m_status = ApiClientStatus::Error;
         
         try {
@@ -324,7 +324,7 @@ struct ApiClient::Impl {
                 }
             }
         } catch (...) {
-            // If parsing fails, use the raw response as error
+            // If parsing fails, use the raw response as an error
             m_last_error = "API error " + std::to_string(status_code) + ": " + m_response_buffer;
         }
         
@@ -351,7 +351,7 @@ struct ApiClient::Impl {
         m_streaming_callback = callback;
         m_streaming_active = true;
         
-        // Set up initial response
+        // Set up an initial response
         ApiResponse initial_response;
         initial_response.m_success = true;
         initial_response.m_is_streaming = true;
@@ -364,7 +364,7 @@ struct ApiClient::Impl {
             // Set client status
             m_status = ApiClientStatus::Processing;
             
-            // Prepare request with streaming enabled
+            // Prepare a request with streaming enabled
             std::string request_data;
             struct curl_slist* headers = prepare_request(query, request_data, true);
             
@@ -479,7 +479,7 @@ struct ApiClient::Impl {
         response.m_success = false;
         
         // Execute request
-        CURLcode curl_result = execute_request(headers);
+        const CURLcode curl_result = execute_request(headers);
         
         // Process response
         response = process_response(curl_result, response);
@@ -497,9 +497,9 @@ struct ApiClient::Impl {
             std::this_thread::sleep_for(std::chrono::milliseconds(
                 static_cast<int>(m_retry_delay * 1000)));
             
-            // Increase retry counter and delay
+            // Increase retry counter and delay with exponential backoff
             m_current_retry++;
-            m_retry_delay *= 2.0; // Exponential backoff
+            m_retry_delay *= 2.0;
             
             // Retry the request
             return send_request_with_retry(query);
@@ -518,7 +518,6 @@ ApiClient::ApiClient(const Config& config) {
             "API key is invalid or not set. ApiClient initialization failed.");
         throw std::runtime_error("Invalid API key configuration");
     }
-    
     m_impl = std::make_unique<Impl>(config);
 }
 
@@ -568,7 +567,6 @@ std::future<ApiResponse> ApiClient::submit_query_async(
                 callback(response);
             }
         }
-        
         return response;
     });
 }
@@ -599,8 +597,9 @@ ApiResponse ApiClient::submit_query_streaming(
         error_response.m_is_streaming = true;
         
         // Call the callback with the error
-        callback(error_response, true, true);
-        
+        if (callback) {
+            callback(error_response, true, true);
+        }
         return error_response;
     }
 }
@@ -683,23 +682,23 @@ void ApiClient::set_api_key(const std::string& api_key) const {
     m_impl->m_config.set_api_key(api_key);
 }
 
-void ApiClient::set_timeout(int timeout_seconds) const {
+void ApiClient::set_timeout(const int timeout_seconds) const {
     m_impl->m_config.set_timeout(timeout_seconds);
 }
 
-void ApiClient::set_max_retries(int max_retries) const {
+void ApiClient::set_max_retries(const int max_retries) const {
     m_impl->m_config.set_max_retries(max_retries);
 }
 
-void ApiClient::set_temperature(float temperature) const {
+void ApiClient::set_temperature(const float temperature) const {
     m_impl->m_config.set_temperature(temperature);
 }
 
-void ApiClient::set_max_tokens(int max_tokens) const {
+void ApiClient::set_max_tokens(const int max_tokens) const {
     m_impl->m_config.set_max_tokens(max_tokens);
 }
 
-void ApiClient::set_streaming_enabled(bool enable) const {
+void ApiClient::set_streaming_enabled(const bool enable) const {
     m_impl->m_config.set_streaming_enabled(enable);
 }
 

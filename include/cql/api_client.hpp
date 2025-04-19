@@ -38,7 +38,7 @@ enum class ApiClientStatus {
     Connecting, ///< Client is connecting to the API
     Processing, ///< Client is processing a request
     Error,      ///< Client has encountered an error
-    RateLimited ///< Client is rate limited
+    RateLimited ///< Client is rate-limited
 };
 
 /**
@@ -154,7 +154,7 @@ public:
      * @return true if the API key appears valid, false otherwise
      */
     [[nodiscard]] bool validate_api_key() const { 
-        // Basic validation: Check if key is not empty and has expected format
+        // Basic validation: Check if the key is not empty and has an expected format
         return !m_api_key.empty() && m_api_key.size() >= 30;
     }
     
@@ -349,7 +349,7 @@ public:
      * @brief Submit a query to the Claude API with streaming responses
      * @param query The compiled query to submit
      * @param callback Function to call for each chunk of the response
-     * @return ApiResponse containing initial status
+     * @return ApiResponse containing the initial status
      */
     [[nodiscard]] ApiResponse submit_query_streaming(
         const std::string& query, 
