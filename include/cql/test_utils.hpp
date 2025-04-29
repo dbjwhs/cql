@@ -56,9 +56,7 @@ inline void print_test_result(const std::string& test_name, const TestResult& re
     }
 }
 
-// Declaration of legacy test functions to support main.cpp
-void list_tests();
-bool run_tests(bool fail_fast, const std::string& test_name);
+// Legacy test functions have been removed
 
 } // namespace cql::test
 

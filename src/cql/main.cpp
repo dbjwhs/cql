@@ -588,11 +588,6 @@ int main(const int argc, char* argv[]) {
         // Dispatch to the appropriate handler based on the first argument
         if (arg1 == "--help" || arg1 == "-h") {
             print_help();
-        } else if (arg1 == "--test" || arg1 == "-t" || arg1 == "--gtest" || arg1 == "-g") {
-            std::cout << "Testing functionality has been removed from the main application." << std::endl;
-            std::cout << "Please use the dedicated test executable instead." << std::endl;
-            std::cout << "For example: ./build/cql_test" << std::endl;
-            return CQL_NO_ERROR;
         } else if (arg1 == "--interactive" || arg1 == "-i") {
             cql::cli::run_interactive();
         } else if (arg1 == "--copyright") {

@@ -44,26 +44,6 @@ int TestResult::get_line_number() const {
     return m_line_number;
 }
 
-// Only include these stubs when compiling for the main application, not in test mode
-#ifndef CQL_TESTING
-
-// Simple stubs for main.cpp compatibility
-void list_tests() {
-    std::cout << "This is a placeholder for the legacy list_tests function." << std::endl;
-    std::cout << "Please use Google Test's --gtest_list_tests flag instead." << std::endl;
-}
-
-bool run_tests(bool, const std::string&) {
-    std::cout << "This is a placeholder for the legacy run_tests function." << std::endl;
-    std::cout << "Please use Google Test's --gtest_filter flag instead." << std::endl;
-    return true;
-}
-
-// Placeholder for test_examples_compilation
-TestResult test_examples_compilation() {
-    return TestResult::pass();
-}
-
-#endif // CQL_TESTING
+// TestResult implementation is kept for Google Test compatibility
 
 } // namespace cql::test
