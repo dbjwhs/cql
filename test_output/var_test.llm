@@ -1,0 +1,4 @@
+@copyright "MIT" "dbjwhs"
+@language "C++"
+@description "Variable test file"
+@variable "name" "value"

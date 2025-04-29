@@ -98,6 +98,51 @@ std::optional<Token> Lexer::next_token() {
         // Continue to next token instead of returning the newline
         return next_token();
     }
+    
+    // Handle C++ style line comments (//...)
+    if (m_current + 1 < m_input.length() && m_input[m_current] == '/' && m_input[m_current + 1] == '/') {
+        // Skip everything until the end of line
+        while (m_current < m_input.length() && m_input[m_current] != '\n') {
+            advance();
+        }
+        
+        // If we reached a newline, process it but don't return a token for it
+        if (m_current < m_input.length() && m_input[m_current] == '\n') {
+            advance();
+            m_line++;
+            m_column = 1;
+        }
+        
+        // Continue to next token instead of returning the newline
+        return next_token();
+    }
+    
+    // Handle C style block comments (/* ... */)
+    if (m_current + 1 < m_input.length() && m_input[m_current] == '/' && m_input[m_current + 1] == '*') {
+        // Skip the opening /*
+        advance(); // skip /
+        advance(); // skip *
+        
+        // Continue until we find the closing */
+        while (m_current + 1 < m_input.length() && 
+              !(m_input[m_current] == '*' && m_input[m_current + 1] == '/')) {
+            if (m_input[m_current] == '\n') {
+                m_line++;
+                m_column = 0; // Will be incremented to 1 by advance()
+            }
+            advance();
+        }
+        
+        // Skip the closing */ if we found it
+        if (m_current + 1 < m_input.length() && 
+            m_input[m_current] == '*' && m_input[m_current + 1] == '/') {
+            advance(); // skip *
+            advance(); // skip /
+        }
+        
+        // Continue to next token
+        return next_token();
+    }
 
     if (m_input[m_current] == '@') {
         return lex_keyword();
@@ -204,7 +249,9 @@ std::optional<Token> Lexer::lex_identifier() {
     while (m_current < m_input.length() &&
            !std::isspace(m_input[m_current]) &&
            m_input[m_current] != '@' &&
-           m_input[m_current] != '#') {
+           m_input[m_current] != '#' &&
+           !(m_current + 1 < m_input.length() && m_input[m_current] == '/' && 
+             (m_input[m_current + 1] == '/' || m_input[m_current + 1] == '*'))) {
         value += m_input[m_current];
         advance();
     }

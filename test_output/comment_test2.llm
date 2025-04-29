@@ -9,7 +9,7 @@
 # handles consecutive comment lines
 @context "Testing # character in context string"
 
-@example "
+@example "Example 2" "
 This is an example code block
 # This isn't a comment, it's part of the string
 "
