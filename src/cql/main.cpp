@@ -19,7 +19,6 @@ void print_help() {
               << "Usage: cql [OPTIONS] [INPUT_FILE] [OUTPUT_FILE]\n\n"
               << "Options:\n"
               << "  --help, -h              Show this help information\n"
-              << "  --examples, -e          Show example queries\n"
               << "  --interactive, -i       Run in interactive mode\n"
               << "  --copyright             Show copyright example\n"
               << "  --clipboard, -c         Copy output to clipboard instead of writing to a file\n"
@@ -594,11 +593,6 @@ int main(const int argc, char* argv[]) {
             std::cout << "Please use the dedicated test executable instead." << std::endl;
             std::cout << "For example: ./build/cql_test" << std::endl;
             return CQL_NO_ERROR;
-        } else if (arg1 == "--examples" || arg1 == "-e") {
-            if (const auto result = cql::test::query_examples(); !result.passed()) {
-                std::cerr << "\nError running examples: " << result.get_error_message() << std::endl;
-                return CQL_ERROR;
-            }
         } else if (arg1 == "--interactive" || arg1 == "-i") {
             cql::cli::run_interactive();
         } else if (arg1 == "--copyright") {

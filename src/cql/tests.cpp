@@ -47,7 +47,6 @@ TestResult test_phase2_features();
 TestResult test_template_management();
 TestResult test_template_inheritance();
 TestResult test_template_validator();
-TestResult query_examples();
 TestResult test_phase2_example_compilation();
 // Test functions now in Google Test format
 TestResult test_architecture_patterns();
@@ -68,7 +67,6 @@ const std::vector<TestInfo> tests = {
     {"Template Management", test_template_management},
     {"Template Inheritance", test_template_inheritance},
     {"Template Validator", test_template_validator},
-    {"Query Examples", query_examples},
     {"Phase 2 Example Compilation", test_phase2_example_compilation},
     {"Architecture Patterns", test_architecture_patterns},
     {"API Client", test_api_client},
@@ -85,12 +83,12 @@ const std::vector<TestInfo> tests = {
 void list_tests() {
     std::cout << "Available tests in the CQL test suite:" << std::endl;
     std::cout << "------------------------------------" << std::endl;
-    
+
     // Print each test name from the shared test list
     for (size_t ndx = 0; ndx < tests.size(); ++ndx) {
         std::cout << ndx + 1 << ". " << tests[ndx].name << std::endl;
     }
-    
+
     std::cout << std::endl;
     std::cout << "Run a specific test with: cql --test \"Test Name\"" << std::endl;
     std::cout << "Run all tests with: cql --test" << std::endl;
@@ -105,23 +103,23 @@ bool run_tests(const bool fail_fast, const std::string& test_name) {
     } else {
         std::cout << "Running CQL Test: \"" << test_name << "\"" << std::endl;
     }
-    
+
     bool all_passed = true;
     bool found_test = test_name.empty(); // If no specific test is requested, we don't need to find it
-    
+
     // run each test
     for (const auto&[name, test_func] : tests) {
         // Skip tests that don't match the requested name
         if (!test_name.empty() && name != test_name) {
             continue;
         }
-        
+
         found_test = true; // We found the requested test
-        
+
         try {
             TestResult result = test_func();
             print_test_result(name, result);
-            
+
             if (!result.passed()) {
                 all_passed = false;
                 if (fail_fast) {
@@ -133,28 +131,28 @@ bool run_tests(const bool fail_fast, const std::string& test_name) {
             TestResult result = TestResult::fail("Uncaught exception: " + std::string(e.what()));
             print_test_result(name, result);
             all_passed = false;
-            
+
             if (fail_fast) {
                 std::cout << "\nFailed fast: Stopping tests after first exception." << std::endl;
                 break;
             }
         }
     }
-    
+
     // Handle case where the specified test wasn't found
     if (!found_test) {
         std::cerr << "Error: Test \"" << test_name << "\" not found!" << std::endl;
         std::cerr << "Use --test --list to see available tests." << std::endl;
         return false;
     }
-    
+
     // print summary
     if (all_passed) {
         std::cout << "\n\033[32mAll tests passed!\033[0m" << std::endl;
     } else {
         std::cout << "\n\033[31mSome tests failed!\033[0m" << std::endl;
     }
-    
+
     return all_passed;
 }
 
@@ -171,7 +169,7 @@ protected:
 
     // Utility functions available to all tests
     static std::string create_temp_directory(const std::string& prefix) {
-        std::string temp_dir = "./" + prefix + "_" + 
+        std::string temp_dir = "./" + prefix + "_" +
             std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
         if (fs::exists(temp_dir)) {
             fs::remove_all(temp_dir);
@@ -192,10 +190,10 @@ protected:
 // Basic compilation test
 TEST_F(CQLTest, BasicCompilation) {
     std::cout << "Testing basic compilation..." << std::endl;
-    
+
     const std::string query = "@copyright \"MIT License\" \"2025 dbjwhs\"\n@language \"C++\"\n@description \"test compilation\"";
     const std::string result = QueryProcessor::compile(query);
-    
+
     ASSERT_FALSE(result.empty()) << "Compilation result should not be empty";
     ASSERT_NE(result.find("MIT License"), std::string::npos) << "Result should contain 'MIT License'";
     ASSERT_NE(result.find("Copyright (c) 2025 dbjwhs"), std::string::npos) << "Result should contain copyright information";
@@ -205,7 +203,7 @@ TEST_F(CQLTest, BasicCompilation) {
 // Complex compilation test
 TEST_F(CQLTest, ComplexCompilation) {
     std::cout << "Testing complex compilation..." << std::endl;
-    
+
     const std::string query =
         "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
         "@language \"C++\"\n"
@@ -217,7 +215,7 @@ TEST_F(CQLTest, ComplexCompilation) {
         "@test \"Test concurrent pop operations\"\n";
 
     const std::string result = QueryProcessor::compile(query);
-    
+
     ASSERT_FALSE(result.empty()) << "Compilation result should not be empty";
     ASSERT_NE(result.find("MIT License"), std::string::npos) << "Result should contain license information";
     ASSERT_NE(result.find("C++"), std::string::npos) << "Result should contain language information";
@@ -231,24 +229,24 @@ TEST_F(CQLTest, ComplexCompilation) {
 // Validation requirements test
 TEST_F(CQLTest, ValidationRequirements) {
     std::cout << "Testing validation requirements..." << std::endl;
-    
+
     // Test 1: Missing copyright directive
     std::string missing_copyright = "@language \"C++\"\n@description \"test without copyright\"";
-    
+
     ASSERT_THROW({
         std::string result = QueryProcessor::compile(missing_copyright);
     }, std::exception) << "Missing copyright should cause compilation to fail";
-    
+
     try {
         std::string result = QueryProcessor::compile(missing_copyright);
         FAIL() << "Missing copyright validation failed - compilation should have failed";
     } catch (const std::exception& e) {
         std::string error_message = e.what();
         std::ranges::transform(error_message, error_message.begin(), ::tolower);
-        ASSERT_NE(error_message.find("copyright"), std::string::npos) 
+        ASSERT_NE(error_message.find("copyright"), std::string::npos)
             << "Error message should mention missing COPYRIGHT directive";
     }
-    
+
     // Test 2: Missing language directive
     // We need to test the validation directly since the parser syntax errors would occur before validation
     {
@@ -256,13 +254,13 @@ TEST_F(CQLTest, ValidationRequirements) {
         std::vector<std::unique_ptr<QueryNode>> nodes;
         nodes.push_back(std::make_unique<CopyrightNode>("MIT License", "2025 dbjwhs"));
         nodes.push_back(std::make_unique<CodeRequestNode>("", "test without language"));
-        
+
         // Now test the validator directly with our manually constructed AST
         ASSERT_THROW({
             QueryValidator validator;
             validator.validate(nodes);
         }, ValidationException) << "Missing language should cause validation to fail";
-        
+
         try {
             QueryValidator validator;
             validator.validate(nodes);
@@ -274,14 +272,14 @@ TEST_F(CQLTest, ValidationRequirements) {
                 << "Error message should mention missing LANGUAGE directive";
         }
     }
-    
+
     // Test 3: Missing description directive
     std::string missing_description = "@copyright \"MIT License\" \"2025 dbjwhs\"\n@language \"C++\"";
-    
+
     ASSERT_THROW({
         std::string result = QueryProcessor::compile(missing_description);
     }, std::exception) << "Missing description should cause compilation to fail";
-    
+
     try {
         std::string result = QueryProcessor::compile(missing_description);
         FAIL() << "Missing description validation failed - compilation should have failed";
@@ -291,28 +289,28 @@ TEST_F(CQLTest, ValidationRequirements) {
         ASSERT_NE(error_message.find("description"), std::string::npos)
             << "Error message should mention missing DESCRIPTION directive";
     }
-    
+
     // Test 4: Parser errors shouldn't prevent validation from running
     // This test has both a parser error (invalid syntax) and a missing required directive
     std::string parser_and_validation_error = "@copyright \"MIT License\" \"2025 dbjwhs\"\n@invalid_token \"Something\"\n@language \"C++\"";
-    
+
     ASSERT_THROW({
         std::string result = QueryProcessor::compile(parser_and_validation_error);
     }, std::exception) << "Invalid token should cause compilation to fail";
-    
+
     try {
         std::string result = QueryProcessor::compile(parser_and_validation_error);
         FAIL() << "Compilation should have failed due to errors";
     } catch (const std::exception& e) {
         std::string error_message = e.what();
         std::ranges::transform(error_message, error_message.begin(), ::tolower);
-        
+
         // We should see the validation error (missing description) in the output
-        ASSERT_TRUE(error_message.find("description") != std::string::npos || 
+        ASSERT_TRUE(error_message.find("description") != std::string::npos ||
                     error_message.find("invalid") != std::string::npos)
             << "Error should be reported for either validation or parser issues";
     }
-    
+
     // Test 5: Successful validation with all required directives
     std::string valid_query = "@copyright \"MIT License\" \"2025 dbjwhs\"\n@language \"C++\"\n@description \"test with all required fields\"";
     std::string result = QueryProcessor::compile(valid_query);
@@ -322,7 +320,7 @@ TEST_F(CQLTest, ValidationRequirements) {
 // Phase 2 features test
 TEST_F(CQLTest, Phase2Features) {
     std::cout << "Testing Phase 2 features..." << std::endl;
-    
+
     const std::string query =
         "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
         "@language \"C++\"\n"
@@ -343,9 +341,9 @@ TEST_F(CQLTest, Phase2Features) {
         "@test \"Test boundary conditions\"\n";
 
     const std::string result = QueryProcessor::compile(query);
-    
+
     ASSERT_FALSE(result.empty()) << "Compilation result should not be empty";
-    
+
     // check for the presence of the content without the exact format string
     ASSERT_NE(result.find("Producer-consumer pattern"), std::string::npos) << "Result should contain architecture information";
     ASSERT_NE(result.find("Thread-safe for concurrent access"), std::string::npos) << "Result should contain constraint information";
@@ -357,10 +355,10 @@ TEST_F(CQLTest, Phase2Features) {
 // Template management test
 TEST_F(CQLTest, TemplateManagement) {
     std::cout << "Testing template management..." << std::endl;
-    
+
     // create a temporary template directory for testing
     std::string temp_dir = create_temp_directory("temp_templates");
-    
+
     try {
         // Create required common and user subdirectories to avoid errors
         // Suppress stderr only for directory creation operations that might log warnings
@@ -369,51 +367,51 @@ TEST_F(CQLTest, TemplateManagement) {
             fs::create_directory(fs::path(temp_dir) / "common");
             fs::create_directory(fs::path(temp_dir) / "user");
         }
-        
+
         // create a template manager with the temp directory
         TemplateManager manager(temp_dir);
-        
+
         // test saving a template
-        std::string template_content = 
+        std::string template_content =
             "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
             "@description \"test template\"\n"
             "@variable \"test_var\" \"test_value\"\n"
             "@language \"${test_var}\"\n";
-        
+
         manager.save_template("test_template", template_content);
-        
+
         // test listing templates
         auto templates = manager.list_templates();
         ASSERT_EQ(templates.size(), 1) << "Should have exactly one template";
         ASSERT_NE(templates[0].find("test_template"), std::string::npos) << "Template list should contain 'test_template'";
-        
+
         // test loading a template
         std::string loaded = manager.load_template("test_template");
         ASSERT_EQ(loaded, template_content) << "Loaded template content should match original";
-        
+
         // test getting template metadata
         auto metadata = manager.get_template_metadata("test_template");
         ASSERT_NE(metadata.name.find("test_template"), std::string::npos) << "Template metadata name should contain 'test_template'";
         ASSERT_EQ(metadata.description, "test template") << "Template metadata description should match";
         ASSERT_EQ(metadata.variables.size(), 1) << "Template should have one variable";
         ASSERT_EQ(metadata.variables[0], "test_var") << "Template variable should be 'test_var'";
-        
+
         // test template instantiation with variables
         std::map<std::string, std::string> vars = {{"test_var", "C++"}};
         std::string instantiated = manager.instantiate_template("test_template", vars);
         ASSERT_NE(instantiated.find("@language \"C++\""), std::string::npos) << "Instantiated template should contain substituted variable";
-        
+
         // test creating a category
         bool category_created = manager.create_category("test_category");
         ASSERT_TRUE(category_created) << "Should be able to create a category";
-        
+
         // test saving a template in a category
         manager.save_template("test_category/category_template", template_content);
-        
+
         // test listing categories
         auto categories = manager.list_categories();
         ASSERT_GE(categories.size(), 3) << "Should have at least common, user, and test_category";
-        
+
         bool found_category = false;
         for (const auto& cat : categories) {
             if (cat == "test_category") {
@@ -422,15 +420,15 @@ TEST_F(CQLTest, TemplateManagement) {
             }
         }
         ASSERT_TRUE(found_category) << "Should find the test_category in the category list";
-        
+
         // test deleting a template
         bool template_deleted = manager.delete_template("test_template");
         ASSERT_TRUE(template_deleted) << "Should be able to delete a template";
-        
+
         templates = manager.list_templates();
         bool template_found = false;
         for (const auto& tmpl : templates) {
-            if (tmpl.find("test_template") != std::string::npos && 
+            if (tmpl.find("test_template") != std::string::npos &&
                 tmpl.find("test_category") == std::string::npos) {
                 template_found = true;
                 break;
@@ -442,7 +440,7 @@ TEST_F(CQLTest, TemplateManagement) {
         remove_temp_directory(temp_dir);
         FAIL() << "Exception in TemplateManagement test: " << e.what();
     }
-    
+
     // cleanup
     remove_temp_directory(temp_dir);
 }
@@ -462,11 +460,6 @@ TEST_F(CQLTest, TemplateInheritance) {
 
 TEST_F(CQLTest, TemplateValidator) {
     TestResult result = test_template_validator();
-    ASSERT_TRUE(result.passed()) << result.get_error_message();
-}
-
-TEST_F(CQLTest, QueryExamples) {
-    TestResult result = query_examples();
     ASSERT_TRUE(result.passed()) << result.get_error_message();
 }
 
@@ -508,7 +501,7 @@ TEST_F(CQLTest, JSONFormatOutput) {
 // test_phase2_example_compilation implementation
 TestResult test_phase2_example_compilation() {
     std::cout << "Testing Phase 2 comprehensive example compilation..." << std::endl;
-    
+
     try {
         // Example query with phase 2 features that was previously in main.cpp
         const std::string query =
@@ -540,7 +533,7 @@ TestResult test_phase2_example_compilation() {
         std::string result = QueryProcessor::compile(query);
         std::cout << "\n=== Compiled Query ===\n\n" << result << "\n===================" << std::endl;
         logger.log(LogLevel::INFO, "\n=== Compiled Query ===\n\n", result, "\n===================");
-        
+
         TEST_ASSERT(!result.empty(), "Compilation result should not be empty");
         TEST_ASSERT(result.find("thread-safe queue with a maximum size") != std::string::npos,
                   "Result should contain the description");
@@ -552,7 +545,7 @@ TestResult test_phase2_example_compilation() {
                   "Result should contain complexity requirements");
         TEST_ASSERT(result.find("ThreadSafeQueue<int> queue(1000)") != std::string::npos,
                   "Result should contain variable substitution");
-        
+
         return TestResult::pass();
     } catch (const std::exception& e) {
         return TestResult::fail("Exception in test_phase2_example_compilation: " + std::string(e.what()),
@@ -566,7 +559,6 @@ TestResult test_response_processor() { return TestResult::pass(); }
 TestResult test_json_format_output() { return TestResult::pass(); }
 TestResult test_template_inheritance() { return TestResult::pass(); }
 TestResult test_template_validator() { return TestResult::pass(); }
-TestResult query_examples() { return TestResult::pass(); }
 TestResult test_basic_compilation() { return TestResult::pass(); }
 TestResult test_complex_compilation() { return TestResult::pass(); }
 TestResult test_validation_requirements() { return TestResult::pass(); }

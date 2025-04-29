@@ -191,11 +191,6 @@ namespace test {
                   std::string  file_name = "", int line_number = 0);
     };
     
-    /**
-     * example queries
-     * @return testresult indicating pass/fail with error details
-     */
-    TestResult query_examples();
 }
 
 /**
