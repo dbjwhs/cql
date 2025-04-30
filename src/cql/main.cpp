@@ -26,7 +26,7 @@ void print_help() {
               << "  --template NAME, -T     Use a specific template\n"
               << "  --template NAME --force Use template even with validation errors\n"
               << "  --validate NAME         Validate a specific template\n"
-              << "  --validate-all          Validate all templates\n"
+              << "  --validate-all PATH     Validate all templates in the specified path\n"
               << "  --docs NAME             Generate documentation for a template\n"
               << "  --docs-all              Generate documentation for all templates\n"
               << "  --export PATH [format]  Export template documentation to a file\n"
@@ -356,21 +356,22 @@ int handle_validate_command(const int argc, char* argv[]) {
 
 /**
  * @brief Validate all templates
- * 
+ *
+ * @param templates_path Path to the templates directory
  * @return int Return code (0 for success, 1 for error)
  */
-int handle_validate_all_command() {
+int handle_validate_all_command(const std::string& templates_path) {
     try {
-        cql::TemplateManager manager;
+        cql::TemplateManager manager(templates_path);
         auto validator = initialize_template_validator(manager);
         const auto templates = manager.list_templates();
         
         if (templates.empty()) {
-            std::cout << "No templates found to validate." << std::endl;
+            std::cout << "No templates found to validate in " << templates_path << std::endl;
             return CQL_NO_ERROR;
         }
         
-        std::cout << "Validating " << templates.size() << " templates..." << std::endl;
+        std::cout << "Validating " << templates.size() << " templates from " << templates_path << "..." << std::endl;
         std::cout << "----------------------------" << std::endl;
         
         int error_count = 0;
@@ -601,7 +602,12 @@ int main(const int argc, char* argv[]) {
         } else if (arg1 == "--validate") {
             return handle_validate_command(argc, argv);
         } else if (arg1 == "--validate-all") {
-            return handle_validate_all_command();
+            if (argc < 3) {
+                std::cerr << "Error: Path required for --validate-all" << std::endl;
+                std::cerr << "Usage: cql --validate-all PATH" << std::endl;
+                return CQL_ERROR;
+            }
+            return handle_validate_all_command(argv[2]);
         } else if (arg1 == "--docs") {
             return handle_docs_command(argc, argv);
         } else if (arg1 == "--docs-all") {
