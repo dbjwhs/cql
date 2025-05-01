@@ -20,7 +20,6 @@ void print_help() {
               << "Options:\n"
               << "  --help, -h              Show this help information\n"
               << "  --interactive, -i       Run in interactive mode\n"
-              << "  --copyright             Show copyright example\n"
               << "  --clipboard, -c         Copy output to clipboard instead of writing to a file\n"
               << "  --templates, -l         List all available templates\n"
               << "  --template NAME, -T     Use a specific template\n"
@@ -43,22 +42,6 @@ void print_help() {
               << "If --clipboard option is used, the output will be copied to the clipboard.\n";
 }
 
-/**
- * @brief Display the copyright example
- */
-void show_copyright_example() {
-    auto& logger = Logger::getInstance();
-    const std::string copyright_example =
-        "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
-        "@language \"C++\"\n"
-        "@description \"implement a thread-safe queue\"\n";
-
-    logger.log(LogLevel::INFO, "Copyright Example DSL:\n", copyright_example);
-
-    const std::string result = cql::QueryProcessor::compile(copyright_example);
-    logger.log(LogLevel::INFO, "\n=== Compiled Query with Copyright ===\n\n", 
-              result, "\n===================");
-}
 
 /**
  * @brief List all available templates
@@ -591,8 +574,6 @@ int main(const int argc, char* argv[]) {
             print_help();
         } else if (arg1 == "--interactive" || arg1 == "-i") {
             cql::cli::run_interactive();
-        } else if (arg1 == "--copyright") {
-            show_copyright_example();
         } else if (arg1 == "--submit") {
             return handle_submit_command(argc, argv);
         } else if (arg1 == "--templates" || arg1 == "-l") {
