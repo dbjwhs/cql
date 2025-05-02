@@ -50,8 +50,8 @@ public:
      * @param name The pattern name (e.g., "factory_method", "observer")
      * @param parameters Optional configuration parameters for the pattern
      */
-    Pattern(PatternLayer layer, const std::string& name, 
-            const std::string& parameters = "");
+    Pattern(PatternLayer layer, std::string  name,
+            std::string  parameters = "");
     
     /**
      * @brief Get the pattern's architectural layer
@@ -96,8 +96,8 @@ private:
  */
 struct CompatibilityIssue {
     std::string message;   ///< Description of the compatibility issue
-    std::string pattern1;  ///< String representation of first pattern
-    std::string pattern2;  ///< String representation of second pattern
+    std::string pattern1;  ///< String representation of the first pattern
+    std::string pattern2;  ///< String representation of the second pattern
     
     /**
      * @brief Create a compatibility issue between two patterns

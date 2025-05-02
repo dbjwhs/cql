@@ -34,20 +34,16 @@ public:
         std::string description;         // human-readable description
 
         // default constructor required for map operations
-        DirectiveSchema() : 
-            name(""), 
-            required(false), 
-            max_occurrences(0), 
-            format(std::regex()) {}
+        DirectiveSchema() : required(false), max_occurrences(0), format(std::regex()) {}
 
-        DirectiveSchema(
-            const std::string& name,
+        explicit DirectiveSchema(
+            std::string  name,
             bool required = false,
             int max_occurrences = 0,
             const std::vector<std::string>& dependencies = {},
             const std::vector<std::string>& incompatible = {},
             const std::string& format_regex = "",
-            const std::string& description = ""
+            std::string  description = ""
         );
     };
 
@@ -55,20 +51,20 @@ public:
     void register_directive(const DirectiveSchema& schema);
     
     // get directive schema by name
-    std::optional<DirectiveSchema> get_directive_schema(const std::string& name) const;
+    [[nodiscard]] std::optional<DirectiveSchema> get_directive_schema(const std::string& name) const;
     
     // get all registered directive schemas
-    const std::map<std::string, DirectiveSchema>& get_all_directives() const;
+    [[nodiscard]] const std::map<std::string, DirectiveSchema>& get_all_directives() const;
     
     // get all required directives
-    std::vector<std::string> get_required_directives() const;
+    [[nodiscard]] std::vector<std::string> get_required_directives() const;
     
     // add a custom validation rule
     using ValidationRule = std::function<std::vector<TemplateValidationIssue>(const std::string&)>;
     void add_validation_rule(const std::string& name, ValidationRule rule);
     
     // get all validation rules
-    const std::map<std::string, ValidationRule>& get_validation_rules() const;
+    [[nodiscard]] const std::map<std::string, ValidationRule>& get_validation_rules() const;
 
     // create a default schema with standard directives and rules
     static TemplateValidatorSchema create_default_schema();

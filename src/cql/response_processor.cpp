@@ -20,8 +20,7 @@ ResponseProcessor::ResponseProcessor(const Config& config)
     : m_config(config),
       m_output_directory(config.get_output_directory()),
       m_overwrite_existing(config.should_overwrite_existing_files()),
-      m_create_directories(config.should_create_missing_directories()) {
-}
+      m_create_directories(config.should_create_missing_directories()) {}
 
 std::vector<GeneratedFile> ResponseProcessor::process_response(const std::string& response_text) {
     Logger::getInstance().log(LogLevel::INFO, "Processing API response");
@@ -176,7 +175,7 @@ std::string ResponseProcessor::sanitize_filename(const std::string& filename) {
     
     // Remove any unsafe characters
     std::string sanitized = filename;
-    std::regex unsafe_chars("[^\\w.-]");
+    const std::regex unsafe_chars("[^\\w.-]");
     sanitized = std::regex_replace(sanitized, unsafe_chars, "_");
     
     // Ensure it has an extension
@@ -191,7 +190,9 @@ std::string ResponseProcessor::sanitize_filename(const std::string& filename) {
 std::string ResponseProcessor::determine_language(const std::string& language_tag) {
     // Normalize language tag
     std::string normalized = language_tag;
-    std::ranges::transform(normalized, normalized.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::ranges::transform(normalized, normalized.begin(), [](const unsigned char c) {
+        return std::tolower(c);
+    });
     
     // Map to standard language names
     std::map<std::string, std::string> language_map = {
@@ -274,26 +275,22 @@ std::string ResponseProcessor::determine_key_from_content(const CodeBlock& block
     
     // For C++, look for class or function names
     if (block.m_language_tag == "cpp" || block.m_language_tag == "c++") {
-        // Try to find class name
+        // Try to find a class name
         std::regex class_regex("class\\s+(\\w+)");
-        std::smatch class_match;
-        if (std::regex_search(block.m_content, class_match, class_regex) && class_match.size() > 1) {
+        if (std::smatch class_match; std::regex_search(block.m_content, class_match, class_regex) && class_match.size() > 1) {
             return class_match[1].str();
         }
         
-        // Try to find struct name
+        // Try to find the struct name
         std::regex struct_regex("struct\\s+(\\w+)");
-        std::smatch struct_match;
-        if (std::regex_search(block.m_content, struct_match, struct_regex) && struct_match.size() > 1) {
+        if (std::smatch struct_match; std::regex_search(block.m_content, struct_match, struct_regex) && struct_match.size() > 1) {
             return struct_match[1].str();
         }
         
         // Try to find the main function name
         std::regex func_regex(R"((\w+)\s*\([^)]*\)\s*\{)");
-        std::smatch func_match;
-        if (std::regex_search(block.m_content, func_match, func_regex) && func_match.size() > 1) {
-            std::string func_name = func_match[1].str();
-            if (func_name != "if" && func_name != "for" && func_name != "while") {
+        if (std::smatch func_match; std::regex_search(block.m_content, func_match, func_regex) && func_match.size() > 1) {
+            if (std::string func_name = func_match[1].str(); func_name != "if" && func_name != "for" && func_name != "while") {
                 return func_name;
             }
         }
@@ -301,17 +298,15 @@ std::string ResponseProcessor::determine_key_from_content(const CodeBlock& block
     
     // For Python, look for class or function names
     if (block.m_language_tag == "python" || block.m_language_tag == "py") {
-        // Try to find class name
+        // Try to find a class name
         std::regex class_regex("class\\s+(\\w+)");
-        std::smatch class_match;
-        if (std::regex_search(block.m_content, class_match, class_regex) && class_match.size() > 1) {
+        if (std::smatch class_match; std::regex_search(block.m_content, class_match, class_regex) && class_match.size() > 1) {
             return class_match[1].str();
         }
         
-        // Try to find function name
+        // Try to find a function name
         std::regex func_regex("def\\s+(\\w+)");
-        std::smatch func_match;
-        if (std::regex_search(block.m_content, func_match, func_regex) && func_match.size() > 1) {
+        if (std::smatch func_match; std::regex_search(block.m_content, func_match, func_regex) && func_match.size() > 1) {
             return func_match[1].str();
         }
     }
@@ -338,22 +333,18 @@ std::string ResponseProcessor::generate_filename_from_content(const CodeBlock& b
 
 std::string ResponseProcessor::generate_test_filename(const std::string& impl_name) {
     // Extract base name without extension
-    size_t dot_pos = impl_name.find_last_of('.');
-    std::string base_name = dot_pos != std::string::npos ? 
-                           impl_name.substr(0, dot_pos) : 
-                           impl_name;
+    const size_t dot_pos = impl_name.find_last_of('.');
+    const std::string base_name = dot_pos != std::string::npos ? impl_name.substr(0, dot_pos) : impl_name;
     
     // Extract extension
-    std::string extension = dot_pos != std::string::npos ? 
-                           impl_name.substr(dot_pos) : 
-                           determine_default_extension("C++");
+    const std::string extension = dot_pos != std::string::npos ? impl_name.substr(dot_pos) : determine_default_extension("C++");
     
     // Generate test filename
     return base_name + "_test" + extension;
 }
 
 std::string ResponseProcessor::determine_filename(const CodeBlock& block, const std::string& context) {
-    // First check if there's a filename hint
+    // First, check if there's a filename hint
     if (!block.m_filename_hint.empty()) {
         return sanitize_filename(block.m_filename_hint);
     }
@@ -452,11 +443,10 @@ bool save_generated_file(const GeneratedFile& file, const std::string& directory
     Logger::getInstance().log(LogLevel::INFO, "Saving generated file: ", file.m_filename);
     
     // Resolve a full path
-    std::string full_path = directory.empty() ? file.m_filename : directory + "/" + file.m_filename;
+    const std::string full_path = directory.empty() ? file.m_filename : directory + "/" + file.m_filename;
     
     // Check if the file exists
-    bool file_exists = std::filesystem::exists(full_path);
-    if (file_exists && !config.should_overwrite_existing_files()) {
+    if (const bool file_exists = std::filesystem::exists(full_path); file_exists && !config.should_overwrite_existing_files()) {
         Logger::getInstance().log(LogLevel::NORMAL, "File already exists and overwrite is disabled: ", full_path);
         
         // Create a backup or versioned filename
@@ -466,9 +456,9 @@ bool save_generated_file(const GeneratedFile& file, const std::string& directory
         return true;
     }
     
-    // Ensure directory exists
-    std::string dir_path = std::filesystem::path(full_path).parent_path().string();
-    if (!dir_path.empty() && !std::filesystem::exists(dir_path)) {
+    // Ensure the directory exists
+    if (const std::string dir_path = std::filesystem::path(full_path).parent_path().string();
+        !dir_path.empty() && !std::filesystem::exists(dir_path)) {
         if (config.should_create_missing_directories()) {
             try {
                 std::filesystem::create_directories(dir_path);

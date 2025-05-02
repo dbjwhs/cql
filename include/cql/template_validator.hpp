@@ -64,31 +64,31 @@ public:
      * @brief Get the severity level of the issue
      * @return The TemplateValidationLevel
      */
-    TemplateValidationLevel get_level() const { return m_level; }
+    [[nodiscard]] TemplateValidationLevel get_level() const { return m_level; }
     
     /**
      * @brief Get the descriptive message
      * @return The message string
      */
-    const std::string& get_message() const { return m_message; }
+    [[nodiscard]] const std::string& get_message() const { return m_message; }
     
     /**
      * @brief Get the variable name if applicable
      * @return Optional containing the variable name or empty
      */
-    const std::optional<std::string>& get_variable_name() const { return m_variable_name; }
+    [[nodiscard]] const std::optional<std::string>& get_variable_name() const { return m_variable_name; }
     
     /**
      * @brief Get the directive name if applicable
      * @return Optional containing the directive name or empty
      */
-    const std::optional<std::string>& get_directive() const { return m_directive; }
+    [[nodiscard]] const std::optional<std::string>& get_directive() const { return m_directive; }
 
     /**
      * @brief Format the issue as a string
      * @return Formatted string representation of the issue
      */
-    std::string to_string() const;
+    [[nodiscard]] std::string to_string() const;
 
 private:
     TemplateValidationLevel m_level;           ///< Severity level
@@ -121,51 +121,51 @@ public:
      * @brief Get all validation issues
      * @return Vector of all validation issues
      */
-    const std::vector<TemplateValidationIssue>& get_issues() const { return m_issues; }
+    [[nodiscard]] const std::vector<TemplateValidationIssue>& get_issues() const { return m_issues; }
     
     /**
      * @brief Get issues filtered by severity level
      * @param level The minimum severity level to include
      * @return Vector of filtered validation issues
      */
-    std::vector<TemplateValidationIssue> get_issues(TemplateValidationLevel level) const;
+    [[nodiscard]] std::vector<TemplateValidationIssue> get_issues(TemplateValidationLevel level) const;
     
     /**
      * @brief Check if there are any issues of a specific level or higher
      * @param min_level The minimum severity level to check for
-     * @return true if issues exist at specified level, false otherwise
+     * @return true if issues exist at a specified level, false otherwise
      */
-    bool has_issues(TemplateValidationLevel min_level = TemplateValidationLevel::INFO) const;
+    [[nodiscard]] bool has_issues(TemplateValidationLevel min_level = TemplateValidationLevel::INFO) const;
     
     /**
      * @brief Get the highest severity level found in the results
      * @return The highest TemplateValidationLevel found
      */
-    TemplateValidationLevel get_highest_level() const;
+    [[nodiscard]] TemplateValidationLevel get_highest_level() const;
     
     /**
      * @brief Count issues with ERROR severity
      * @return Number of error issues
      */
-    size_t count_errors() const;
+    [[nodiscard]] size_t count_errors() const;
     
     /**
      * @brief Count issues with WARNING severity
      * @return Number of warning issues
      */
-    size_t count_warnings() const;
+    [[nodiscard]] size_t count_warnings() const;
     
     /**
      * @brief Count issues with INFO severity
      * @return Number of info issues
      */
-    size_t count_infos() const;
+    [[nodiscard]] size_t count_infos() const;
     
     /**
      * @brief Get a formatted summary of validation results
      * @return Formatted string summary of all issues
      */
-    std::string get_summary() const;
+    [[nodiscard]] std::string get_summary() const;
 
 private:
     std::vector<TemplateValidationIssue> m_issues; ///< Collection of validation issues
@@ -284,7 +284,7 @@ private:
      * @param content The template content to analyze
      * @return Set of referenced variable names
      */
-    std::set<std::string> extract_referenced_variables(const std::string& content);
+    static std::set<std::string> extract_referenced_variables(const std::string& content);
     
     /**
      * @brief Extract all directives from template content

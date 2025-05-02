@@ -9,36 +9,36 @@ namespace cql {
 // convert token type to string (for debugging)
 std::string token_type_to_string(TokenType type) {
     switch (type) {
-        case TokenType::LANGUAGE: return "LANGUAGE";
-        case TokenType::DESCRIPTION: return "DESCRIPTION";
-        case TokenType::CONTEXT: return "CONTEXT";
-        case TokenType::TEST: return "TEST";
-        case TokenType::DEPENDENCY: return "DEPENDENCY";
-        case TokenType::PERFORMANCE: return "PERFORMANCE";
-        case TokenType::COPYRIGHT: return "COPYRIGHT";
-        case TokenType::ARCHITECTURE: return "ARCHITECTURE";
-        case TokenType::CONSTRAINT: return "CONSTRAINT";
-        case TokenType::EXAMPLE: return "EXAMPLE";
-        case TokenType::SECURITY: return "SECURITY";
-        case TokenType::COMPLEXITY: return "COMPLEXITY";
-        case TokenType::MODEL: return "MODEL";
-        case TokenType::FORMAT: return "FORMAT";
-        case TokenType::VARIABLE: return "VARIABLE";
+        case TokenType::LANGUAGE:      return "LANGUAGE";
+        case TokenType::DESCRIPTION:   return "DESCRIPTION";
+        case TokenType::CONTEXT:       return "CONTEXT";
+        case TokenType::TEST:          return "TEST";
+        case TokenType::DEPENDENCY:    return "DEPENDENCY";
+        case TokenType::PERFORMANCE:   return "PERFORMANCE";
+        case TokenType::COPYRIGHT:     return "COPYRIGHT";
+        case TokenType::ARCHITECTURE:  return "ARCHITECTURE";
+        case TokenType::CONSTRAINT:    return "CONSTRAINT";
+        case TokenType::EXAMPLE:       return "EXAMPLE";
+        case TokenType::SECURITY:      return "SECURITY";
+        case TokenType::COMPLEXITY:    return "COMPLEXITY";
+        case TokenType::MODEL:         return "MODEL";
+        case TokenType::FORMAT:        return "FORMAT";
+        case TokenType::VARIABLE:      return "VARIABLE";
         case TokenType::OUTPUT_FORMAT: return "OUTPUT_FORMAT";
-        case TokenType::MAX_TOKENS: return "MAX_TOKENS";
-        case TokenType::TEMPERATURE: return "TEMPERATURE";
-        case TokenType::PATTERN: return "PATTERN";
-        case TokenType::STRUCTURE: return "STRUCTURE";
-        case TokenType::IDENTIFIER: return "IDENTIFIER";
-        case TokenType::STRING: return "STRING";
-        case TokenType::NEWLINE: return "NEWLINE";
-        case TokenType::END: return "END";
+        case TokenType::MAX_TOKENS:    return "MAX_TOKENS";
+        case TokenType::TEMPERATURE:   return "TEMPERATURE";
+        case TokenType::PATTERN:       return "PATTERN";
+        case TokenType::STRUCTURE:     return "STRUCTURE";
+        case TokenType::IDENTIFIER:    return "IDENTIFIER";
+        case TokenType::STRING:        return "STRING";
+        case TokenType::NEWLINE:       return "NEWLINE";
+        case TokenType::END:           return "END";
         default: return "UNKNOWN";
     }
 }
 
 // token implementation
-Token::Token(TokenType t, std::string v, size_t l, size_t c)
+Token::Token(TokenType t, std::string v, const size_t l, const size_t c)
     : m_type(t), m_value(std::move(v)), m_line(l), m_column(c) {}
 
 std::string Token::to_string() const {
@@ -51,8 +51,7 @@ std::string Token::to_string() const {
 }
 
 // lexer implementation
-Lexer::Lexer(std::string_view input)
-    : m_input(input), m_current(0), m_line(1), m_column(1) {}
+Lexer::Lexer(const std::string_view input) : m_input(input), m_current(0), m_line(1), m_column(1) {}
 
 void Lexer::advance() {
     m_current++;
@@ -95,7 +94,7 @@ std::optional<Token> Lexer::next_token() {
             m_column = 1;
         }
         
-        // Continue to next token instead of returning the newline
+        // Continue to the next token instead of returning the newline
         return next_token();
     }
     
@@ -113,7 +112,7 @@ std::optional<Token> Lexer::next_token() {
             m_column = 1;
         }
         
-        // Continue to next token instead of returning the newline
+        // Continue to the next token instead of returning the newline
         return next_token();
     }
     
@@ -140,7 +139,7 @@ std::optional<Token> Lexer::next_token() {
             advance(); // skip /
         }
         
-        // Continue to next token
+        // Continue to the next token
         return next_token();
     }
 

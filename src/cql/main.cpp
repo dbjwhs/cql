@@ -47,7 +47,7 @@ void print_help() {
  * @brief List all available templates
  */
 void list_templates() {
-    cql::TemplateManager manager;
+    const cql::TemplateManager manager;
 
     if (const auto templates = manager.list_templates(); templates.empty()) {
         std::cout << "No templates found in " << manager.get_templates_directory() << std::endl;
@@ -143,9 +143,7 @@ int handle_submit_command(const int argc, char* argv[]) {
     
     // Parse additional options
     for (int ndx = 3; ndx < argc; ndx++) {
-        std::string arg = argv[ndx];
-        
-        if (arg == "--model" && ndx + 1 < argc) {
+        if (std::string arg = argv[ndx]; arg == "--model" && ndx + 1 < argc) {
             model = argv[++ndx];
         } else if (arg == "--output-dir" && ndx + 1 < argc) {
             output_dir = argv[++ndx];
@@ -180,8 +178,7 @@ std::vector<std::string> handle_missing_variables(const cql::TemplateValidationR
     
     // Extract variables from validation issues
     for (const auto var_issues = validation_result.get_issues(cql::TemplateValidationLevel::WARNING); const auto& issue : var_issues) {
-        if (issue.get_variable_name().has_value() && 
-            issue.to_string().find("not declared") != std::string::npos) {
+        if (issue.get_variable_name().has_value() && issue.to_string().find("not declared") != std::string::npos) {
             if (std::string var_name = issue.get_variable_name().value(); !variables.contains(var_name) && !template_vars.contains(var_name)) {
                 missing_vars.push_back(var_name);
             }
@@ -557,7 +554,7 @@ int main(const int argc, char* argv[]) {
     try {
         std::cout << "Parsing command line arguments..." << std::endl;
         
-        // Handle case with no arguments
+        // Handle a case with no arguments
         if (argc <= 1) {
             std::cout << "No arguments provided. Please use --help to see available options." << std::endl;
             print_help();

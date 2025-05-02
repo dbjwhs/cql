@@ -18,13 +18,13 @@ namespace cql::cli {
 
 // Helper functions for interactive mode
 
-// Initialize template validator with default schema
+// Initialize template validator with the default schema
 TemplateValidator initialize_template_validator(const TemplateManager& template_manager) {
     TemplateValidator template_validator(template_manager);
 
     // add schema validation rules
     for (const auto schema = TemplateValidatorSchema::create_default_schema();
-        const auto& [name, rule] : schema.get_validation_rules()) {
+         const auto &rule: schema.get_validation_rules() | std::views::values) {
         template_validator.add_validation_rule(rule);
     }
     
@@ -125,7 +125,7 @@ bool handle_basic_commands(const std::string& line, std::string& current_query) 
 }
 
 // List templates and categories
-bool handle_list_commands(const std::string& line, TemplateManager& template_manager) {
+bool handle_list_commands(const std::string& line, const TemplateManager& template_manager) {
     if (line == "templates") {
         try {
             if (const auto templates = template_manager.list_templates(); templates.empty()) {
@@ -256,7 +256,7 @@ bool handle_template_basic_commands(const std::string& line,
             std::cout << "Description: " << template_description << std::endl;
             std::cout << "Last modified: " << template_last_modified << std::endl;
 
-            // show parent template if it exists
+            // show the parent template if it exists
             if (template_parent.has_value() && !template_parent.value().empty()) {
                 std::cout << "Inherits from: " << template_parent.value() << std::endl;
             }
@@ -388,7 +388,7 @@ bool handle_variable_commands(const std::string& line,
                 
                 // get template content to extract default values if available
                 std::string content = template_manager.load_template(template_name);
-                auto variables_with_values = template_manager.collect_variables(content);
+                auto variables_with_values = cql::TemplateManager::collect_variables(content);
                 
                 for (const auto& var_name : metadata.variables) {
                     std::string default_value;
@@ -490,7 +490,7 @@ bool handle_template_use(const std::string& line, std::string& current_query
             
             // check for missing variables
             std::string template_content = template_manager.load_template(name);
-            auto template_vars = template_manager.collect_variables(template_content);
+            auto template_vars = cql::TemplateManager::collect_variables(template_content);
             
             // get all variables used in the template from a validation result
             auto referenced_vars = validation_result.get_issues(TemplateValidationLevel::INFO);
@@ -644,7 +644,7 @@ bool handle_template_inheritance(const std::string& line, std::string& current_q
 }
 
 // Handle template validation commands
-bool handle_template_validation(const std::string& line, TemplateManager& template_manager
+bool handle_template_validation(const std::string& line, const TemplateManager& template_manager
     , TemplateValidator& template_validator) {
     if (line.substr(0, 18) == "template validate ") {
         const std::string template_name = line.substr(18);
@@ -765,9 +765,9 @@ bool handle_template_validation(const std::string& line, TemplateManager& templa
 }
 
 // Handle template documentation commands
-bool handle_template_documentation(const std::string& line, TemplateManager& template_manager) {
+bool handle_template_documentation(const std::string& line, const TemplateManager& template_manager) {
     if (line.substr(0, 14) == "template docs ") {
-        std::string template_name = line.substr(14);
+        const std::string template_name = line.substr(14);
         try {
             std::string docs = template_manager.generate_template_documentation(template_name);
             
@@ -843,7 +843,7 @@ struct InteractiveContext {
 /**
  * @brief Command handler type for the command pattern
  *
- * Each handler accepts the input string and context, and returns
+ * Each handler accepts the input string and context and returns
  * true if the command was handled, false otherwise.
  */
 using CommandHandler = std::function<bool(const std::string&, InteractiveContext&)>;
@@ -853,7 +853,7 @@ using CommandHandler = std::function<bool(const std::string&, InteractiveContext
  *
  * @param input User input to check
  * @param command Command string to match against
- * @return true if input exactly matches command
+ * @return true if input exactly matches the command
  */
 bool exact_match(const std::string& input, const std::string& command) {
     return input == command;
@@ -873,7 +873,7 @@ bool prefix_match(const std::string& input, const std::string& prefix) {
 }
 
 /**
- * @brief Main interactive interface for using CQL
+ * @brief The main interactive interface for using CQL
  *
  * Implements a REPL (Read-Eval-Print Loop) using the command pattern
  * for extensible command handling with minimal conditional nesting.
@@ -1110,7 +1110,7 @@ void run_interactive() {
             // If a matcher returns true, execute its handler
             if (matcher(line)) {
                 handled = handler(line, context);
-                break;  // Stop after first matching handler
+                break;  // Stop after the first matching handler
             }
         }
         
@@ -1118,7 +1118,7 @@ void run_interactive() {
         if (!handled) {
             // Add the line to the current query
             if (!current_query.empty()) {
-                current_query += "\n";  // Add newline for multi-line queries
+                current_query += "\n";  // Add a newline for multi-line queries
             }
             current_query += line;      // Append the new line
         }

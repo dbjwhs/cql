@@ -31,8 +31,7 @@ MockServer::~MockServer() {
     stop();
 }
 
-void MockServer::add_handler(const std::string& endpoint, 
-                           std::function<std::string(const std::string&)> handler) {
+void MockServer::add_handler(const std::string& endpoint, std::function<std::string(const std::string&)> handler) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_handlers[endpoint] = std::move(handler);
 }

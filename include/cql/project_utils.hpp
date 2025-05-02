@@ -89,7 +89,7 @@ private:
             m_log_file.flush();
         }
 
-        // write to console if console logging is enabled for this level
+        // write to the console if console logging is enabled for this level
         if (is_level_enabled(level)) {
             if ((level == LogLevel::CRITICAL || level == LogLevel::ERROR) && m_stderr_enabled) {
                 std::cerr << message;
@@ -121,8 +121,8 @@ private:
         }
 
         // initialize enabled levels - all levels enabled by default
-        for (int ndx = 0; ndx < static_cast<int>(LogLevel::CRITICAL) + 1; ++ndx) {
-            m_enabled_levels[ndx] = true;
+        for (auto & m_enabled_level : m_enabled_levels) {
+            m_enabled_level = true;
         }
     }
 
@@ -168,7 +168,7 @@ public:
         return getOrCreateInstance();
     }
 
-    // with custom path for the shared_ptr version
+    // with a custom path for the shared_ptr version
     static std::shared_ptr<Logger> getInstancePtr(const std::string& custom_path) {
         return getOrCreateInstance(custom_path);
     }
@@ -262,7 +262,7 @@ private:
 
     // utility function for expression tree visualization
     static std::string getIndentation(const int depth) {
-        return std::string(depth * 2, ' ');
+        return {static_cast<char>(depth * 2), ' '};
     }
 
     // convert log level to string
@@ -289,7 +289,7 @@ private:
         const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
         auto time = std::chrono::system_clock::to_time_t(now);
 
-        struct tm tm_buf;
+        struct tm tm_buf{};
 #ifdef _WIN32
         // ### not tested (did work a few years ago)
         gmtime_s(&tm_buf, &time);

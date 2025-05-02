@@ -282,7 +282,7 @@ private:
      * @param counts Map of directive counts
      * @return Vector of validation issues (empty if all required directives present)
      */
-    std::vector<ValidationIssue> check_required(const std::map<TokenType, int>& counts) const;
+    [[nodiscard]] std::vector<ValidationIssue> check_required(const std::map<TokenType, int>& counts) const;
     
     /**
      * @brief Check that exclusive directives appear at most once
@@ -290,7 +290,7 @@ private:
      * @param counts Map of directive counts
      * @return Vector of validation issues (empty if no exclusivity violations)
      */
-    std::vector<ValidationIssue> check_exclusive(const std::map<TokenType, int>& counts) const;
+    [[nodiscard]] std::vector<ValidationIssue> check_exclusive(const std::map<TokenType, int>& counts) const;
     
     /**
      * @brief Check that dependencies between directives are satisfied
@@ -314,7 +314,7 @@ private:
      * @param nodes Vector of unique pointers to AST nodes
      * @return Vector of validation issues from custom rules
      */
-    std::vector<ValidationIssue> run_custom_rules(const std::vector<std::unique_ptr<QueryNode>>& nodes) const;
+    [[nodiscard]] std::vector<ValidationIssue> run_custom_rules(const std::vector<std::unique_ptr<QueryNode>>& nodes) const;
 };
 
 } // namespace cql

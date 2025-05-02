@@ -10,8 +10,7 @@
 namespace cql::test {
 
 // TestResult implementation (needed by both main and test targets)
-TestResult::TestResult(const bool passed, std::string error_message,
-                     std::string file_name, const int line_number)
+TestResult::TestResult(const bool passed, std::string error_message, std::string file_name, const int line_number)
     : m_passed(passed),
       m_error_message(std::move(error_message)),
       m_file_name(std::move(file_name)),
@@ -22,9 +21,7 @@ TestResult TestResult::pass() {
     return TestResult(true);
 }
 
-TestResult TestResult::fail(const std::string& error_message,
-                        const std::string& file_name,
-                        const int line_number) {
+TestResult TestResult::fail(const std::string& error_message, const std::string& file_name, const int line_number) {
     return TestResult(false, error_message, file_name, line_number);
 }
 

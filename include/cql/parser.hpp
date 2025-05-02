@@ -44,7 +44,7 @@ namespace parser_errors {
  */
 class Parser {
 public:
-    explicit Parser(const std::string_view input);
+    explicit Parser(std::string_view input);
     
     // parse the input and build the ast
     std::vector<std::unique_ptr<QueryNode>> parse();
@@ -101,7 +101,7 @@ public:
         const std::string& message,
         size_t line,
         size_t column,
-        const std::string& error_code = parser_errors::GENERAL_ERROR);
+        std::string  error_code = parser_errors::GENERAL_ERROR);
     
     /**
      * Get the line number where the error occurred

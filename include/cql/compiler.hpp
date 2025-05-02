@@ -117,7 +117,7 @@ public:
     
     /**
      * @brief Process a VariableNode
-     * @param node The node containing variable definition
+     * @param node The node containing a variable definition
      */
     void visit(const VariableNode& node) override;
     
@@ -129,7 +129,7 @@ public:
     
     /**
      * @brief Process a MaxTokensNode
-     * @param node The node containing maximum token limit
+     * @param node The node containing the maximum token limit
      */
     void visit(const MaxTokensNode& node) override;
     
@@ -159,7 +159,7 @@ public:
      * @brief Get the final compiled query string
      * 
      * Assembles all sections into a coherent query string formatted according
-     * to the specified output format (markdown, json, etc.)
+     * to the specified output format (markdown, JSON, etc.)
      * 
      * @return The complete formatted query
      */

@@ -8,8 +8,7 @@ namespace cql {
 
 // visitor interface implementation
 void QueryCompiler::visit(const CodeRequestNode& node) {
-    m_result_sections["code"] = "Please generate " + node.language() + " code that:\n" +
-                             node.description() + "\n\n";
+    m_result_sections["code"] = "Please generate " + node.language() + " code that:\n" + node.description() + "\n\n";
 }
 
 void QueryCompiler::visit(const ContextNode& node) {
@@ -20,7 +19,7 @@ void QueryCompiler::visit(const ContextNode& node) {
 }
 
 void QueryCompiler::visit(const TestNode& node) {
-    // store the test cases, we'll format them when getting the final query
+    // to store the test cases, we'll format them when getting the final query
     m_test_cases.insert(m_test_cases.end(),
                       node.test_cases().begin(),
                       node.test_cases().end());
@@ -140,7 +139,7 @@ std::string QueryCompiler::interpolate_variables(const std::string& input) const
     
     // find all occurrences of ${variable_name} and replace them
     while ((start_pos = result.find("${", start_pos)) != std::string::npos) {
-        size_t end_pos = result.find("}", start_pos);
+        const size_t end_pos = result.find('}', start_pos);
         if (end_pos == std::string::npos) {
             break; // no closing bracket, stop processing
         }
@@ -156,7 +155,7 @@ std::string QueryCompiler::interpolate_variables(const std::string& input) const
             // move past the replacement
             start_pos += it->second.length();
         } else {
-            // variable not found, leave it as is and move past it
+            // the variable isn't found, leave it as is and move past it
             start_pos = end_pos + 1;
         }
     }
@@ -167,7 +166,7 @@ std::string QueryCompiler::interpolate_variables(const std::string& input) const
 std::string QueryCompiler::get_compiled_query() const {
     std::string query_string;
 
-    // add model-specific preamble if not using the default model
+    // add a model-specific preamble if not using the default model
     if (m_target_model != "claude-3-opus") {
         query_string += "Target Model: " + m_target_model + "\n\n";
     }
@@ -179,68 +178,57 @@ std::string QueryCompiler::get_compiled_query() const {
     }
 
     // add a code section if it exists
-    auto code_it = m_result_sections.find("code");
-    if (code_it != m_result_sections.end()) {
+    if (auto code_it = m_result_sections.find("code"); code_it != m_result_sections.end()) {
         query_string += code_it->second;
     }
 
     // add a context section if it exists
-    auto context_it = m_result_sections.find("context");
-    if (context_it != m_result_sections.end()) {
+    if (auto context_it = m_result_sections.find("context"); context_it != m_result_sections.end()) {
         query_string += context_it->second + "\n";
     }
 
     // add an architecture section if it exists
-    auto architecture_it = m_result_sections.find("architecture");
-    if (architecture_it != m_result_sections.end()) {
+    if (auto architecture_it = m_result_sections.find("architecture"); architecture_it != m_result_sections.end()) {
         query_string += architecture_it->second + "\n";
     }
 
     // add a constraints section if it exists
-    auto constraints_it = m_result_sections.find("constraints");
-    if (constraints_it != m_result_sections.end()) {
+    if (auto constraints_it = m_result_sections.find("constraints"); constraints_it != m_result_sections.end()) {
         query_string += constraints_it->second + "\n";
     }
 
     // add a dependencies section if it exists
-    auto dependencies_it = m_result_sections.find("dependencies");
-    if (dependencies_it != m_result_sections.end()) {
+    if (auto dependencies_it = m_result_sections.find("dependencies"); dependencies_it != m_result_sections.end()) {
         query_string += dependencies_it->second + "\n";
     }
 
     // add a performance section if it exists
-    auto performance_it = m_result_sections.find("performance");
-    if (performance_it != m_result_sections.end()) {
+    if (auto performance_it = m_result_sections.find("performance"); performance_it != m_result_sections.end()) {
         query_string += performance_it->second + "\n";
     }
 
     // add a security section if it exists
-    auto security_it = m_result_sections.find("security");
-    if (security_it != m_result_sections.end()) {
+    if (auto security_it = m_result_sections.find("security"); security_it != m_result_sections.end()) {
         query_string += security_it->second + "\n";
     }
 
     // add a complexity section if it exists
-    auto complexity_it = m_result_sections.find("complexity");
-    if (complexity_it != m_result_sections.end()) {
+    if (auto complexity_it = m_result_sections.find("complexity"); complexity_it != m_result_sections.end()) {
         query_string += complexity_it->second + "\n";
     }
     
-    // add model parameters section if it exists
-    auto model_params_it = m_result_sections.find("model_parameters");
-    if (model_params_it != m_result_sections.end()) {
+    // add a model parameters section if it exists
+    if (auto model_params_it = m_result_sections.find("model_parameters"); model_params_it != m_result_sections.end()) {
         query_string += model_params_it->second + "\n";
     }
     
     // add design patterns section if it exists
-    auto patterns_it = m_result_sections.find("design_patterns");
-    if (patterns_it != m_result_sections.end()) {
+    if (auto patterns_it = m_result_sections.find("design_patterns"); patterns_it != m_result_sections.end()) {
         query_string += patterns_it->second + "\n";
     }
     
-    // add file structure section if it exists
-    auto structure_it = m_result_sections.find("file_structure");
-    if (structure_it != m_result_sections.end()) {
+    // add a file structure section if it exists
+    if (auto structure_it = m_result_sections.find("file_structure"); structure_it != m_result_sections.end()) {
         query_string += structure_it->second + "\n";
     }
 
@@ -275,7 +263,7 @@ std::string QueryCompiler::get_compiled_query() const {
             // Create a JSON object using nlohmann/json
             nlohmann::json json_obj;
 
-            // Set up JSON object with proper multi-line formatting for the query
+            // Set up a JSON object with proper multi-line formatting for the query
             json_obj["query"] = query_string;
             json_obj["model"] = m_target_model;
             json_obj["format"] = m_output_format;
@@ -303,7 +291,7 @@ std::string QueryCompiler::get_compiled_query() const {
             
             // Convert to properly formatted JSON with indentation
             return json_obj.dump(2) + "\n";
-        } catch (const nlohmann::json::exception& e) {
+        } catch (const nlohmann::json::exception&) {
             // If JSON creation fails, fall back to manual string building with proper escaping
             std::string json_output = "{\n";
             
@@ -312,14 +300,14 @@ std::string QueryCompiler::get_compiled_query() const {
             
             // Replace backslashes first (important to do this first)
             size_t pos = 0;
-            while ((pos = escaped_query.find("\\", pos)) != std::string::npos) {
+            while ((pos = escaped_query.find('\\', pos)) != std::string::npos) {
                 escaped_query.replace(pos, 1, "\\\\");
                 pos += 2; // Skip the replacement
             }
             
             // Replace quotes
             pos = 0;
-            while ((pos = escaped_query.find("\"", pos)) != std::string::npos) {
+            while ((pos = escaped_query.find('\"', pos)) != std::string::npos) {
                 escaped_query.replace(pos, 1, "\\\"");
                 pos += 2; // Skip the replacement
             }

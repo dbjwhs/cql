@@ -30,7 +30,7 @@ std::string TemplateValidationIssue::to_string() const {
             break;
     }
     
-    // add main message
+    // add the main message
     ss << m_message;
     
     // add variable name if available
@@ -260,8 +260,8 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_variables(const st
     std::vector<TemplateValidationIssue> issues;
     
     // extract variables
-    auto declared_vars = extract_declared_variables(content);
-    auto referenced_vars = extract_referenced_variables(content);
+    const auto declared_vars = extract_declared_variables(content);
+    const auto referenced_vars = extract_referenced_variables(content);
     
     // check for undeclared variables
     for (const auto& var : referenced_vars) {
@@ -292,7 +292,7 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_directives(const s
     std::vector<TemplateValidationIssue> issues;
     
     // extract all directives
-    auto directives = extract_directives(content);
+    const auto directives = extract_directives(content);
     
     // check for essential directives
     static const std::unordered_set<std::string> essential_directives = {

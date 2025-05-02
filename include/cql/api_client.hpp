@@ -159,7 +159,7 @@ public:
     }
     
     /**
-     * @brief Get the model to use for requests
+     * @brief Get the model to use it for requests
      * @return Model name string
      */
     [[nodiscard]] std::string get_model() const { return m_model; }

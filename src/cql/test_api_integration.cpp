@@ -59,7 +59,7 @@ protected:
     std::string output_dir;
 };
 
-// New test case using Google Test framework
+// New test case using the Google Test framework
 TEST_F(APITest, CustomBaseURL) {
     std::cout << "Testing ApiClient with custom base URL..." << std::endl;
     
@@ -93,7 +93,7 @@ TEST_F(APITest, CustomBaseURL) {
     server.stop();
 }
 
-// Integration test using Google Test framework
+// Integration test using the Google Test framework
 TEST_F(APITest, Integration) {
     std::cout << "Testing API Integration with mock server..." << std::endl;
     
@@ -279,7 +279,7 @@ TEST_F(APITest, ErrorHandlingAndRetry) {
     ASSERT_TRUE(key_validation_failed) << "API key validation should fail with invalid key";
 }
 
-// Streaming test using Google Test framework
+// Streaming test using the Google Test framework
 TEST_F(APITest, Streaming) {
     std::cout << "Testing API streaming implementation..." << std::endl;
     
@@ -326,7 +326,7 @@ TEST_F(APITest, Streaming) {
     
     // Create a callback for streaming
     StreamingCallback callback = [&received_chunks, &received_first_chunk, &received_last_chunk]
-        (const ApiResponse& chunk, bool is_first_chunk, bool is_last_chunk) {
+        (const ApiResponse& chunk, const bool is_first_chunk, const bool is_last_chunk) {
             if (is_first_chunk) {
                 received_first_chunk = true;
             }

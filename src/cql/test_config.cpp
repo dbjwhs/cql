@@ -29,7 +29,7 @@ protected:
             std::filesystem::create_directory(temp_dir);
         }
         
-        // Save original HOME env var if it exists
+        // Save the original HOME env var if it exists
         if (const char* home = std::getenv("HOME")) {
             home_backup = home;
         }
@@ -63,13 +63,13 @@ protected:
      */
     static bool create_temp_config_file(const std::string& filepath, const std::string& config_json) {
         try {
-            // Create parent directory if it doesn't exist
+            // Create a parent directory if it doesn't exist
             if (const auto parent_path = std::filesystem::path(filepath).parent_path();
                 !parent_path.empty() && !std::filesystem::exists(parent_path)) {
                 std::filesystem::create_directories(parent_path);
             }
             
-            // Write to file
+            // Write to a file
             std::ofstream file(filepath);
             if (!file.is_open()) {
                 return false;
@@ -298,7 +298,7 @@ TEST_F(ConfigTest, ConfigOverridePrecedence) {
         << "Max retries should be loaded from file when no env var is set";
 }
 
-// Simplified legacy functions that just returns success
+// Simplified legacy functions that just return success
 // The actual tests will be handled by Google Test
 
 // Helper function to test configuration from environment variables

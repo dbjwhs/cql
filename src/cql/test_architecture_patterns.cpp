@@ -117,11 +117,11 @@ TEST_F(ArchitecturePatternsTest, PatternCompatibility) {
 // Test foundation uniqueness constraint
 TEST_F(ArchitecturePatternsTest, FoundationUniqueness) {
     CreateTestPatterns();
-    
-    ArchitectureNode foundation_node2(PatternLayer::FOUNDATION, "layered_architecture", "");
-    Pattern foundation_pattern2(foundation_node2);
-    
-    std::vector<Pattern> patterns = {*foundation_pattern, foundation_pattern2};
+
+    const ArchitectureNode foundation_node2(PatternLayer::FOUNDATION, "layered_architecture", "");
+    const Pattern foundation_pattern2(foundation_node2);
+
+    const std::vector<Pattern> patterns = {*foundation_pattern, foundation_pattern2};
     auto issues = manager.check_compatibility(patterns);
     
     ASSERT_FALSE(issues.empty())
@@ -131,9 +131,9 @@ TEST_F(ArchitecturePatternsTest, FoundationUniqueness) {
 // Test incompatible patterns
 TEST_F(ArchitecturePatternsTest, IncompatiblePatterns) {
     CreateTestPatterns();
-    
-    ArchitectureNode prototype_node(PatternLayer::COMPONENT, "prototype", "deep_copy: true");
-    Pattern prototype_pattern(prototype_node);
+
+    const ArchitectureNode prototype_node(PatternLayer::COMPONENT, "prototype", "deep_copy: true");
+    const Pattern prototype_pattern(prototype_node);
     
     ASSERT_FALSE(manager.are_patterns_compatible(*component_pattern2, prototype_pattern))
         << "Singleton and prototype should be incompatible";
@@ -235,7 +235,7 @@ TEST_F(ArchitecturePatternsTest, LegacyPatternFormat) {
         << "Legacy pattern should default to COMPONENT layer";
 }
 
-// Test compatibility issue string representation
+// Test compatibility issues string representation
 TEST_F(ArchitecturePatternsTest, CompatibilityIssueString) {
     CreateTestPatterns();
     
@@ -285,7 +285,7 @@ TestResult test_architecture_patterns() {
         }
         
         // We're not testing all the patterns here since the Google Test version will handle that
-        // Just do a basic check to make sure the legacy function passes
+        // do a basic check to make sure the legacy function passes
         
         return TestResult::pass();
     } catch (const std::exception& e) {

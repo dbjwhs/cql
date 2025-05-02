@@ -20,7 +20,7 @@ namespace fs = std::filesystem;
 namespace cql {
 
 TemplateManager::TemplateManager() {
-    // default templates directory is in the user's home directory
+    // the default templates directory is in the user's home directory
     if (const char* home_dir = getenv("HOME")) {
         m_templates_dir = std::string(home_dir) + "/.llm/templates";
     } else {
@@ -77,7 +77,7 @@ void TemplateManager::save_template(const std::string& name, const std::string& 
     }
     
     try {
-        // ensure parent directory exists (for nested categories)
+        // ensure the parent directory exists (for nested categories)
         if (const fs::path parent_dir = fs::path(template_path).parent_path(); !fs::exists(parent_dir)) {
             fs::create_directories(parent_dir);
         }
@@ -209,7 +209,7 @@ std::vector<std::string> TemplateManager::list_templates() const {
                 // handle custom categories (not common or user)
                 for (const auto& sub_entry : fs::recursive_directory_iterator(entry.path())) {
                     if (sub_entry.is_regular_file() && sub_entry.path().extension() == ".llm") {
-                        // format a path as category/template
+                        // format a path as a category / template
                         fs::path rel_path = sub_entry.path().lexically_relative(m_templates_dir);
                         std::string template_name = rel_path.string();
                         
@@ -229,7 +229,7 @@ std::vector<std::string> TemplateManager::list_templates() const {
             const std::string a_category = a.find('/') != std::string::npos ? a.substr(0, a.find('/')) : "";
             const std::string b_category = b.find('/') != std::string::npos ? b.substr(0, b.find('/')) : "";
             
-            // put common category first, then user, then others alphabetically
+            // put a common category first, then user, then others alphabetically
             if (a_category == "common" && b_category != "common") return true;
             if (a_category != "common" && b_category == "common") return false;
             if (a_category == "user" && b_category != "user" && b_category != "common") return true;
@@ -355,21 +355,18 @@ std::string TemplateManager::get_template_path(const std::string& name) const {
         return m_templates_dir + "/" + filename;
     }
     
-    // first check in user directory (the most common case)
-    std::string user_path = m_templates_dir + "/user/" + filename;
-    if (fs::exists(user_path)) {
+    // first check in the user directory (the most common case)
+    if (std::string user_path = m_templates_dir + "/user/" + filename; fs::exists(user_path)) {
         return user_path;
     }
     
-    // then check in common directory
-    std::string common_path = m_templates_dir + "/common/" + filename;
-    if (fs::exists(common_path)) {
+    // then check in the common directory
+    if (std::string common_path = m_templates_dir + "/common/" + filename; fs::exists(common_path)) {
         return common_path;
     }
     
     // check if it exists directly under the templates directory (legacy support)
-    std::string root_path = m_templates_dir + "/" + filename;
-    if (fs::exists(root_path)) {
+    if (std::string root_path = m_templates_dir + "/" + filename; fs::exists(root_path)) {
         return root_path;
     }
     
@@ -384,7 +381,7 @@ void TemplateManager::ensure_templates_directory() const {
             fs::create_directories(m_templates_dir);
             Logger::getInstance().log(LogLevel::INFO, "Created templates directory: ", m_templates_dir);
             
-            // initialize the directory with standard structure
+            // initialize the directory with a standard structure
             initialize_template_structure();
         } else {
             // validate existing directory structure
@@ -571,7 +568,7 @@ std::string TemplateManager::replace_variables(
             Logger::getInstance().log(LogLevel::ERROR, "Variable not found: ", var_name);
         }
         
-        // update positions for next iteration
+        // update positions for the next iteration
         last_pos = end_pos;
         search_start = match[0].second;
     }
@@ -603,7 +600,7 @@ std::map<std::string, std::string> TemplateManager::collect_variables(const std:
     return variables;
 }
 
-// extract parent template name if this template inherits from another
+// extract a parent template name if this template inherits from another
 std::optional<std::string> TemplateManager::extract_parent_template(const std::string& content) {
     if (const auto parents = cql::util::extract_regex_group_values(content, "@inherit\\s+\"([^\"]*)\"", 1); !parents.empty()) {
         std::string parent = *parents.begin();
@@ -642,7 +639,7 @@ std::vector<std::string> TemplateManager::get_inheritance_chain(const std::strin
     
     std::string current = name;
     while (!current.empty()) {
-        // add to chain
+        // add to the chain
         chain.push_back(current);
         
         // mark as visited
@@ -683,7 +680,7 @@ std::vector<std::string> TemplateManager::get_inheritance_chain(const std::strin
         }
     }
     
-    // reverse to get base template first, followed by derived templates
+    // reverse to get the base template first, followed by derived templates
     std::ranges::reverse(chain);
     return chain;
 }
@@ -700,7 +697,7 @@ std::string TemplateManager::load_template_with_inheritance(const std::string& n
     // start with empty content
     std::string merged_content;
     
-    // process each template in the chain, starting from base class
+    // process each template in the chain, starting from the base class
     for (const auto& template_name : chain) {
         std::string template_content = load_template(template_name);
         
@@ -777,7 +774,7 @@ std::string TemplateManager::generate_template_documentation(const std::string& 
         // load the template content
         const std::string content = load_template(name);
         
-        // format the template documentation using common helper
+        // format the template documentation using a common helper
         return format_template_markdown(metadata, content);
     } catch (const std::exception& e) {
         return "Error generating documentation: " + std::string(e.what());
@@ -800,7 +797,7 @@ std::string TemplateManager::generate_all_template_documentation() const {
         for (const auto& templ : templates) {
             std::string category = "uncategorized";
             
-            // check if template has a category in its name
+            // check if a template has a category in its name
             if (templ.find('/') != std::string::npos) {
                 category = templ.substr(0, templ.find('/'));
             }
@@ -830,7 +827,7 @@ std::string TemplateManager::generate_all_template_documentation() const {
             std::string anchor = templ;
             std::ranges::replace(anchor, '/', '-');
             
-            // if the template has .llm extension, remove it for display
+            // if the template has a.llm extension, remove it for display
             std::string display_name = templ;
             if (display_name.length() > 4 && display_name.substr(display_name.length() - 4) == ".llm") {
                 display_name = display_name.substr(0, display_name.length() - 4);
@@ -885,7 +882,7 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
         // generate the documentation
         std::string doc_content = generate_all_template_documentation();
         
-        // convert to requested format if not markdown
+        // convert to the requested format if not markdown
         std::string final_content;
         std::string extension;
         
@@ -1105,13 +1102,13 @@ void TemplateManager::create_readme_file() const {
 }
 
 void TemplateManager::ensure_standard_directories() const {
-    // create common subdirectory if it doesn't exist
+    // create a common subdirectory if it doesn't exist
     if (!fs::exists(fs::path(m_templates_dir) / "common") || 
         !fs::is_directory(fs::path(m_templates_dir) / "common")) {
         fs::create_directory(fs::path(m_templates_dir) / "common");
     }
     
-    // create user subdirectory if it doesn't exist
+    // create a user subdirectory if it doesn't exist
     if (!fs::exists(fs::path(m_templates_dir) / "user") || 
         !fs::is_directory(fs::path(m_templates_dir) / "user")) {
         fs::create_directory(fs::path(m_templates_dir) / "user");

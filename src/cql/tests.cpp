@@ -449,52 +449,52 @@ TEST_F(CQLTest, TemplateManagement) {
 // These can be gradually migrated to proper Google Test functions later
 
 TEST_F(CQLTest, PhaseExampleCompilation) {
-    TestResult result = test_phase2_example_compilation();
+    const TestResult result = test_phase2_example_compilation();
     ASSERT_TRUE(result.passed()) << result.get_error_message();
 }
 
 TEST_F(CQLTest, TemplateInheritance) {
-    TestResult result = test_template_inheritance();
+    const TestResult result = test_template_inheritance();
     ASSERT_TRUE(result.passed()) << result.get_error_message();
 }
 
 TEST_F(CQLTest, TemplateValidator) {
-    TestResult result = test_template_validator();
+    const TestResult result = test_template_validator();
     ASSERT_TRUE(result.passed()) << result.get_error_message();
 }
 
 TEST_F(CQLTest, APIClient) {
-    TestResult result = test_api_client();
+    const TestResult result = test_api_client();
     ASSERT_TRUE(result.passed()) << result.get_error_message();
 }
 
 TEST_F(CQLTest, ResponseProcessor) {
-    TestResult result = test_response_processor();
+    const TestResult result = test_response_processor();
     ASSERT_TRUE(result.passed()) << result.get_error_message();
 }
 
 TEST_F(CQLTest, ExamplesCompilation) {
-    TestResult result = test_examples_compilation();
+    const TestResult result = test_examples_compilation();
     ASSERT_TRUE(result.passed()) << result.get_error_message();
 }
 
 TEST_F(CQLTest, LexerStandalone) {
-    TestResult result = test_lexer_standalone();
+    const TestResult result = test_lexer_standalone();
     ASSERT_TRUE(result.passed()) << result.get_error_message();
 }
 
 TEST_F(CQLTest, ParserStandalone) {
-    TestResult result = test_parser_standalone();
+    const TestResult result = test_parser_standalone();
     ASSERT_TRUE(result.passed()) << result.get_error_message();
 }
 
 TEST_F(CQLTest, CompilerStandalone) {
-    TestResult result = test_compiler_standalone();
+    const TestResult result = test_compiler_standalone();
     ASSERT_TRUE(result.passed()) << result.get_error_message();
 }
 
 TEST_F(CQLTest, JSONFormatOutput) {
-    TestResult result = test_json_format_output();
+    const TestResult result = test_json_format_output();
     ASSERT_TRUE(result.passed()) << result.get_error_message();
 }
 

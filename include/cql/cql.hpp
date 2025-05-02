@@ -62,7 +62,7 @@ namespace util {
     // check if a string contains a substring
     bool contains(const std::string& str, const std::string& substr);
     
-    // extract regex matches from text using a pattern
+    // extract regex matches from a text using a pattern
     // returns a vector of matched groups for each match
     std::vector<std::vector<std::string>> extract_regex_matches(
         const std::string& content, 
@@ -80,7 +80,7 @@ namespace util {
 }
 
 /**
- * Main CQL processor class
+ * The Main CQL processor class
  * Provides a simplified interface for compiling CQL queries
  * 
  * The compilation process involves:

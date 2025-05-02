@@ -76,7 +76,7 @@ private:
      * @param blocks The code blocks to organize
      * @return Vector of generated files
      */
-    [[nodiscard]] std::vector<GeneratedFile> organize_code_blocks(const std::vector<CodeBlock>& blocks);
+    [[nodiscard]] static std::vector<GeneratedFile> organize_code_blocks(const std::vector<CodeBlock>& blocks);
     
     /**
      * @brief Determine a filename for a code block
@@ -84,7 +84,7 @@ private:
      * @param context Additional context (e.g., key from content analysis)
      * @return Generated filename
      */
-    [[nodiscard]] std::string determine_filename(const CodeBlock& block, const std::string& context);
+    [[nodiscard]] static std::string determine_filename(const CodeBlock& block, const std::string& context);
     
     /**
      * @brief Extract a filename hint from text
@@ -98,7 +98,7 @@ private:
      * @param filename The filename to sanitize
      * @return The sanitized filename
      */
-    [[nodiscard]] std::string sanitize_filename(const std::string& filename);
+    [[nodiscard]] static std::string sanitize_filename(const std::string& filename);
     
     /**
      * @brief Determine the standardized language name from a language tag
@@ -112,7 +112,7 @@ private:
      * @param language The standardized language name
      * @return The default file extension (including dot)
      */
-    [[nodiscard]] std::string determine_default_extension(const std::string& language);
+    [[nodiscard]] static std::string determine_default_extension(const std::string& language);
     
     /**
      * @brief Generate a filename from code content
@@ -120,14 +120,14 @@ private:
      * @param key The key from content analysis
      * @return The generated filename
      */
-    [[nodiscard]] std::string generate_filename_from_content(const CodeBlock& block, const std::string& key);
+    [[nodiscard]] static std::string generate_filename_from_content(const CodeBlock& block, const std::string& key);
     
     /**
      * @brief Generate a test filename from an implementation filename
      * @param impl_name The implementation filename
      * @return The test filename
      */
-    [[nodiscard]] std::string generate_test_filename(const std::string& impl_name);
+    [[nodiscard]] static std::string generate_test_filename(const std::string& impl_name);
     
     /**
      * @brief Determine a key from code content for grouping related blocks

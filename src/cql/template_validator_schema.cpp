@@ -1,6 +1,8 @@
 // MIT License
 // Copyright (c) 2025 dbjwhs
 
+#include <utility>
+
 #include "../../include/cql/template_validator_schema.hpp"
 #include "../../cpp-snippets/headers/project_utils.hpp"
 
@@ -8,20 +10,20 @@ namespace cql {
 
 // directiveschema constructor
 TemplateValidatorSchema::DirectiveSchema::DirectiveSchema(
-    const std::string& name,
-    bool required,
-    int max_occurrences,
+    std::string name,
+    const bool required,
+    const int max_occurrences,
     const std::vector<std::string>& dependencies,
     const std::vector<std::string>& incompatible,
     const std::string& format_regex,
-    const std::string& description
-) : name(name),
+    std::string description
+) : name(std::move(name)),
     required(required),
     max_occurrences(max_occurrences),
     dependencies(dependencies),
     incompatible(incompatible),
     format(format_regex.empty() ? std::regex() : std::regex(format_regex)),
-    description(description) {
+    description(std::move(description)) {
 }
 
 // register a directive schema
@@ -32,8 +34,7 @@ void TemplateValidatorSchema::register_directive(const DirectiveSchema& schema) 
 // get directive schema by name
 std::optional<TemplateValidatorSchema::DirectiveSchema> 
 TemplateValidatorSchema::get_directive_schema(const std::string& name) const {
-    auto it = m_directives.find(name);
-    if (it != m_directives.end()) {
+    if (const auto it = m_directives.find(name); it != m_directives.end()) {
         return it->second;
     }
     return std::nullopt;
@@ -80,7 +81,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         1,     // max occurrences
         {},    // dependencies
         {},    // incompatible
-        "^@description\\s+\"[^\"]{1,}\"$",  // format
+        R"(^@description\s+"[^"]{1,}"$)",  // format
         "Main description of the template"
     ));
     
@@ -90,8 +91,8 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         1,
         {},
         {},
-        "^@copyright\\s+\"[^\"]+\"\\s+\"[^\"]+\"$",
-        "Copyright information in the format: @copyright \"LICENSE\" \"OWNER\""
+        R"(^@copyright\s+"[^"]+"\s+"[^"]+"$)",
+        R"(Copyright information in the format: @copyright "LICENSE" "OWNER")"
     ));
     
     schema.register_directive(DirectiveSchema(
@@ -100,7 +101,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         1,
         {},
         {},
-        "^@language\\s+\"[^\"]+\"$",
+        R"(^@language\s+"[^"]+"$)",
         "Programming language for the implementation"
     ));
     
@@ -110,7 +111,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         0,  // unlimited
         {},
         {},
-        "^@context\\s+\"[^\"]+\"$",
+        R"(^@context\s+"[^"]+"$)",
         "Additional context for the implementation"
     ));
     
@@ -120,7 +121,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         0,
         {},
         {},
-        "^@dependency\\s+\"[^\"]+\"$",
+        R"(^@dependency\s+"[^"]+"$)",
         "External dependencies required"
     ));
     
@@ -130,7 +131,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         0,
         {},
         {},
-        "^@test\\s+\"[^\"]+\"$",
+        R"(^@test\s+"[^"]+"$)",
         "Test cases to verify implementation"
     ));
     
@@ -140,7 +141,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         1,
         {},
         {},
-        "^@architecture\\s+\"[^\"]+\"$",
+        R"(^@architecture\s+"[^"]+"$)",
         "Architectural pattern for implementation"
     ));
     
@@ -150,7 +151,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         0,
         {},
         {},
-        "^@constraint\\s+\"[^\"]+\"$",
+        R"(^@constraint\s+"[^"]+"$)",
         "Constraints or requirements for implementation"
     ));
     
@@ -160,7 +161,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         0,
         {},
         {},
-        "^@security\\s+\"[^\"]+\"$",
+        R"(^@security\s+"[^"]+"$)",
         "Security considerations"
     ));
     
@@ -170,7 +171,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         1,
         {},
         {},
-        "^@complexity\\s+\"[^\"]+\"$",
+        R"(^@complexity\s+"[^"]+"$)",
         "Time/space complexity information"
     ));
     
@@ -180,8 +181,8 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         0,
         {},
         {},
-        "^@example\\s+\"[^\"]+\"\\s+\"[^\"]+\"$",
-        "Example usage in the format: @example \"NAME\" \"CODE\""
+        R"(^@example\s+"[^"]+"\s+"[^"]+"$)",
+        R"(Example usage in the format: @example "NAME" "CODE")"
     ));
     
     schema.register_directive(DirectiveSchema(
@@ -190,8 +191,8 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         0,
         {},
         {},
-        "^@variable\\s+\"[^\"]+\"\\s+\"[^\"]*\"$",
-        "Variable declaration in the format: @variable \"NAME\" \"DEFAULT_VALUE\""
+        R"(^@variable\s+"[^"]+"\s+"[^"]*"$)",
+        R"(Variable declaration in the format: @variable "NAME" "DEFAULT_VALUE")"
     ));
     
     schema.register_directive(DirectiveSchema(
@@ -200,7 +201,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         1,
         {},
         {},
-        "^@inherit\\s+\"[^\"]+\"$",
+        R"(^@inherit\s+"[^"]+"$)",
         "Parent template to inherit from"
     ));
     
@@ -210,7 +211,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         0,
         {},
         {},
-        "^@performance\\s+\"[^\"]+\"$",
+        R"(^@performance\s+"[^"]+"$)",
         "Performance requirements or expectations"
     ));
     
@@ -219,7 +220,7 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
     // rule: variable references should use alphanumeric and underscore only
     schema.add_validation_rule("variable_naming", [](const std::string& content) {
         std::vector<TemplateValidationIssue> issues;
-        std::regex var_ref_regex("\\$\\{([^}]+)\\}");
+        std::regex var_ref_regex(R"(\$\{([^}]+)\})");
         std::regex valid_name_regex("^[a-zA-Z0-9_]+$");
         
         std::string::const_iterator search_start(content.begin());
@@ -230,11 +231,11 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
             if (match.size() > 1) {
                 std::string var_name = match[1].str();
                 if (!std::regex_match(var_name, valid_name_regex)) {
-                    issues.push_back(TemplateValidationIssue(
+                    issues.emplace_back(
                         TemplateValidationLevel::ERROR,
                         "Variable name must contain only alphanumeric characters and underscores",
                         var_name
-                    ));
+                    );
                 }
             }
             search_start = match.suffix().first;
@@ -248,11 +249,11 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
             if (match.size() > 1) {
                 std::string var_name = match[1].str();
                 if (!std::regex_match(var_name, valid_name_regex)) {
-                    issues.push_back(TemplateValidationIssue(
+                    issues.emplace_back(
                         TemplateValidationLevel::ERROR,
                         "Declared variable name must contain only alphanumeric characters and underscores",
                         var_name
-                    ));
+                    );
                 }
             }
             search_start = match.suffix().first;
@@ -264,18 +265,18 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
     // rule: description should be at least 10 characters
     schema.add_validation_rule("description_length", [](const std::string& content) {
         std::vector<TemplateValidationIssue> issues;
-        std::regex desc_regex("@description\\s+\"([^\"]*)\"");
+        const std::regex desc_regex("@description\\s+\"([^\"]*)\"");
         
         std::smatch match;
         if (std::regex_search(content, match, desc_regex) && match.size() > 1) {
             std::string desc = match[1].str();
             if (desc.length() < 10) {
-                issues.push_back(TemplateValidationIssue(
+                issues.emplace_back(
                     TemplateValidationLevel::ERROR,
                     "Description must be at least 10 characters long",
                     std::nullopt,
                     "@description"
-                ));
+                );
             }
         }
         
@@ -292,12 +293,12 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
         for (const auto& deprecated : deprecated_directives) {
             std::regex directive_regex(deprecated + "\\s+");
             if (std::regex_search(content, directive_regex)) {
-                issues.push_back(TemplateValidationIssue(
+                issues.emplace_back(
                     TemplateValidationLevel::ERROR,
                     "Deprecated directive found: " + deprecated,
                     std::nullopt,
                     deprecated
-                ));
+                );
             }
         }
         
@@ -307,27 +308,26 @@ TemplateValidatorSchema TemplateValidatorSchema::create_default_schema() {
     // rule: check for unknown directives (malformed)
     schema.add_validation_rule("unknown_directives", [](const std::string& content) {
         std::vector<TemplateValidationIssue> issues;
-        std::regex directive_regex("^@([a-zA-Z0-9_]+)\\s+", std::regex::multiline);
+        const std::regex directive_regex("^@([a-zA-Z0-9_]+)\\s+", std::regex::multiline);
         std::set<std::string> known_directives = {
             "@copyright", "@language", "@description", "@context", "@dependency", 
             "@test", "@architecture", "@constraint", "@security", "@complexity",
             "@example", "@variable", "@inherit", "@performance"
         };
-        
-        std::string::const_iterator search_start(content.begin());
-        std::string::const_iterator content_end(content.end());
+
+        auto search_start(content.begin());
+        const auto content_end(content.end());
         std::smatch match;
         
         while (std::regex_search(search_start, content_end, match, directive_regex)) {
             if (match.size() > 1) {
-                std::string directive = "@" + match[1].str();
-                if (known_directives.find(directive) == known_directives.end()) {
-                    issues.push_back(TemplateValidationIssue(
+                if (std::string directive = "@" + match[1].str(); !known_directives.contains(directive)) {
+                    issues.emplace_back(
                         TemplateValidationLevel::ERROR,
                         "Unknown directive: " + directive,
                         std::nullopt,
                         directive
-                    ));
+                    );
                 }
             }
             search_start = match.suffix().first;

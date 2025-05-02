@@ -3,20 +3,16 @@
 
 #include "../../include/cql/parser.hpp"
 #include <algorithm> // For std::transform
+#include <utility>
 
 namespace cql {
 
 // parsererror implementation
-ParserError::ParserError(
-    const std::string& message, 
-    size_t line, 
-    size_t column,
-    const std::string& error_code)
-    : std::runtime_error("Parser error at line " + std::to_string(line) + 
-                         ", column " + std::to_string(column) + ": " + message),
+ParserError::ParserError(const std::string& message, const size_t line, const size_t column, std::string  error_code)
+    : std::runtime_error("Parser error at line " + std::to_string(line) + ", column " + std::to_string(column) + ": " + message),
       m_line(line), 
       m_column(column),
-      m_error_code(error_code) {}
+      m_error_code(std::move(error_code)) {}
 
 // parser implementation
 Parser::Parser(const std::string_view input) : m_lexer(input) {
@@ -111,7 +107,6 @@ std::vector<std::unique_ptr<QueryNode>> Parser::parse() {
             case TokenType::VARIABLE:
                 nodes.push_back(parse_variable());
                 break;
-            // New directives
             case TokenType::OUTPUT_FORMAT:
                 nodes.push_back(parse_output_format());
                 break;
@@ -128,8 +123,7 @@ std::vector<std::unique_ptr<QueryNode>> Parser::parse() {
                 nodes.push_back(parse_structure());
                 break;
             default:
-                throw ParserError("Unexpected token type", 
-                                 m_current_token->m_line, m_current_token->m_column);
+                throw ParserError("Unexpected token type", m_current_token->m_line, m_current_token->m_column);
         }
     }
 
@@ -161,8 +155,8 @@ std::string Parser::parse_string() {
 }
 
 std::unique_ptr<QueryNode> Parser::parse_code_request() {
-    size_t line = m_current_token->m_line;
-    size_t column = m_current_token->m_column;
+    const size_t line = m_current_token->m_line;
+    const size_t column = m_current_token->m_column;
     
     advance(); // skip past @language token
 
@@ -232,25 +226,26 @@ std::unique_ptr<QueryNode> Parser::parse_architecture() {
     advance(); // skip @architecture
     
     // Backup the current token to restore if needed
-    std::optional<Token> saved_token = m_current_token;
+    const std::optional<Token> saved_token = m_current_token;
     
     // Check for layered format - first token should be the layer type
-    std::string first_token;
     if (m_current_token && m_current_token->m_type == TokenType::IDENTIFIER) {
-        first_token = m_current_token->m_value;
+        const std::string first_token = m_current_token->m_value;
         advance(); // consume the layer identifier
         
         // Convert to lowercase for consistent checking
         std::string lowercase_layer = first_token;
-        std::transform(lowercase_layer.begin(), lowercase_layer.end(), lowercase_layer.begin(),
-                      [](unsigned char c) { return std::tolower(c); });
+        std::ranges::transform(lowercase_layer, lowercase_layer.begin(),
+                               [](const unsigned char c) {
+                                   return std::tolower(c);
+                               });
         
         // Check if this is a valid layer
         if (lowercase_layer == "foundation" || lowercase_layer == "component" || lowercase_layer == "interaction") {
             // This is the layered format
             PatternLayer layer = string_to_pattern_layer(lowercase_layer);
             
-            // Next token should be the pattern name
+            // The Next token should be the pattern name
             std::string pattern_name = parse_string();
             
             // Check if we have parameters

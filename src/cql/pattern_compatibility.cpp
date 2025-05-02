@@ -4,6 +4,7 @@
 #include "../../include/cql/pattern_compatibility.hpp"
 #include <algorithm>
 #include <sstream>
+#include <utility>
 
 namespace cql {
 
@@ -15,7 +16,7 @@ Pattern::Pattern(const ArchitectureNode& node) {
         m_parameters = node.get_parameters();
     } else {
         // Handle legacy format - try to extract pattern name
-        std::string arch = node.architecture();
+        const std::string& arch = node.architecture();
         
         // Default to component layer for legacy format
         m_layer = PatternLayer::COMPONENT;
@@ -36,14 +37,14 @@ Pattern::Pattern(const ArchitectureNode& node) {
             }
         }
         
-        // Default to the full string as name if no known pattern is found
+        // Default to the full string as a name if no known pattern is found
         m_name = arch;
         m_parameters = "";
     }
 }
 
-Pattern::Pattern(PatternLayer layer, const std::string& name, const std::string& parameters)
-    : m_layer(layer), m_name(name), m_parameters(parameters) {
+Pattern::Pattern(const PatternLayer layer, std::string  name, std::string  parameters)
+    : m_layer(layer), m_name(std::move(name)), m_parameters(std::move(parameters)) {
 }
 
 std::string Pattern::to_string() const {
@@ -81,7 +82,7 @@ void PatternCompatibilityManager::initialize_creational_patterns() {
         "observer", "decorator", "strategy"
     };
     factory_method.incompatible_patterns = {
-        // Generally, you shouldn't have multiple factory methods for the same product types
+        // Generally, you shouldn't have multiple factory methods for the same product types,
         // But this depends on the specific implementation and context
     };
     m_compatibility_rules["factory_method"] = factory_method;
@@ -398,18 +399,18 @@ std::vector<CompatibilityIssue> PatternCompatibilityManager::check_compatibility
     }
     
     // Check for pattern compatibility
-    for (size_t i = 0; i < patterns.size(); ++i) {
-        for (size_t j = i + 1; j < patterns.size(); ++j) {
+    for (size_t ndx = 0; ndx < patterns.size(); ++ndx) {
+        for (size_t rdx = ndx + 1; rdx < patterns.size(); ++rdx) {
             // Skip patterns in different layers
-            if (patterns[i].get_layer() != patterns[j].get_layer()) {
+            if (patterns[ndx].get_layer() != patterns[rdx].get_layer()) {
                 continue;
             }
             
-            if (!are_patterns_compatible(patterns[i], patterns[j])) {
+            if (!are_patterns_compatible(patterns[ndx], patterns[rdx])) {
                 issues.emplace_back(
                     "Incompatible patterns",
-                    patterns[i],
-                    patterns[j]
+                    patterns[ndx],
+                    patterns[rdx]
                 );
             }
         }
@@ -422,6 +423,7 @@ std::vector<CompatibilityIssue> PatternCompatibilityManager::check_compatibility
     const std::vector<const ArchitectureNode*>& nodes) const {
     
     std::vector<Pattern> patterns;
+    patterns.reserve(nodes.size());
     for (const auto* node : nodes) {
         patterns.emplace_back(*node);
     }
@@ -447,8 +449,8 @@ bool PatternCompatibilityManager::are_patterns_compatible(
     const std::string& name2 = p2.get_name();
     
     // Check if we have compatibility rules for these patterns
-    auto it1 = m_compatibility_rules.find(name1);
-    auto it2 = m_compatibility_rules.find(name2);
+    const auto it1 = m_compatibility_rules.find(name1);
+    const auto it2 = m_compatibility_rules.find(name2);
     
     // If we don't have rules for either pattern, assume they're compatible
     if (it1 == m_compatibility_rules.end() || it2 == m_compatibility_rules.end()) {
@@ -456,18 +458,18 @@ bool PatternCompatibilityManager::are_patterns_compatible(
     }
     
     // Check if p2 is in p1's incompatible patterns
-    if (it1->second.incompatible_patterns.find(name2) != it1->second.incompatible_patterns.end()) {
+    if (it1->second.incompatible_patterns.contains(name2)) {
         return false;
     }
     
     // Check if p1 is in p2's incompatible patterns
-    if (it2->second.incompatible_patterns.find(name1) != it2->second.incompatible_patterns.end()) {
+    if (it2->second.incompatible_patterns.contains(name1)) {
         return false;
     }
     
     // If p2 is in p1's compatible patterns or p1 is in p2's compatible patterns, they're compatible
-    if (it1->second.compatible_patterns.find(name2) != it1->second.compatible_patterns.end() ||
-        it2->second.compatible_patterns.find(name1) != it2->second.compatible_patterns.end()) {
+    if (it1->second.compatible_patterns.contains(name2) ||
+        it2->second.compatible_patterns.contains(name1)) {
         return true;
     }
     

@@ -45,7 +45,7 @@ public:
     TemplateManager();
     
     /**
-     * @brief Constructor with custom template directory
+     * @brief Constructor with a custom template directory
      *
      * @param template_dir The directory path where templates will be stored
      */
@@ -166,7 +166,7 @@ public:
      * @brief Create a new category for organizing templates
      *
      * @param category The category name
-     * @return true if category was successfully created, false otherwise
+     * @return true if a category was successfully created, false otherwise
      */
     [[nodiscard]] bool create_category(const std::string& category) const;
     
@@ -186,7 +186,7 @@ public:
      *
      * @param name The name for the new template
      * @param parent_name The parent template name to inherit from
-     * @param content The content for the new template (will be merged with parent)
+     * @param content The content for the new template (will be merged with the parent)
      * @throws std::runtime_error If the parent template cannot be found
      */
     void create_inherited_template(const std::string& name, const std::string& parent_name, 
@@ -225,31 +225,31 @@ private:
     [[nodiscard]] std::string get_template_path(const std::string& name) const;
     
     /**
-     * @brief Create templates directory if it doesn't exist and validate structure
+     * @brief Create a templates directory if it doesn't exist and validate the structure
      */
     void ensure_templates_directory() const;
     
     /**
      * @brief Validate the template directory structure and permissions
      *
-     * @return true if directory structure is valid, false otherwise
+     * @return true if the directory structure is valid, false otherwise
      */
     [[nodiscard]] bool validate_template_directory() const;
     
     /**
-     * @brief Initialize standard directory structure for templates
+     * @brief Initialize the standard directory structure for templates
      */
     void initialize_template_structure() const;
     
     /**
-     * @brief Repair template directory structure if it's damaged
+     * @brief Repair the template directory structure if it's damaged
      *
      * @return true if repair was successful, false otherwise
      */
     [[nodiscard]] bool repair_template_directory() const;
     
     /**
-     * @brief Create README file with usage instructions
+     * @brief Create a README file with usage instructions
      */
     void create_readme_file() const;
     
@@ -296,7 +296,7 @@ private:
                                   const std::map<std::string, std::string>& variables);
     
     /**
-     * @brief Extract parent template name if this template inherits from another
+     * @brief Extract the parent template name if this template inherits from another
      *
      * Looks for @inherits directive in the template.
      *
@@ -330,7 +330,7 @@ private:
 
 public: // Exposed for direct access from CLI
     /**
-     * @brief Extract and combine all variables from template
+     * @brief Extract and combine all variables from the template
      *
      * Collects all variables from the template content and declared variables.
      *
