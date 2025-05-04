@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "../../include/cql/template_validator_schema.hpp"
-#include "../../cpp-snippets/headers/project_utils.hpp"
+#include "../../include/cql/project_utils.hpp"
 
 namespace cql {
 

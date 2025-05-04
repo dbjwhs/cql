@@ -12,7 +12,7 @@
 #include "../../include/cql/template_validator_schema.hpp"
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/response_processor.hpp"
-#include "../../cpp-snippets/headers/project_utils.hpp"
+#include "../../include/cql/project_utils.hpp"
 
 namespace cql::cli {
 
