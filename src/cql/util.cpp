@@ -32,7 +32,7 @@ bool contains(const std::string& str, const std::string& substr) {
     return str.find(substr) != std::string::npos;
 }
 
-// extract regex matches from text using a pattern
+// extract regex matches from a text using a pattern
 std::vector<std::vector<std::string>> extract_regex_matches(
     const std::string& content, 
     const std::string& pattern,
@@ -77,8 +77,7 @@ std::set<std::string> extract_regex_group_values(
     auto end = std::sregex_iterator();
     
     for (std::sregex_iterator it = begin; it != end; ++it) {
-        const std::smatch& match = *it;
-        if (match.size() > group_index) {
+        if (const std::smatch& match = *it; match.size() > group_index) {
             values.insert(match[group_index].str());
         }
     }
@@ -120,7 +119,7 @@ std::string QueryProcessor::compile(const std::string_view query_str) {
         throw;
     }
     
-    // If no nodes were parsed at all, we can't validate, so just report the parser error
+    // If no nodes were parsed at all, we can't validate, so report the parser error
     if (nodes.empty() && parser_error) {
         throw std::runtime_error(*parser_error);
     }
