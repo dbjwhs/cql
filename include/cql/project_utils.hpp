@@ -207,15 +207,23 @@ public:
     }
 
     // enable/disable specific log level
-    void setLevelEnabled(LogLevel level, bool enabled) {
-        int levelIndex = static_cast<int>(level);
-        if (levelIndex >= 0 && levelIndex <= static_cast<int>(LogLevel::CRITICAL)) {
-            m_enabled_levels[levelIndex] = enabled;
+    void setLevelEnabled(LogLevel level, const bool enabled) {
+        if (static_cast<int>(level) >= 0 && static_cast<int>(level) <= static_cast<int>(LogLevel::CRITICAL)) {
+            m_enabled_levels[static_cast<int>(level)] = enabled;
+        }
+    }
+
+    // enable/disable to a specific log level
+    void setToLevelEnabled(LogLevel debug_level) {
+        // Configure logger to only show messages at or above the specified level
+        for (int ndx = 0; ndx <= static_cast<int>(LogLevel::CRITICAL); ++ndx) {
+            const auto level = static_cast<LogLevel>(ndx);
+            this->setLevelEnabled(level, ndx >= static_cast<int>(debug_level));
         }
     }
 
     // check if a specific log level is enabled
-    bool isLevelEnabled(LogLevel level) const {
+    bool isLevelEnabled(const LogLevel level) const {
         return is_level_enabled(level);
     }
 
