@@ -2,6 +2,7 @@
 // Copyright (c) 2025 dbjwhs
 
 #include <iostream>
+#include <memory>  // For std::unique_ptr
 #include "../../include/cql/cql.hpp"
 #include "../../include/cql/template_validator.hpp"
 #include "../../include/cql/template_validator_schema.hpp"
@@ -21,6 +22,7 @@ void print_help() {
               << "  --help, -h              Show this help information\n"
               << "  --interactive, -i       Run in interactive mode\n"
               << "  --clipboard, -c         Copy output to clipboard instead of writing to a file\n"
+              << "  --debug-level LEVEL     Set log level (INFO|NORMAL|DEBUG|ERROR|CRITICAL, default: DEBUG)\n"
               << "  --templates, -l         List all available templates\n"
               << "  --template NAME, -T     Use a specific template\n"
               << "  --template NAME --force Use template even with validation errors\n"
@@ -42,6 +44,24 @@ void print_help() {
               << "If --clipboard option is used, the output will be copied to the clipboard.\n";
 }
 
+
+/**
+ * @brief Convert string to LogLevel
+ *
+ * @param level_str String representation of log level
+ * @return LogLevel enum value
+ */
+LogLevel string_to_log_level(const std::string& level_str) {
+    if (level_str == "INFO") return LogLevel::INFO;
+    if (level_str == "NORMAL") return LogLevel::NORMAL;
+    if (level_str == "DEBUG") return LogLevel::DEBUG;
+    if (level_str == "ERROR") return LogLevel::ERROR;
+    if (level_str == "CRITICAL") return LogLevel::CRITICAL;
+    
+    // Default to DEBUG if invalid level provided
+    std::cerr << "Warning: Invalid log level '" << level_str << "', using DEBUG instead." << std::endl;
+    return LogLevel::DEBUG;
+}
 
 /**
  * @brief List all available templates
@@ -545,22 +565,134 @@ int handle_file_processing(const std::string& input_file,
  * @param argv Argument values
  * @return int Return code (0 for success, 1 for error)
  */
+/**
+ * @brief Process command line arguments to find specific options
+ * 
+ * @param argc Number of arguments
+ * @param argv Array of argument strings
+ * @param option Option to search for
+ * @param value Optional pointer to store option value if found
+ * @return true if the option was found, false otherwise
+ */
+bool find_command_line_option(const int argc, char* argv[], const std::string& option, std::string* value = nullptr) {
+    for (int ndx = 1; ndx < argc; ++ndx) {
+        if (std::string arg = argv[ndx]; arg == option) {
+            if (value != nullptr && ndx + 1 < argc) {
+                *value = argv[ndx + 1];
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief Find an argument in the command line and remove it along with its value
+ * 
+ * @param argc Number of arguments
+ * @param argv Array of argument strings
+ * @param option Option to find and remove
+ * @param value String to store the option value if found
+ * @param new_argc New argument count after removal
+ * @param new_argv Smart pointer to new argument array after removal
+ * @return true if option was found and removed
+ */
+bool find_and_remove_option(const int argc, char* argv[], const std::string& option,
+                           std::string& value, int& new_argc, std::unique_ptr<char*[]>& new_argv) {
+    // Allocate a new array for modified arguments using a smart pointer
+    new_argv = std::make_unique<char*[]>(argc);
+    new_argc = 0;
+    
+    bool found = false;
+    bool skip_next = false;
+    
+    // Copy program name
+    new_argv[new_argc++] = argv[0];
+    
+    // Process remaining arguments
+    for (int ndx = 1; ndx < argc; ++ndx) {
+        if (skip_next) {
+            skip_next = false;
+            continue;
+        }
+        
+        if (std::string(argv[ndx]) == option && ndx + 1 < argc) {
+            value = argv[ndx + 1];
+            found = true;
+            skip_next = true;
+        } else {
+            new_argv[new_argc++] = argv[ndx];
+        }
+    }
+    return found;
+}
+
 int main(const int argc, char* argv[]) {
+    // Default debug level
+    auto debug_level = LogLevel::DEBUG;
+    
+    // Check for debug level in arguments
+    std::string debug_level_str;
+    int new_argc;
+    std::unique_ptr<char*[]> new_argv;
+    
+    // We have a little bit of a chicken-and-egg problem here,
+    // I need to set the logging level before processing any args,
+    // thus we need to find and remove the debug level option if present.
+    // This is the best way I came up with; maybe there is
+    // something better?
+    const bool has_debug_option = find_and_remove_option(argc, argv, "--debug-level",
+                                                  debug_level_str, new_argc, new_argv);
+    
+    if (has_debug_option) {
+        debug_level = string_to_log_level(debug_level_str);
+    }
+    
     // Initialize logger
     auto& logger = Logger::getInstance();
+    
+    // Set the logging level
+    logger.setToLevelEnabled(debug_level);
+    
     std::cout << "Starting CQL Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")..." << std::endl;
+    logger.log(LogLevel::INFO, "Starting CQL Compiler v", CQL_VERSION_STRING, " (", CQL_BUILD_TIMESTAMP, ")...");
+    
+    // Log the debug level that was set
+    const std::string level_name = debug_level == LogLevel::INFO ? "INFO" :
+                             debug_level == LogLevel::NORMAL ? "NORMAL" : 
+                             debug_level == LogLevel::DEBUG ? "DEBUG" : 
+                             debug_level == LogLevel::ERROR ? "ERROR" : "CRITICAL";
+    logger.log(LogLevel::INFO, "Log level set to: ", level_name);
+
+#if 0
+    logger.log(LogLevel::INFO, "This is a INFO message");
+    logger.log(LogLevel::NORMAL, "This is a NORMAL message");
+    logger.log(LogLevel::DEBUG, "This is a DEBUG message");
+    logger.log(LogLevel::ERROR, "This is a ERROR message");
+    logger.log(LogLevel::CRITICAL, "This is a CRITICAL message");
+#endif
+
+    // If the only argument was --debug-level, show help
+    if (has_debug_option && new_argc == 1) {
+        std::cout << "Log level set to: " << debug_level_str << std::endl;
+        std::cout << "No other arguments provided." << std::endl;
+        print_help();
+        return CQL_NO_ERROR;
+    }
 
     try {
         // Handle a case with no arguments
-        if (argc <= 1) {
-            std::cout << "No arguments provided. Please use --help to see available options." << std::endl;
-            print_help();
-            std::cout << "\nTo run the application with a file, use: cql input.llm output.txt" << std::endl;
+        if (new_argc <= 1) {
+            if (!has_debug_option) {
+                std::cout << "No arguments provided." << std::endl;
+                print_help();
+                std::cout << "\nTo run the application with a file, use: cql input.llm output.txt" << std::endl;
+            }
             return CQL_NO_ERROR;
         }
 
-        // Parse first argument
-        const std::string arg1 = argv[1];
+        // Parse the first argument from our modified argument array
+        const std::string arg1 = new_argv[1];
         std::cout << "Received argument: " << arg1 << std::endl;
 
         // Dispatch to the appropriate handler based on the first argument
@@ -569,32 +701,32 @@ int main(const int argc, char* argv[]) {
         } else if (arg1 == "--interactive" || arg1 == "-i") {
             cql::cli::run_interactive();
         } else if (arg1 == "--submit") {
-            return handle_submit_command(argc, argv);
+            return handle_submit_command(new_argc, new_argv.get());
         } else if (arg1 == "--templates" || arg1 == "-l") {
             list_templates();
         } else if (arg1 == "--template" || arg1 == "-T") {
-            return handle_template_command(argc, argv);
+            return handle_template_command(new_argc, new_argv.get());
         } else if (arg1 == "--validate") {
-            return handle_validate_command(argc, argv);
+            return handle_validate_command(new_argc, new_argv.get());
         } else if (arg1 == "--validate-all") {
-            if (argc < 3) {
+            if (new_argc < 3) {
                 std::cerr << "Error: Path required for --validate-all" << std::endl;
                 std::cerr << "Usage: cql --validate-all PATH" << std::endl;
                 return CQL_ERROR;
             }
-            return handle_validate_all_command(argv[2]);
+            return handle_validate_all_command(new_argv[2]);
         } else if (arg1 == "--docs") {
-            return handle_docs_command(argc, argv);
+            return handle_docs_command(new_argc, new_argv.get());
         } else if (arg1 == "--docs-all") {
             return handle_docs_all_command();
         } else if (arg1 == "--export") {
-            return handle_export_command(argc, argv);
+            return handle_export_command(new_argc, new_argv.get());
         } else if (arg1 == "--clipboard" || arg1 == "-c") {
-            if (argc < 3) {
+            if (new_argc < 3) {
                 std::cerr << "Error: Input file required when using --clipboard option" << std::endl;
                 return CQL_ERROR;
             }
-            return handle_file_processing(argv[2], "", true);
+            return handle_file_processing(new_argv[2], "", true);
         } else if (arg1.substr(0, 2) == "--") {
             // Unknown option starting with "--"
             std::cerr << "Error: Unknown option: " << arg1 << std::endl;
@@ -607,8 +739,8 @@ int main(const int argc, char* argv[]) {
             bool use_clipboard = false;
 
             // Check if any of the arguments is --clipboard/-c
-            for (int i = 2; i < argc; ++i) {
-                if (std::string arg = argv[i]; arg == "--clipboard" || arg == "-c") {
+            for (int i = 2; i < new_argc; ++i) {
+                if (std::string arg = new_argv[i]; arg == "--clipboard" || arg == "-c") {
                     use_clipboard = true;
                     break;
                 } else if (output_file.empty() && arg.substr(0, 2) != "--") {
