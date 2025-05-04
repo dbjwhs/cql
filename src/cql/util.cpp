@@ -45,7 +45,7 @@ std::vector<std::vector<std::string>> extract_regex_matches(
     auto end = std::sregex_iterator();
     
     for (std::sregex_iterator it = begin; it != end; ++it) {
-        std::smatch match = *it;
+        const std::smatch& match = *it;
         
         // skip if we don't have the expected number of groups
         if (expected_groups > 0 && match.size() <= expected_groups) {
@@ -54,8 +54,8 @@ std::vector<std::vector<std::string>> extract_regex_matches(
         
         // each match has multiple groups
         std::vector<std::string> groups;
-        for (size_t i = 0; i < match.size(); ++i) {
-            groups.push_back(match[i].str());
+        for (const auto & i : match) {
+            groups.push_back(i.str());
         }
         
         results.push_back(groups);
@@ -77,7 +77,7 @@ std::set<std::string> extract_regex_group_values(
     auto end = std::sregex_iterator();
     
     for (std::sregex_iterator it = begin; it != end; ++it) {
-        std::smatch match = *it;
+        const std::smatch& match = *it;
         if (match.size() > group_index) {
             values.insert(match[group_index].str());
         }
