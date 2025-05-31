@@ -134,7 +134,7 @@ TemplateValidator::TemplateValidator(TemplateManager  template_manager)
     : m_template_manager(std::move(template_manager)) {
 }
 
-TemplateValidationResult TemplateValidator::validate_template(const std::string& template_name) {
+TemplateValidationResult TemplateValidator::validate_template(const std::string& template_name) const {
     try {
         // load template content
         const std::string content = m_template_manager.load_template(template_name);
@@ -158,7 +158,7 @@ TemplateValidationResult TemplateValidator::validate_template(const std::string&
     }
 }
 
-TemplateValidationResult TemplateValidator::validate_content(const std::string& content) {
+TemplateValidationResult TemplateValidator::validate_content(const std::string& content) const {
     TemplateValidationResult result;
     
     // check variables
@@ -181,7 +181,7 @@ TemplateValidationResult TemplateValidator::validate_content(const std::string& 
     return result;
 }
 
-TemplateValidationResult TemplateValidator::validate_inheritance(const std::string& template_name) {
+TemplateValidationResult TemplateValidator::validate_inheritance(const std::string& template_name) const {
     TemplateValidationResult result;
     
     // check for inheritance cycles

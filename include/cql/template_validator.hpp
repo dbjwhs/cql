@@ -206,7 +206,7 @@ public:
      * @param template_name The name of the template to validate
      * @return Validation results containing any issues found
      */
-    TemplateValidationResult validate_template(const std::string& template_name);
+    TemplateValidationResult validate_template(const std::string& template_name) const;
     
     /**
      * @brief Validate template content directly
@@ -214,7 +214,7 @@ public:
      * @param content The template content string to validate
      * @return Validation results containing any issues found
      */
-    TemplateValidationResult validate_content(const std::string& content);
+    TemplateValidationResult validate_content(const std::string& content) const;
     
     /**
      * @brief Validate the inheritance chain of a template
@@ -224,7 +224,7 @@ public:
      * @param template_name The name of the template to validate
      * @return Validation results for the inheritance chain
      */
-    TemplateValidationResult validate_inheritance(const std::string& template_name);
+    TemplateValidationResult validate_inheritance(const std::string& template_name) const;
     
     /**
      * @brief Type alias for custom validation rule functions
@@ -252,7 +252,7 @@ private:
      * @param content The template content to check
      * @return Vector of issues related to variables
      */
-    std::vector<TemplateValidationIssue> check_variables(const std::string& content);
+    static std::vector<TemplateValidationIssue> check_variables(const std::string& content);
     
     /**
      * @brief Check for required directives and directive correctness

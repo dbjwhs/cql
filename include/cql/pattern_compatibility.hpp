@@ -124,7 +124,7 @@ struct CompatibilityIssue {
  * can be used together in the same architecture. The compatibility system enforces:
  *
  * 1. Layer-based rules: Generally, patterns in different layers can coexist
- * 2. Only one Foundation pattern allowed in an architecture
+ * 2. Only one Foundation pattern allowed in architecture
  * 3. Pattern-specific compatibility rules for the 23 standard GoF design patterns
  *    (Creational, Structural, and Behavioral categories)
  *
