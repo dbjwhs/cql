@@ -369,43 +369,43 @@ public:
      * @brief Set the model to use for requests
      * @param model Model name string
      */
-    void set_model(const std::string& model) const;
+    void set_model(const std::string& model);
     
     /**
      * @brief Set the API key
      * @param api_key API key string
      */
-    void set_api_key(const std::string& api_key) const;
+    void set_api_key(const std::string& api_key);
 
     /**
      * @brief Set the timeout for requests in seconds
      * @param timeout_seconds Timeout value
      */
-    void set_timeout(int timeout_seconds) const;
+    void set_timeout(int timeout_seconds);
     
     /**
      * @brief Set the maximum number of retries for failed requests
      * @param max_retries Maximum retries value
      */
-    void set_max_retries(int max_retries) const;
+    void set_max_retries(int max_retries);
     
     /**
      * @brief Set the temperature for API requests
      * @param temperature Temperature value between 0 and 1
      */
-    void set_temperature(float temperature) const;
+    void set_temperature(float temperature);
     
     /**
      * @brief Set the maximum tokens to request from the API
      * @param max_tokens Maximum number of tokens
      */
-    void set_max_tokens(int max_tokens) const;
+    void set_max_tokens(int max_tokens);
     
     /**
      * @brief Enable or disable streaming mode
      * @param enable true to enable streaming, false to disable
      */
-    void set_streaming_enabled(bool enable) const;
+    void set_streaming_enabled(bool enable);
     
     /**
      * @brief Check if the client is connected to the API

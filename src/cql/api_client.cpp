@@ -674,31 +674,31 @@ std::future<ApiResponse> ApiClient::submit_query_streaming_async(
     });
 }
 
-void ApiClient::set_model(const std::string& model) const {
+void ApiClient::set_model(const std::string& model) {
     m_impl->m_config.set_model(model);
 }
 
-void ApiClient::set_api_key(const std::string& api_key) const {
+void ApiClient::set_api_key(const std::string& api_key) {
     m_impl->m_config.set_api_key(api_key);
 }
 
-void ApiClient::set_timeout(const int timeout_seconds) const {
+void ApiClient::set_timeout(const int timeout_seconds) {
     m_impl->m_config.set_timeout(timeout_seconds);
 }
 
-void ApiClient::set_max_retries(const int max_retries) const {
+void ApiClient::set_max_retries(const int max_retries) {
     m_impl->m_config.set_max_retries(max_retries);
 }
 
-void ApiClient::set_temperature(const float temperature) const {
+void ApiClient::set_temperature(const float temperature) {
     m_impl->m_config.set_temperature(temperature);
 }
 
-void ApiClient::set_max_tokens(const int max_tokens) const {
+void ApiClient::set_max_tokens(const int max_tokens) {
     m_impl->m_config.set_max_tokens(max_tokens);
 }
 
-void ApiClient::set_streaming_enabled(const bool enable) const {
+void ApiClient::set_streaming_enabled(const bool enable) {
     m_impl->m_config.set_streaming_enabled(enable);
 }
 
