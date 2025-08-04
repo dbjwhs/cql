@@ -4,7 +4,7 @@
 #ifndef CQL_COMPILER_HPP
 #define CQL_COMPILER_HPP
 
-#include <map>
+#include <unordered_map>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -174,7 +174,7 @@ public:
 
 private:
     // Output content organized by section
-    std::map<std::string, std::string> m_result_sections;   ///< Main content sections
+    std::unordered_map<std::string, std::string> m_result_sections;   ///< Main content sections
     std::vector<std::string> m_test_cases;                  ///< Test requirements
     std::vector<std::pair<std::string, std::string>> m_examples;  ///< Code examples with labels
     
@@ -186,7 +186,7 @@ private:
     std::string m_temperature;                      ///< Temperature value
     
     // Template variables for string interpolation
-    std::map<std::string, std::string> m_variables; ///< Variable name to value mapping
+    std::unordered_map<std::string, std::string> m_variables; ///< Variable name to value mapping
     
     /**
      * @brief Process string with variable interpolation
