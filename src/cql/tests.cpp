@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <algorithm>
 #include <cctype>
@@ -503,6 +504,57 @@ TEST_F(CQLTest, JSONFormatOutput) {
  */
 TEST_F(CQLTest, CommentsAndWhitespaceHandling) {
     std::cout << "Testing comments and whitespace handling..." << std::endl;
+    
+    // Create test directory if it doesn't exist
+    std::filesystem::create_directories("test_output");
+    
+    // Create test files
+    std::ofstream baseline("test_output/baseline.llm");
+    baseline << "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+             << "@language \"C++\"\n"
+             << "@description \"Basic test template for comments and whitespace handling\"\n";
+    baseline.close();
+    
+    std::ofstream comment_test("test_output/comment_test.llm");
+    comment_test << "# This is a comment\n"
+                 << "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+                 << "# Another comment\n"
+                 << "@language \"C++\"\n"
+                 << "@description \"Test template with comments\"\n"
+                 << "# Final comment\n";
+    comment_test.close();
+    
+    std::ofstream comment_test2("test_output/comment_test2.llm");
+    comment_test2 << "@copyright \"MIT License\" \"2025 dbjwhs\"\n\n"
+                  << "@language \"C++\"\n\n\n"
+                  << "@description \"Test template with extra whitespace\"\n";
+    comment_test2.close();
+    
+    std::ofstream whitespace_test("test_output/whitespace_test.llm");
+    whitespace_test << "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+                    << "@language \"C++\"\n"
+                    << "@description \"Test template with various whitespace\"\n";
+    whitespace_test.close();
+    
+    std::ofstream whitespace_var_test("test_output/whitespace_var_test.llm");
+    whitespace_var_test << "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+                        << "@language \"C++\"\n"
+                        << "@description \"Test template with whitespace variables\"\n"
+                        << "@variable \"test_var\" \"test_value\"\n";
+    whitespace_var_test.close();
+    
+    std::ofstream minimal_test("test_output/minimal_test.llm");
+    minimal_test << "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+                 << "@language \"C++\"\n"
+                 << "@description \"Minimal test template\"\n";
+    minimal_test.close();
+    
+    std::ofstream example_test("test_output/example_test.llm");
+    example_test << "@copyright \"MIT License\" \"2025 dbjwhs\"\n"
+                 << "@language \"C++\"\n"
+                 << "@description \"Example test template\"\n"
+                 << "@example \"Test Example\" \"Sample code here\"\n";
+    example_test.close();
     
     // Test files with comments
     ASSERT_NO_THROW({

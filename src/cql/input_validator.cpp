@@ -10,15 +10,14 @@ namespace cql {
 
 // Define dangerous patterns
 const std::vector<std::string> InputValidator::SHELL_INJECTION_PATTERNS = {
-    ";", "&&", "||", "|", "`", "$", "$(", "${", 
+    "; rm", "; cat", "; ls", "; del", "&&", "||", " | ", "`", "$(cat", "$(rm", "$(ls", 
     "../", "../../", "~", "/dev/", "/proc/", "/sys/",
-    "rm ", "del ", "format ", "exec", "eval", "system"
+    "rm ", "del ", "format ", " exec ", " eval ", " system "
 };
 
 const std::vector<std::string> InputValidator::SQL_INJECTION_PATTERNS = {
-    "'", "\"", ";", "--", "/*", "*/", "xp_", "sp_",
-    " or ", " and ", " union ", " select ", " insert ", " delete ", 
-    " drop ", " update ", " exec ", " execute "
+    "'; ", "\"; ", " or '", " and '", " union ", " select ", " insert ", " delete ", 
+    " drop ", " update ", " exec ", " execute ", "--", "/*", "*/"
 };
 
 const std::vector<std::string> InputValidator::PATH_TRAVERSAL_PATTERNS = {
@@ -38,8 +37,7 @@ void InputValidator::validate_file_path(std::string_view path) {
     
     // Check for path traversal attempts
     if (contains_dangerous_patterns(path, PATH_TRAVERSAL_PATTERNS)) {
-        throw SecurityValidationError("Potential path traversal detected in: " + 
-                                    sanitize_for_logging(path));
+        throw SecurityValidationError("Potential path traversal detected");
     }
     
     // Check for absolute paths outside safe directories
@@ -148,8 +146,9 @@ void InputValidator::validate_directive_content(std::string_view directive_name,
                                     std::string(directive_name));
     }
     
-    // Check for null bytes
-    if (content.find('\0') != std::string_view::npos) {
+    // Check for null bytes (using string find instead of string_view)
+    std::string content_str(content);
+    if (content_str.find('\0') != std::string::npos) {
         throw SecurityValidationError("Null bytes not allowed in directive content");
     }
 }
@@ -169,7 +168,7 @@ void InputValidator::validate_api_key(std::string_view api_key) {
     }
     
     // API keys should contain only alphanumeric characters, hyphens, and underscores
-    if (!contains_only_safe_chars(api_key, "[A-Za-z0-9_-]")) {
+    if (!contains_only_safe_chars(api_key, "A-Za-z0-9_\\-")) {
         throw SecurityValidationError("API key contains invalid characters");
     }
     

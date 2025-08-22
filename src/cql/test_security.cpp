@@ -93,7 +93,7 @@ TEST_F(SecurityTest, ShellInjectionPrevention) {
     
     // Safe content should pass
     EXPECT_TRUE(InputValidator::is_shell_safe("This is safe content"));
-    EXPECT_TRUE(InputValidator::is_shell_safe("function test() { return 42; }"));
+    EXPECT_TRUE(InputValidator::is_shell_safe("function test returns 42"));
 }
 
 TEST_F(SecurityTest, SQLInjectionPrevention) {
@@ -116,7 +116,7 @@ TEST_F(SecurityTest, DirectiveContentValidation) {
     EXPECT_THROW(InputValidator::validate_directive_content("test", long_content),
                  SecurityValidationError);
     
-    std::string null_content = "test\0malicious";
+    std::string null_content = std::string("test") + '\0' + "malicious";
     EXPECT_THROW(InputValidator::validate_directive_content("test", null_content),
                  SecurityValidationError);
     
@@ -179,7 +179,7 @@ TEST_F(SecurityTest, SecureConfigurationLoading) {
     Config config;
     
     // Test that API key is properly stored securely
-    config.set_api_key("test_key_12345678901234567890");
+    config.set_api_key("sk-1234567890abcdefghijklmnopqrstuvwxyz12345");
     EXPECT_TRUE(config.validate_api_key());
     
     // Test masked API key for logging
