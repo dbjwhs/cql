@@ -1,0 +1,257 @@
+#!/usr/bin/env python3
+"""
+version-tool: Automated semantic versioning and Git tagging utility
+
+A Python tool for managing semantic versions and Git tags with build metadata.
+Handles version increments and creates annotated tags with commit SHA and date.
+"""
+
+import argparse
+import re
+import subprocess
+import sys
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional, Tuple
+
+
+@dataclass
+class Version:
+    """Represents a semantic version with optional pre-release info."""
+    major: int
+    minor: int
+    patch: int
+    prerelease: Optional[str] = None
+    
+    def __str__(self) -> str:
+        version_str = f"v{self.major}.{self.minor}.{self.patch}"
+        if self.prerelease:
+            version_str += f"-{self.prerelease}"
+        return version_str
+    
+    @classmethod
+    def parse(cls, version_str: str) -> 'Version':
+        """Parse a version string like 'v1.2.3-alpha' into a Version object."""
+        # Remove 'v' prefix if present
+        version_str = version_str.lstrip('v')
+        
+        # Split on '+' to remove build metadata
+        version_core = version_str.split('+')[0]
+        
+        # Check for prerelease info
+        if '-' in version_core:
+            version_part, prerelease = version_core.split('-', 1)
+        else:
+            version_part = version_core
+            prerelease = None
+        
+        # Parse major.minor.patch
+        try:
+            parts = version_part.split('.')
+            if len(parts) != 3:
+                raise ValueError(f"Invalid version format: {version_str}")
+            
+            major, minor, patch = map(int, parts)
+            return cls(major, minor, patch, prerelease)
+        except ValueError as e:
+            raise ValueError(f"Failed to parse version '{version_str}': {e}")
+
+
+class GitVersionTool:
+    """Main class for version management and Git tagging operations."""
+    
+    def __init__(self):
+        self.default_version = Version(0, 0, 0)
+    
+    def run_git_command(self, *args: str) -> Tuple[str, int]:
+        """Execute a git command and return (output, return_code)."""
+        try:
+            result = subprocess.run(
+                ['git'] + list(args),
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            return result.stdout.strip(), result.returncode
+        except FileNotFoundError:
+            raise RuntimeError("Git is not installed or not in PATH")
+    
+    def get_current_version(self) -> Version:
+        """Get the current version from the latest git tag, or default if no tags exist."""
+        # Try to get the latest version tag
+        output, returncode = self.run_git_command(
+            'tag', '--list', '--sort=-version:refname', 'v*'
+        )
+        
+        if returncode != 0:
+            raise RuntimeError("Failed to list git tags")
+        
+        if not output:
+            # No tags exist yet - return default starting version
+            print("No existing version tags found. Starting with v0.0.0")
+            return self.default_version
+        
+        # Get the first (most recent) tag
+        latest_tag = output.split('\n')[0]
+        print(f"Found latest version tag: {latest_tag}")
+        
+        try:
+            return Version.parse(latest_tag)
+        except ValueError as e:
+            raise RuntimeError(f"Failed to parse latest tag '{latest_tag}': {e}")
+    
+    def get_build_metadata(self) -> str:
+        """Generate build metadata with current date and commit SHA."""
+        # Get current date in YYYYMMDD format
+        date_str = datetime.now().strftime('%Y%m%d')
+        
+        # Get short commit SHA
+        sha_output, returncode = self.run_git_command('rev-parse', '--short', 'HEAD')
+        if returncode != 0:
+            raise RuntimeError("Failed to get current commit SHA")
+        
+        return f"{date_str}.{sha_output}"
+    
+    def create_new_version(self, current: Version, mode: str, info_tag: Optional[str]) -> Version:
+        """Create a new version based on the increment mode."""
+        if mode == 'tag':
+            # Keep current version, just add/update info tag
+            new_version = Version(current.major, current.minor, current.patch, info_tag)
+        elif mode == 'development':
+            # Increment patch version
+            new_version = Version(current.major, current.minor, current.patch + 1, info_tag)
+        elif mode == 'release-fix':
+            # Increment minor version, reset patch
+            new_version = Version(current.major, current.minor + 1, 0, info_tag)
+        elif mode == 'release':
+            # Increment major version, reset minor and patch
+            new_version = Version(current.major + 1, 0, 0, info_tag)
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+        
+        return new_version
+    
+    def create_tag(self, version: Version, build_metadata: str) -> str:
+        """Create an annotated git tag with the specified version and metadata."""
+        # Construct full tag name
+        tag_name = f"{version}+{build_metadata}"
+        
+        # Create commit message for the annotated tag
+        mode_descriptions = {
+            'tag': 'Tagged current version',
+            'development': 'Development increment',
+            'release-fix': 'Minor version increment', 
+            'release': 'Major version release'
+        }
+        
+        # Determine mode from version increment pattern
+        current_version = self.get_current_version()
+        if version.major > current_version.major:
+            mode = 'release'
+        elif version.minor > current_version.minor:
+            mode = 'release-fix'
+        elif version.patch > current_version.patch:
+            mode = 'development'
+        else:
+            mode = 'tag'
+        
+        commit_msg = f"{mode_descriptions[mode]}: {tag_name}"
+        if version.prerelease:
+            commit_msg += f"\n\nInfo tag: {version.prerelease}"
+        
+        # Create annotated tag
+        tag_output, returncode = self.run_git_command(
+            'tag', '-a', tag_name, '-m', commit_msg
+        )
+        
+        if returncode != 0:
+            raise RuntimeError(f"Failed to create git tag: {tag_output}")
+        
+        return tag_name
+    
+    def run(self, mode: str, info_tag: Optional[str]) -> None:
+        """Main execution method."""
+        try:
+            print(f"Running version-tool in {mode} mode...")
+            
+            # Get current version
+            current_version = self.get_current_version()
+            print(f"Current version: {current_version}")
+            
+            # Create new version
+            new_version = self.create_new_version(current_version, mode, info_tag)
+            print(f"New version: {new_version}")
+            
+            # Get build metadata
+            build_metadata = self.get_build_metadata()
+            print(f"Build metadata: {build_metadata}")
+            
+            # Create the tag
+            tag_name = self.create_tag(new_version, build_metadata)
+            
+            print(f"✅ Successfully created tag: {tag_name}")
+            print(f"   Use 'git push --tags' to push to remote repository")
+            
+        except Exception as e:
+            print(f"❌ Error: {e}", file=sys.stderr)
+            sys.exit(1)
+
+
+def main():
+    """Command-line interface for the version tool."""
+    parser = argparse.ArgumentParser(
+        description="Automated semantic versioning and Git tagging utility",
+        epilog="""
+Examples:
+  %(prog)s --tag --info-tag security          # Tag current version with info
+  %(prog)s --development --info-tag feature   # Increment patch version  
+  %(prog)s --release-fix --info-tag bugfix    # Increment minor version
+  %(prog)s --release --info-tag stable        # Increment major version
+        """,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
+    # Version increment modes (mutually exclusive)
+    mode_group = parser.add_mutually_exclusive_group(required=True)
+    mode_group.add_argument(
+        '--tag', action='store_true',
+        help='Tag current version without incrementing'
+    )
+    mode_group.add_argument(
+        '--development', action='store_true',
+        help='Increment patch version (third number)'
+    )
+    mode_group.add_argument(
+        '--release-fix', action='store_true', 
+        help='Increment minor version (second number), reset patch'
+    )
+    mode_group.add_argument(
+        '--release', action='store_true',
+        help='Increment major version (first number), reset minor and patch'
+    )
+    
+    # Optional info tag
+    parser.add_argument(
+        '--info-tag', type=str,
+        help='Optional information tag to include in version (e.g., "security", "alpha")'
+    )
+    
+    args = parser.parse_args()
+    
+    # Determine mode
+    if args.tag:
+        mode = 'tag'
+    elif args.development:
+        mode = 'development'
+    elif args.release_fix:
+        mode = 'release-fix'
+    elif args.release:
+        mode = 'release'
+    
+    # Run the tool
+    tool = GitVersionTool()
+    tool.run(mode, args.info_tag)
+
+
+if __name__ == '__main__':
+    main()
