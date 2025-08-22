@@ -1185,11 +1185,11 @@ std::string compile_query_for_api(const std::string& input_file) {
 }
 
 // Submit a compiled query to the API
-ApiResponse submit_to_api(const std::string& compiled_query, const Config& config) {
+ApiResponse submit_to_api(const std::string& compiled_query, Config config) {
     Logger::getInstance().log(LogLevel::INFO, "Submitting to Claude API...");
     std::cout << "Submitting to Claude API (model: " << config.get_model() << ")..." << std::endl;
     
-    ApiClient api_client(config);
+    ApiClient api_client(std::move(config));
     ApiResponse response = api_client.submit_query(compiled_query);
     
     if (!response.m_success) {
@@ -1203,8 +1203,8 @@ ApiResponse submit_to_api(const std::string& compiled_query, const Config& confi
 }
 
 // Process API response into files
-std::vector<GeneratedFile> process_api_response(const ApiResponse& response, const Config& config) {
-    ResponseProcessor processor(config);
+std::vector<GeneratedFile> process_api_response(const ApiResponse& response, Config config) {
+    ResponseProcessor processor(std::move(config));
     std::vector<GeneratedFile> files = processor.process_response(response.m_raw_response);
     
     Logger::getInstance().log(LogLevel::INFO, "Generated ", files.size(), " files:");

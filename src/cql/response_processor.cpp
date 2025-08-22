@@ -16,11 +16,11 @@
 
 namespace cql {
 
-ResponseProcessor::ResponseProcessor(const Config& config)
-    : m_config(config),
-      m_output_directory(config.get_output_directory()),
-      m_overwrite_existing(config.should_overwrite_existing_files()),
-      m_create_directories(config.should_create_missing_directories()) {}
+ResponseProcessor::ResponseProcessor(Config config)
+    : m_config(std::move(config)),
+      m_output_directory(m_config.get_output_directory()),
+      m_overwrite_existing(m_config.should_overwrite_existing_files()),
+      m_create_directories(m_config.should_create_missing_directories()) {}
 
 std::vector<GeneratedFile> ResponseProcessor::process_response(const std::string& response_text) {
     Logger::getInstance().log(LogLevel::INFO, "Processing API response");

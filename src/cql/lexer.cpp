@@ -3,6 +3,7 @@
 
 #include <cctype>
 #include "../../include/cql/lexer.hpp"
+#include "../../include/cql/input_validator.hpp"
 
 namespace cql {
 
@@ -237,6 +238,13 @@ std::optional<Token> Lexer::lex_string() {
 
     advance(); // skip closing quote
     skip_trailing_whitespace();
+    
+    // Security: Validate string content for potential injection attacks
+    try {
+        InputValidator::validate_directive_content("STRING", value);
+    } catch (const SecurityValidationError& e) {
+        throw LexerError("Security validation failed: " + std::string(e.what()), m_line, start_column);
+    }
     
     return Token(TokenType::STRING, value, m_line, start_column);
 }

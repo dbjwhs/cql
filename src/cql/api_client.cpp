@@ -17,6 +17,7 @@
 #include <nlohmann/json.hpp>
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/project_utils.hpp"
+#include "../../include/cql/secure_string.hpp"
 
 namespace cql {
 
@@ -178,6 +179,17 @@ struct ApiClient::Impl {
         curl_easy_setopt(m_curl, CURLOPT_WRITEDATA, &m_response_buffer);
         curl_easy_setopt(m_curl, CURLOPT_POSTFIELDS, request_data.c_str());
         curl_easy_setopt(m_curl, CURLOPT_TIMEOUT, m_config.get_timeout());
+        
+        // Security: Enforce HTTPS certificate validation
+        curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 1L);
+        curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 2L);
+        curl_easy_setopt(m_curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+        
+        // Security: Follow redirects only to HTTPS
+        curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(m_curl, CURLOPT_MAXREDIRS, 3L);
+        curl_easy_setopt(m_curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+        curl_easy_setopt(m_curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTPS);
         
         // Set headers
         struct curl_slist* headers = nullptr;
@@ -680,6 +692,8 @@ void ApiClient::set_model(const std::string& model) {
 
 void ApiClient::set_api_key(const std::string& api_key) {
     m_impl->m_config.set_api_key(api_key);
+    Logger::getInstance().log(LogLevel::INFO, "API key updated (", 
+                             m_impl->m_config.get_api_key_masked(), ")");
 }
 
 void ApiClient::set_timeout(const int timeout_seconds) {
@@ -721,10 +735,8 @@ std::string ApiClient::get_last_error() const {
 Config Config::load_from_default_locations() {
     Config config{};
     
-    // Try to load from environment variables first
-    if (const char *api_key_env = std::getenv("LLM_API_KEY")) {
-        config.m_api_key = api_key_env;
-    }
+    // Try to load from environment variables first (securely)
+    config.m_api_key = secure_getenv("LLM_API_KEY");
 
     if (const char *model_env = std::getenv("LLM_MODEL")) {
         config.m_model = model_env;
@@ -793,7 +805,7 @@ Config Config::load_from_file(const std::string& filename) {
             auto api = json_config["api"];
             
             if (api.contains("key") && api["key"].is_string()) {
-                config.m_api_key = api["key"];
+                config.m_api_key = SecureString(api["key"].get<std::string>());
             }
             
             if (api.contains("model") && api["model"].is_string()) {

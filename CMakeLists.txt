@@ -131,6 +131,8 @@ set(CQL_CORE_SOURCES
     src/cql/stubs.cpp  # Include stubs.cpp in core sources
     src/cql/clipboard_impl.cpp
     src/cql/clipboard_stub.cpp
+    src/cql/secure_string.cpp
+    src/cql/input_validator.cpp
 )
 
 set(CQL_MAIN_SOURCES
@@ -145,6 +147,7 @@ set(CQL_TEST_SOURCES
     src/cql/test_architecture_patterns.cpp
     src/cql/test_api_integration.cpp
     src/cql/test_config.cpp
+    src/cql/test_security.cpp
 )
 
 # Find required packages

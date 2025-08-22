@@ -12,6 +12,7 @@
 #include <string_view>
 #include <future>
 #include <optional>
+#include "secure_string.hpp"
 
 namespace cql {
 
@@ -131,6 +132,59 @@ struct ApiResponse {
 class Config {
 public:
     /**
+     * @brief Default constructor
+     */
+    Config() = default;
+    
+    /**
+     * @brief Copy constructor (explicitly handle SecureString)
+     */
+    Config(const Config& other) 
+        : m_api_key(SecureString(other.m_api_key.data())),
+          m_model(other.m_model),
+          m_api_base_url(other.m_api_base_url),
+          m_timeout(other.m_timeout),
+          m_max_retries(other.m_max_retries),
+          m_output_directory(other.m_output_directory),
+          m_overwrite_existing(other.m_overwrite_existing),
+          m_create_missing_dirs(other.m_create_missing_dirs),
+          m_no_save(other.m_no_save),
+          m_streaming_enabled(other.m_streaming_enabled),
+          m_max_tokens(other.m_max_tokens),
+          m_temperature(other.m_temperature) {}
+    
+    /**
+     * @brief Move constructor
+     */
+    Config(Config&& other) noexcept = default;
+    
+    /**
+     * @brief Copy assignment (explicitly handle SecureString)
+     */
+    Config& operator=(const Config& other) {
+        if (this != &other) {
+            m_api_key = SecureString(other.m_api_key.data());
+            m_model = other.m_model;
+            m_api_base_url = other.m_api_base_url;
+            m_timeout = other.m_timeout;
+            m_max_retries = other.m_max_retries;
+            m_output_directory = other.m_output_directory;
+            m_overwrite_existing = other.m_overwrite_existing;
+            m_create_missing_dirs = other.m_create_missing_dirs;
+            m_no_save = other.m_no_save;
+            m_streaming_enabled = other.m_streaming_enabled;
+            m_max_tokens = other.m_max_tokens;
+            m_temperature = other.m_temperature;
+        }
+        return *this;
+    }
+    
+    /**
+     * @brief Move assignment
+     */
+    Config& operator=(Config&& other) noexcept = default;
+    
+    /**
      * @brief Load configuration from default locations (env vars, config file)
      * @return Config object with loaded settings
      */
@@ -147,7 +201,13 @@ public:
      * @brief Get the API key
      * @return API key string
      */
-    [[nodiscard]] std::string get_api_key() const { return m_api_key; }
+    [[nodiscard]] std::string get_api_key() const { return m_api_key.data(); }
+    
+    /**
+     * @brief Get the API key securely (masked for logging)
+     * @return Masked API key safe for logging
+     */
+    [[nodiscard]] std::string get_api_key_masked() const { return m_api_key.masked(); }
     
     /**
      * @brief Validate the API key format
@@ -210,7 +270,7 @@ public:
      * @brief Set the API key
      * @param api_key API key string
      */
-    void set_api_key(const std::string& api_key) { m_api_key = api_key; }
+    void set_api_key(const std::string& api_key) { m_api_key = SecureString(api_key); }
     
     /**
      * @brief Set the model to use for requests
@@ -297,7 +357,7 @@ public:
     [[nodiscard]] float get_temperature() const { return m_temperature; }
 
 private:
-    std::string m_api_key;           ///< API key for authentication
+    SecureString m_api_key;          ///< API key for authentication (secured)
     std::string m_model = "claude-3-opus"; ///< Model to use for requests
     std::string m_api_base_url = "https://api.anthropic.com"; ///< Base URL for API requests
     int m_timeout = 60;              ///< Timeout in seconds

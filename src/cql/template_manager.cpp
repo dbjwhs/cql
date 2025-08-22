@@ -3,6 +3,7 @@
 
 #include "../../include/cql/template_manager.hpp"
 #include "../../include/cql/cql.hpp"
+#include "../../include/cql/input_validator.hpp"
 #include "../../include/cql/project_utils.hpp"
 
 #include <fstream>
@@ -343,8 +344,20 @@ std::vector<std::string> TemplateManager::list_categories() const {
 }
 
 std::string TemplateManager::get_template_path(const std::string& name) const {
+    // Security: Validate template name to prevent path traversal
+    try {
+        InputValidator::validate_filename(name.find('/') != std::string::npos ? 
+                                        name.substr(name.find_last_of('/') + 1) : name);
+        InputValidator::validate_file_path(name);
+    } catch (const SecurityValidationError& e) {
+        throw std::invalid_argument("Invalid template name: " + std::string(e.what()));
+    }
+    
+    // Sanitize the name to prevent path traversal
+    std::string sanitized_name = InputValidator::sanitize_file_path(name);
+    
     // check if the name already has a .llm extension
-    std::string filename = name;
+    std::string filename = sanitized_name;
     if (filename.length() < 4 || filename.substr(filename.length() - 4) != ".llm") {
         filename += ".llm";
     }
@@ -1058,9 +1071,18 @@ bool TemplateManager::export_documentation(const std::string& output_path, const
             extension = ".md";
         }
         
-        // ensure the output file has the correct extension
-        std::string final_path = output_path;
-        if (fs::path(output_path).extension().empty()) {
+        // Security: Validate output path
+        try {
+            InputValidator::validate_file_path(output_path);
+        } catch (const SecurityValidationError& e) {
+            Logger::getInstance().log(LogLevel::ERROR, "Invalid output path: ", e.what());
+            return false;
+        }
+        
+        // Sanitize and ensure the output file has the correct extension
+        std::string sanitized_path = InputValidator::sanitize_file_path(output_path);
+        std::string final_path = sanitized_path;
+        if (fs::path(sanitized_path).extension().empty()) {
             final_path += extension;
         }
         

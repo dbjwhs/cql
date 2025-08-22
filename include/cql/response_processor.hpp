@@ -36,7 +36,7 @@ public:
      * @brief Constructor
      * @param config Configuration for the response processor
      */
-    explicit ResponseProcessor(const Config& config);
+    explicit ResponseProcessor(Config config);
     
     /**
      * @brief Process an API response and extract code blocks
