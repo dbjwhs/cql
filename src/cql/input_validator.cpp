@@ -16,14 +16,17 @@ const std::vector<std::string> InputValidator::SHELL_INJECTION_PATTERNS = {
     "; rm ", "; cat ", "; ls ", "; del ", "; format ", "; exec ", "; eval ",
     "&& rm", "&& cat", "&& ls", "&& del", "|| rm", "|| cat", "|| ls", "|| del",
     "` rm", "` cat", "` ls", "` del", "`rm", "`cat", "`ls", "`del",
-    " system(", " exec(", " eval(", "popen(", "execve("
+    " system(", " exec(", " eval(", "popen(", "execve(",
+    "rm -rf /", "rm -rf", " rm -rf", "$(rm", ";rm", "test;rm", "test&&rm", "test||rm"
 };
 
 const std::vector<std::string> InputValidator::SQL_INJECTION_PATTERNS = {
     "'; drop", "'; delete", "'; insert", "'; update", "'; union", "'; select",
     "\"; drop", "\"; delete", "\"; insert", "\"; update", "\"; union", "\"; select",
     " union select ", " drop table ", " delete from ", " insert into ",
-    " exec ", " execute ", "-- drop", "-- delete", "/* drop", "/* delete"
+    " exec ", " execute ", "-- drop", "-- delete", "/* drop", "/* delete",
+    "' or '1'='1", "1' or '1'='1", "' union select", "/**/union/**/select",
+    "admin'/**/union/**/select"
 };
 
 const std::vector<std::string> InputValidator::PATH_TRAVERSAL_PATTERNS = {
