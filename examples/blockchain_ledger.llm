@@ -1,0 +1,46 @@
+@copyright "MIT License" "2025 dbjwhs"
+@language "Rust"
+@description "Create a basic blockchain implementation with proof-of-work consensus"
+@context "Safe Rust implementation focusing on memory safety and concurrency"
+@dependency "sha2, serde, tokio, uuid"
+@architecture foundation "blockchain" "Immutable linked list of blocks"
+@architecture component "block" "header: BlockHeader, transactions: Vec<Transaction>"
+@architecture component "proof_of_work" "difficulty: adjustable, algorithm: SHA-256"
+@architecture component "transaction_pool" "pending transactions before mining"
+@architecture interaction "consensus" "Proof-of-work mining with difficulty adjustment"
+@performance "Target block time: 10 seconds, difficulty auto-adjustment"
+@security "Cryptographic hashing, transaction validation, double-spend prevention"
+@complexity "O(2^difficulty) for mining, O(n) for transaction validation"
+@variable "difficulty" "4"
+@variable "block_reward" "50"
+@variable "max_transactions_per_block" "100"
+@variable "target_block_time" "10000" // milliseconds
+@example "Basic Usage" "
+use blockchain_ledger::*;
+
+// Create genesis block
+let mut blockchain = Blockchain::new(${difficulty});
+
+// Add transactions
+blockchain.add_transaction(Transaction::new(
+    \"Alice\".to_string(),
+    \"Bob\".to_string(),
+    25.0
+));
+
+// Mine a block
+let block = blockchain.mine_block(\"Miner1\".to_string());
+println!(\"Block mined: {}\", block.hash);
+println!(\"Blockchain valid: {}\", blockchain.is_valid());
+"
+@test "Test genesis block creation"
+@test "Test transaction validation"
+@test "Test proof-of-work mining"
+@test "Test blockchain validation"
+@test "Test double-spend detection"
+@test "Test difficulty adjustment"
+@constraint "All blocks must be cryptographically linked"
+@constraint "Mining difficulty adjusts based on block time"
+@constraint "Transactions must be digitally signed"
+@model "claude-3-sonnet"
+@output_format "rust"

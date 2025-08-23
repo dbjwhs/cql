@@ -1,0 +1,50 @@
+@copyright "MIT License" "2025 dbjwhs"
+@language "C++"
+@description "Build a 3D graphics engine with modern OpenGL and PBR rendering"
+@context "Modern OpenGL 4.5+ with GLSL shaders and compute shaders"
+@dependency "OpenGL, GLFW, GLAD, GLM, stb_image, assimp"
+@architecture foundation "component_system" "Entity-Component-System architecture"
+@architecture component "renderer" "forward_plus: true, deferred: true"
+@architecture component "material_system" "pbr: true, shader_variants: dynamic"
+@architecture component "scene_graph" "frustum_culling: true, occlusion_culling: true"
+@architecture interaction "render_pipeline" "stages: [\"shadow\", \"geometry\", \"lighting\", \"post_process\"]"
+@performance "Target 60 FPS at 1080p with 10k+ objects"
+@complexity "O(n log n) for frustum culling, O(n) for rendering sorted objects"
+@variable "max_lights" "1024"
+@variable "shadow_map_size" "2048"
+@variable "msaa_samples" "4"
+@variable "max_texture_units" "32"
+@example "Basic Scene Rendering" "
+#include \"graphics_engine.h\"
+
+GraphicsEngine engine;
+engine.initialize(1920, 1080, \"My 3D App\");
+
+// Load resources
+auto mesh = engine.loadMesh(\"models/suzanne.obj\");
+auto material = engine.createPBRMaterial(\"materials/metal.json\");
+
+// Create scene
+Scene scene;
+auto entity = scene.createEntity();
+entity.addComponent<MeshRenderer>(mesh, material);
+entity.addComponent<Transform>(glm::vec3(0, 0, -5));
+
+// Main loop
+while (engine.shouldRender()) {
+    engine.beginFrame();
+    engine.renderScene(scene);
+    engine.endFrame();
+}
+"
+@test "Test PBR material rendering"
+@test "Test shadow mapping quality"
+@test "Test frustum culling accuracy"
+@test "Test multi-light scenarios"
+@test "Test texture loading and binding"
+@constraint "Must support both forward and deferred rendering"
+@constraint "Implement physically-based materials"
+@constraint "Support dynamic batching for performance"
+@security "Validate shader compilation, prevent buffer overflows"
+@model "claude-3-sonnet"
+@output_format "cpp"

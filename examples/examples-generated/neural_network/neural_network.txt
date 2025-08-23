@@ -1,0 +1,70 @@
+Target Model: claude-3-sonnet
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate Python code that:
+Implement a feedforward neural network with backpropagation from scratch
+
+Context:
+- NumPy-based implementation for educational purposes
+
+Architecture Requirements:
+- component "layer" "neurons: variable, activation: configurable"
+- component "optimizer" "types: ["SGD", "Adam", "RMSprop"]"
+- component "forward_pass" "Input → Hidden Layers → Output"
+- component "backward_pass" "Error propagation and weight updates"
+
+Constraints:
+- Gradients must be computed analytically, not numerically
+- Support different activation functions (sigmoid, ReLU, tanh)
+
+Dependencies:
+- numpy, matplotlib, scipy
+
+Performance Requirements:
+- Train on datasets up to 100k samples efficiently
+
+Security Requirements:
+- Validate input dimensions and prevent buffer overflows
+
+Algorithmic Complexity Requirements:
+- O(n*m*h) where n=samples, m=features, h=hidden_units
+
+Model Parameters:
+- Output Format: python
+
+Please reference these examples:
+Example - XOR Problem:
+```
+
+import numpy as np
+from neural_network import NeuralNetwork
+
+# XOR training data
+X = np.array([[0,0], [0,1], [1,0], [1,1]])
+y = np.array([[0], [1], [1], [0]])
+
+# Create network: 2 inputs → 4 hidden → 1 output
+nn = NeuralNetwork([2, 4, 1], learning_rate=0.001)
+nn.train(X, y, epochs=1000)
+print(nn.predict([[1, 0]]))  # Should output ~1
+
+```
+
+Please include tests for the following cases:
+- Test XOR problem convergence
+- Test gradient computation accuracy
+- Test different activation functions
+- Test overfitting detection
+- Test batch vs online learning
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

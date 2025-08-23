@@ -1,0 +1,113 @@
+Target Model: claude-3-sonnet
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate Go code that:
+Build a container orchestrator with service discovery and load balancing
+
+Context:
+- Cloud-native architecture with Kubernetes-like features
+
+Architecture Requirements:
+- foundation "microservices" "Distributed system with API-driven components"
+- component "scheduler" "algorithm: bin_packing, constraints: resource_aware"
+- component "service_mesh" "load_balancing: round_robin, health_checks: true"
+- component "storage" "volumes: persistent, secrets: encrypted"
+- component "networking" "overlay: vxlan, policies: network_policies"
+- interaction "leader_election" "algorithm: raft, failover: automatic"
+
+Constraints:
+- Support horizontal pod autoscaling
+- Implement graceful shutdown for all components
+- Maintain backward compatibility with Docker
+
+Dependencies:
+- Docker API, etcd, Prometheus, gRPC
+
+Performance Requirements:
+- Schedule 1000+ containers per second across 100+ nodes
+
+Security Requirements:
+- mTLS for inter-service communication, RBAC for API access
+
+Algorithmic Complexity Requirements:
+- O(n²) for optimal scheduling, O(n log n) for heuristic scheduling
+
+Model Parameters:
+- Output Format: golang
+
+Please reference these examples:
+Example - Container Deployment:
+```
+
+package main
+
+import (
+    "container-orchestrator/api"
+    "container-orchestrator/scheduler"
+)
+
+func main() {
+    // Initialize orchestrator
+    orchestrator := api.NewOrchestrator()
+    
+    // Define deployment
+    deployment := &api.Deployment{
+        Name: "web-server",
+        Replicas: 3,
+        Containers: []api.Container{{
+            Image: "nginx:latest",
+            Resources: api.Resources{
+                CPU:    "100m",
+                Memory: "128Mi",
+            },
+            Ports: []api.Port{{
+                ContainerPort: 80,
+                Protocol: "TCP",
+            }},
+        }},
+        Strategy: api.RollingUpdate{
+            MaxSurge: "25%",
+            MaxUnavailable: "25%",
+        },
+    }
+    
+    // Deploy and expose service
+    err := orchestrator.Deploy(deployment)
+    if err != nil {
+        panic(err)
+    }
+    
+    // Create service with load balancer
+    service := &api.Service{
+        Name: "web-server-svc",
+        Selector: map[string]string{"app": "web-server"},
+        Ports: []api.ServicePort{{
+            Port: 80,
+            TargetPort: 80,
+        }},
+        Type: api.LoadBalancer,
+    }
+    
+    orchestrator.ExposeService(service)
+}
+
+```
+
+Please include tests for the following cases:
+- Test pod scheduling across multiple nodes
+- Test service discovery and DNS resolution
+- Test rolling deployments with zero downtime
+- Test node failure recovery
+- Test resource quota enforcement
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

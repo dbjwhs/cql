@@ -1,0 +1,78 @@
+Target Model: claude-3-sonnet
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate Rust code that:
+Create a basic blockchain implementation with proof-of-work consensus
+
+Context:
+- Safe Rust implementation focusing on memory safety and concurrency
+
+Architecture Requirements:
+- foundation "blockchain" "Immutable linked list of blocks"
+- component "block" "header: BlockHeader, transactions: Vec<Transaction>"
+- component "proof_of_work" "difficulty: adjustable, algorithm: SHA-256"
+- component "transaction_pool" "pending transactions before mining"
+- interaction "consensus" "Proof-of-work mining with difficulty adjustment"
+
+Constraints:
+- All blocks must be cryptographically linked
+- Mining difficulty adjusts based on block time
+- Transactions must be digitally signed
+
+Dependencies:
+- sha2, serde, tokio, uuid
+
+Performance Requirements:
+- Target block time: 10 seconds, difficulty auto-adjustment
+
+Security Requirements:
+- Cryptographic hashing, transaction validation, double-spend prevention
+
+Algorithmic Complexity Requirements:
+- O(2^difficulty) for mining, O(n) for transaction validation
+
+Model Parameters:
+- Output Format: rust
+
+Please reference these examples:
+Example - Basic Usage:
+```
+
+use blockchain_ledger::*;
+
+// Create genesis block
+let mut blockchain = Blockchain::new(4);
+
+// Add transactions
+blockchain.add_transaction(Transaction::new(
+    "Alice".to_string(),
+    "Bob".to_string(),
+    25.0
+));
+
+// Mine a block
+let block = blockchain.mine_block("Miner1".to_string());
+println!("Block mined: {}", block.hash);
+println!("Blockchain valid: {}", blockchain.is_valid());
+
+```
+
+Please include tests for the following cases:
+- Test genesis block creation
+- Test transaction validation
+- Test proof-of-work mining
+- Test blockchain validation
+- Test double-spend detection
+- Test difficulty adjustment
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

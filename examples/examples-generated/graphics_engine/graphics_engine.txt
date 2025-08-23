@@ -1,0 +1,82 @@
+Target Model: claude-3-sonnet
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate C++ code that:
+Build a 3D graphics engine with modern OpenGL and PBR rendering
+
+Context:
+- Modern OpenGL 4.5+ with GLSL shaders and compute shaders
+
+Architecture Requirements:
+- foundation "component_system" "Entity-Component-System architecture"
+- component "renderer" "forward_plus: true, deferred: true"
+- component "material_system" "pbr: true, shader_variants: dynamic"
+- component "scene_graph" "frustum_culling: true, occlusion_culling: true"
+- interaction "render_pipeline" "stages: ["shadow", "geometry", "lighting", "post_process"]"
+
+Constraints:
+- Must support both forward and deferred rendering
+- Implement physically-based materials
+- Support dynamic batching for performance
+
+Dependencies:
+- OpenGL, GLFW, GLAD, GLM, stb_image, assimp
+
+Performance Requirements:
+- Target 60 FPS at 1080p with 10k+ objects
+
+Security Requirements:
+- Validate shader compilation, prevent buffer overflows
+
+Algorithmic Complexity Requirements:
+- O(n log n) for frustum culling, O(n) for rendering sorted objects
+
+Model Parameters:
+- Output Format: cpp
+
+Please reference these examples:
+Example - Basic Scene Rendering:
+```
+
+#include "graphics_engine.h"
+
+GraphicsEngine engine;
+engine.initialize(1920, 1080, "My 3D App");
+
+// Load resources
+auto mesh = engine.loadMesh("models/suzanne.obj");
+auto material = engine.createPBRMaterial("materials/metal.json");
+
+// Create scene
+Scene scene;
+auto entity = scene.createEntity();
+entity.addComponent<MeshRenderer>(mesh, material);
+entity.addComponent<Transform>(glm::vec3(0, 0, -5));
+
+// Main loop
+while (engine.shouldRender()) {
+    engine.beginFrame();
+    engine.renderScene(scene);
+    engine.endFrame();
+}
+
+```
+
+Please include tests for the following cases:
+- Test PBR material rendering
+- Test shadow mapping quality
+- Test frustum culling accuracy
+- Test multi-light scenarios
+- Test texture loading and binding
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

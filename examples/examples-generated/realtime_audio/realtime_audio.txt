@@ -1,0 +1,87 @@
+Target Model: claude-3-sonnet
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate C++ code that:
+Build a real-time audio processing engine with DSP effects and low latency
+
+Context:
+- Cross-platform audio using JUCE framework with real-time constraints
+
+Architecture Requirements:
+- foundation "callback_driven" "Audio callback with fixed buffer sizes"
+- component "audio_buffer" "ring_buffer: true, lock_free: true"
+- component "effect_chain" "serial: true, parallel: true, dynamic: true"
+- component "dsp_processor" "simd_optimized: true, vectorized: true"
+- interaction "realtime_thread" "priority: high, no_allocation: true"
+
+Constraints:
+- No memory allocation in audio callback
+- Support SIMD instruction sets (SSE, AVX)
+- Handle sample rate changes dynamically
+
+Dependencies:
+- JUCE, FFTW3, Intel IPP
+
+Performance Requirements:
+- < 10ms latency at 44.1kHz with complex effect chains
+
+Security Requirements:
+- Validate audio data ranges, prevent buffer overflows
+
+Algorithmic Complexity Requirements:
+- O(n) per audio buffer, O(log n) for parameter changes
+
+Model Parameters:
+- Output Format: cpp
+
+Please reference these examples:
+Example - Audio Effect Chain:
+```
+
+#include "realtime_audio.h"
+
+AudioEngine engine(44100, 512);
+
+// Create effect chain
+auto reverb = std::make_unique<ReverbEffect>();
+auto eq = std::make_unique<EqualizerEffect>();
+auto compressor = std::make_unique<CompressorEffect>();
+
+EffectChain chain;
+chain.addEffect(std::move(eq));
+chain.addEffect(std::move(compressor));
+chain.addEffect(std::move(reverb));
+
+// Setup audio callback
+engine.setProcessCallback([&](AudioBuffer& buffer) {
+    // Real-time processing - no allocations!
+    chain.process(buffer);
+    
+    // Apply real-time parameter changes
+    if (auto param_changes = engine.getParameterChanges()) {
+        chain.updateParameters(param_changes);
+    }
+});
+
+engine.start();
+
+```
+
+Please include tests for the following cases:
+- Test audio callback timing consistency
+- Test effect parameter automation
+- Test buffer underrun/overrun handling
+- Test multi-channel processing
+- Test SIMD optimization correctness
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

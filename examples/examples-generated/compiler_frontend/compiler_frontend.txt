@@ -1,0 +1,85 @@
+Target Model: claude-3-sonnet
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate C++ code that:
+Implement a compiler frontend with lexical analysis, parsing, and AST generation
+
+Context:
+- Modern C++20 implementation with concepts and ranges
+
+Architecture Requirements:
+- foundation "pipeline" "Source → Lexer → Parser → AST → Semantic Analysis"
+- component "lexer" "regex_based: true, error_recovery: true"
+- component "parser" "recursive_descent: true, operator_precedence: true"
+- component "ast" "visitor_pattern: true, type_safe: true"
+- component "symbol_table" "scoped: true, hash_based: true"
+- interaction "error_handling" "error_recovery: true, diagnostics: rich"
+
+Constraints:
+- Support configurable grammar through BNF-like syntax
+- Provide rich error messages with source location
+- Handle Unicode identifiers properly
+
+Dependencies:
+- std::regex, fmt, range-v3
+
+Performance Requirements:
+- Parse 100k+ lines per second with detailed error reporting
+
+Security Requirements:
+- Validate input encoding, prevent parser stack overflow
+
+Algorithmic Complexity Requirements:
+- O(n) for lexing, O(n log n) for parsing with operator precedence
+
+Model Parameters:
+- Output Format: cpp
+
+Please reference these examples:
+Example - Simple Language Parsing:
+```
+
+#include "compiler_frontend.h"
+
+std::string source = R"(
+    function factorial(n: int) -> int {
+        if (n <= 1) {
+            return 1;
+        }
+        return n * factorial(n - 1);
+    }
+)";
+
+CompilerFrontend compiler;
+auto tokens = compiler.tokenize(source);
+auto ast = compiler.parse(tokens);
+auto errors = compiler.getErrors();
+
+if (errors.empty()) {
+    ast->accept(PrettyPrintVisitor{});
+} else {
+    for (const auto& error : errors) {
+        std::cout << error.format() << std::endl;
+    }
+}
+
+```
+
+Please include tests for the following cases:
+- Test tokenization of all language constructs
+- Test parsing with various precedence levels
+- Test error recovery during parsing
+- Test AST visitor pattern implementation
+- Test symbol table scoping rules
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

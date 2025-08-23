@@ -1,0 +1,60 @@
+@copyright "MIT License" "2025 dbjwhs"
+@language "C++"
+@description "Create a type-safe ORM with query builder and connection pooling"
+@context "Modern C++20 with concepts, reflection, and CRTP patterns"
+@dependency "SQLite3, PostgreSQL, MySQL, libpq, fmt"
+@architecture foundation "active_record" "Models map directly to database tables"
+@architecture component "query_builder" "fluent_api: true, type_safe: true"
+@architecture component "connection_pool" "size: configurable, thread_safe: true"
+@architecture component "schema_migration" "versioned: true, rollback: true"
+@architecture interaction "lazy_loading" "N+1 query prevention through eager loading"
+@performance "Handle 10k+ concurrent connections with prepared statements"
+@complexity "O(1) for primary key lookups, O(log n) for indexed queries"
+@variable "pool_size" "20"
+@variable "connection_timeout" "30000"
+@variable "query_timeout" "5000"
+@variable "max_retries" "3"
+@example "ORM Usage" "
+#include \"database_orm.h\"
+
+// Define model
+class User : public Model<User> {
+public:
+    FIELD(int, id, PRIMARY_KEY, AUTO_INCREMENT)
+    FIELD(std::string, email, UNIQUE, NOT_NULL)
+    FIELD(std::string, name, NOT_NULL)
+    FIELD(std::optional<std::string>, bio)
+    FIELD(std::chrono::system_clock::time_point, created_at, DEFAULT_NOW)
+    
+    HAS_MANY(Post, posts)
+    BELONGS_TO(Company, company)
+};
+
+// Usage
+DatabaseConfig config{\"sqlite:///app.db\", ${pool_size}};
+ORM::initialize(config);
+
+// Type-safe queries
+auto users = User::where(\"age\", \">\", 18)
+                 .order_by(\"created_at\", DESC)
+                 .limit(10)
+                 .with(\"posts\", \"company\")  // Eager loading
+                 .get();
+
+// Create new record
+User user;
+user.email = \"john@example.com\";
+user.name = \"John Doe\";
+user.save();
+"
+@test "Test CRUD operations on all supported databases"
+@test "Test connection pooling under load"
+@test "Test transaction rollback scenarios"
+@test "Test eager loading performance"
+@test "Test schema migration up/down"
+@constraint "Must prevent SQL injection through parameterized queries"
+@constraint "Support multiple database backends seamlessly"
+@constraint "Provide compile-time type checking for queries"
+@security "Parameterized queries only, input validation, connection encryption"
+@model "claude-3-sonnet"
+@output_format "cpp"

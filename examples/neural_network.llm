@@ -1,0 +1,38 @@
+@copyright "MIT License" "2025 dbjwhs"
+@language "Python"
+@description "Implement a feedforward neural network with backpropagation from scratch"
+@context "NumPy-based implementation for educational purposes"
+@dependency "numpy, matplotlib, scipy"
+@architecture component "layer" "neurons: variable, activation: configurable"
+@architecture component "optimizer" "types: [\"SGD\", \"Adam\", \"RMSprop\"]"
+@architecture component "forward_pass" "Input → Hidden Layers → Output"
+@architecture component "backward_pass" "Error propagation and weight updates"
+@performance "Train on datasets up to 100k samples efficiently"
+@complexity "O(n*m*h) where n=samples, m=features, h=hidden_units"
+@variable "learning_rate" "0.001"
+@variable "epochs" "1000"
+@variable "batch_size" "32"
+@variable "hidden_layers" "[128, 64, 32]"
+@example "XOR Problem" "
+import numpy as np
+from neural_network import NeuralNetwork
+
+# XOR training data
+X = np.array([[0,0], [0,1], [1,0], [1,1]])
+y = np.array([[0], [1], [1], [0]])
+
+# Create network: 2 inputs → 4 hidden → 1 output
+nn = NeuralNetwork([2, 4, 1], learning_rate=${learning_rate})
+nn.train(X, y, epochs=${epochs})
+print(nn.predict([[1, 0]]))  # Should output ~1
+"
+@test "Test XOR problem convergence"
+@test "Test gradient computation accuracy"
+@test "Test different activation functions"
+@test "Test overfitting detection"
+@test "Test batch vs online learning"
+@constraint "Gradients must be computed analytically, not numerically"
+@constraint "Support different activation functions (sigmoid, ReLU, tanh)"
+@security "Validate input dimensions and prevent buffer overflows"
+@model "claude-3-sonnet"
+@output_format "python"

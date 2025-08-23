@@ -1,0 +1,55 @@
+@copyright "MIT License" "2025 dbjwhs"
+@language "C++"
+@description "Build a real-time audio processing engine with DSP effects and low latency"
+@context "Cross-platform audio using JUCE framework with real-time constraints"
+@dependency "JUCE, FFTW3, Intel IPP"
+@architecture foundation "callback_driven" "Audio callback with fixed buffer sizes"
+@architecture component "audio_buffer" "ring_buffer: true, lock_free: true"
+@architecture component "effect_chain" "serial: true, parallel: true, dynamic: true"
+@architecture component "dsp_processor" "simd_optimized: true, vectorized: true"
+@architecture interaction "realtime_thread" "priority: high, no_allocation: true"
+@performance "< 10ms latency at 44.1kHz with complex effect chains"
+@complexity "O(n) per audio buffer, O(log n) for parameter changes"
+@variable "sample_rate" "44100"
+@variable "buffer_size" "512"
+@variable "max_effects" "16"
+@variable "max_channels" "8"
+@example "Audio Effect Chain" "
+#include \"realtime_audio.h\"
+
+AudioEngine engine(${sample_rate}, ${buffer_size});
+
+// Create effect chain
+auto reverb = std::make_unique<ReverbEffect>();
+auto eq = std::make_unique<EqualizerEffect>();
+auto compressor = std::make_unique<CompressorEffect>();
+
+EffectChain chain;
+chain.addEffect(std::move(eq));
+chain.addEffect(std::move(compressor));
+chain.addEffect(std::move(reverb));
+
+// Setup audio callback
+engine.setProcessCallback([&](AudioBuffer& buffer) {
+    // Real-time processing - no allocations!
+    chain.process(buffer);
+    
+    // Apply real-time parameter changes
+    if (auto param_changes = engine.getParameterChanges()) {
+        chain.updateParameters(param_changes);
+    }
+});
+
+engine.start();
+"
+@test "Test audio callback timing consistency"
+@test "Test effect parameter automation"
+@test "Test buffer underrun/overrun handling"
+@test "Test multi-channel processing"
+@test "Test SIMD optimization correctness"
+@constraint "No memory allocation in audio callback"
+@constraint "Support SIMD instruction sets (SSE, AVX)"
+@constraint "Handle sample rate changes dynamically"
+@security "Validate audio data ranges, prevent buffer overflows"
+@model "claude-3-sonnet"
+@output_format "cpp"

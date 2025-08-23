@@ -1,0 +1,52 @@
+@copyright "MIT License" "2025 dbjwhs"
+@language "C++"
+@description "Implement a compiler frontend with lexical analysis, parsing, and AST generation"
+@context "Modern C++20 implementation with concepts and ranges"
+@dependency "std::regex, fmt, range-v3"
+@architecture foundation "pipeline" "Source → Lexer → Parser → AST → Semantic Analysis"
+@architecture component "lexer" "regex_based: true, error_recovery: true"
+@architecture component "parser" "recursive_descent: true, operator_precedence: true"
+@architecture component "ast" "visitor_pattern: true, type_safe: true"
+@architecture component "symbol_table" "scoped: true, hash_based: true"
+@architecture interaction "error_handling" "error_recovery: true, diagnostics: rich"
+@performance "Parse 100k+ lines per second with detailed error reporting"
+@complexity "O(n) for lexing, O(n log n) for parsing with operator precedence"
+@variable "max_identifier_length" "255"
+@variable "max_nesting_depth" "100"
+@variable "error_limit" "10"
+@example "Simple Language Parsing" "
+#include \"compiler_frontend.h\"
+
+std::string source = R\"(
+    function factorial(n: int) -> int {
+        if (n <= 1) {
+            return 1;
+        }
+        return n * factorial(n - 1);
+    }
+)\";
+
+CompilerFrontend compiler;
+auto tokens = compiler.tokenize(source);
+auto ast = compiler.parse(tokens);
+auto errors = compiler.getErrors();
+
+if (errors.empty()) {
+    ast->accept(PrettyPrintVisitor{});
+} else {
+    for (const auto& error : errors) {
+        std::cout << error.format() << std::endl;
+    }
+}
+"
+@test "Test tokenization of all language constructs"
+@test "Test parsing with various precedence levels"
+@test "Test error recovery during parsing"
+@test "Test AST visitor pattern implementation"
+@test "Test symbol table scoping rules"
+@constraint "Support configurable grammar through BNF-like syntax"
+@constraint "Provide rich error messages with source location"
+@constraint "Handle Unicode identifiers properly"
+@security "Validate input encoding, prevent parser stack overflow"
+@model "claude-3-sonnet"
+@output_format "cpp"

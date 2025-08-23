@@ -1,0 +1,63 @@
+Target Model: claude-3-sonnet
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate C++ code that:
+Build a high-performance web crawler with rate limiting and politeness policies
+
+Context:
+- Modern C++20 implementation with coroutines and async/await patterns
+
+Architecture Requirements:
+- foundation "event_driven" "Uses async I/O and thread pools"
+- component "thread_pool" "size: 16, work_stealing: true"
+- component "rate_limiter" "requests_per_second: 10, burst_capacity: 50"
+- interaction "producer_consumer" "URL queue with multiple worker threads"
+
+Constraints:
+- Must respect robots.txt and crawl-delay directives
+- Handle HTTP redirects (3xx) properly
+
+Dependencies:
+- libcurl, nlohmann/json, boost::asio
+
+Performance Requirements:
+- Crawl up to 1000 URLs per minute while respecting robots.txt
+
+Security Requirements:
+- Validate URLs, prevent SSRF attacks, handle malicious redirects
+
+Algorithmic Complexity Requirements:
+- O(n) for URL processing, O(log n) for duplicate detection
+
+Please reference these examples:
+Example - Basic Crawling:
+```
+
+WebCrawler crawler(5, "PoliteBot/1.0");
+crawler.setRateLimit(10); // requests per second
+crawler.addSeed("https://example.com");
+crawler.setContentFilter([](const std::string& content) {
+    return content.find("<title>") != std::string::npos;
+});
+auto results = crawler.crawl();
+
+```
+
+Please include tests for the following cases:
+- Test robots.txt compliance
+- Test rate limiting functionality
+- Test duplicate URL detection
+- Test malformed URL handling
+- Test timeout handling
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

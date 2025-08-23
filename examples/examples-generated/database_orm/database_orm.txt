@@ -1,0 +1,92 @@
+Target Model: claude-3-sonnet
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate C++ code that:
+Create a type-safe ORM with query builder and connection pooling
+
+Context:
+- Modern C++20 with concepts, reflection, and CRTP patterns
+
+Architecture Requirements:
+- foundation "active_record" "Models map directly to database tables"
+- component "query_builder" "fluent_api: true, type_safe: true"
+- component "connection_pool" "size: configurable, thread_safe: true"
+- component "schema_migration" "versioned: true, rollback: true"
+- interaction "lazy_loading" "N+1 query prevention through eager loading"
+
+Constraints:
+- Must prevent SQL injection through parameterized queries
+- Support multiple database backends seamlessly
+- Provide compile-time type checking for queries
+
+Dependencies:
+- SQLite3, PostgreSQL, MySQL, libpq, fmt
+
+Performance Requirements:
+- Handle 10k+ concurrent connections with prepared statements
+
+Security Requirements:
+- Parameterized queries only, input validation, connection encryption
+
+Algorithmic Complexity Requirements:
+- O(1) for primary key lookups, O(log n) for indexed queries
+
+Model Parameters:
+- Output Format: cpp
+
+Please reference these examples:
+Example - ORM Usage:
+```
+
+#include "database_orm.h"
+
+// Define model
+class User : public Model<User> {
+public:
+    FIELD(int, id, PRIMARY_KEY, AUTO_INCREMENT)
+    FIELD(std::string, email, UNIQUE, NOT_NULL)
+    FIELD(std::string, name, NOT_NULL)
+    FIELD(std::optional<std::string>, bio)
+    FIELD(std::chrono::system_clock::time_point, created_at, DEFAULT_NOW)
+    
+    HAS_MANY(Post, posts)
+    BELONGS_TO(Company, company)
+};
+
+// Usage
+DatabaseConfig config{"sqlite:///app.db", 20};
+ORM::initialize(config);
+
+// Type-safe queries
+auto users = User::where("age", ">", 18)
+                 .order_by("created_at", DESC)
+                 .limit(10)
+                 .with("posts", "company")  // Eager loading
+                 .get();
+
+// Create new record
+User user;
+user.email = "john@example.com";
+user.name = "John Doe";
+user.save();
+
+```
+
+Please include tests for the following cases:
+- Test CRUD operations on all supported databases
+- Test connection pooling under load
+- Test transaction rollback scenarios
+- Test eager loading performance
+- Test schema migration up/down
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

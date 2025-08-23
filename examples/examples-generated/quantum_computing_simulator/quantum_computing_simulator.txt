@@ -1,0 +1,167 @@
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate C++ code that:
+Build a comprehensive quantum computing simulator with advanced quantum algorithms
+
+Context:
+- High-performance quantum state simulation with multi-threading and SIMD optimization
+
+Architecture Requirements:
+- foundation "quantum_circuit" "Gate-based quantum computation model"
+- component "quantum_state" "representation: state_vector, precision: 64-bit"
+- component "gate_library" "universal_set: true, custom_gates: true, parametric: true"
+- component "measurement" "projective: true, weak: true, continuous: true"
+- component "noise_model" "decoherence: T1/T2, gate_errors: probabilistic"
+- component "optimizer" "simd: AVX512, threading: OpenMP, gpu: CUDA"
+- interaction "circuit_compilation" "optimization: true, decomposition: automatic"
+- interaction "error_correction" "codes: ["surface", "color", "toric"], syndrome_decoding: true"
+- interaction "variational_algorithms" "optimizers: ["COBYLA", "SPSA", "Adam"], gradients: parameter_shift"
+
+Constraints:
+- Maintain unitarity of quantum evolution
+- Support both ideal and noisy quantum simulations
+- Implement major quantum algorithms (Shor's, Grover's, VQE, QAOA)
+- Provide quantum-classical hybrid optimization
+- Export results to standard formats (OpenQASM, Cirq, Qiskit)
+
+Dependencies:
+- Eigen3, Intel MKL, CUDA (optional), OpenMP, HDF5
+
+Performance Requirements:
+- Simulate 20-qubit circuits with 10^6 gates in minutes
+
+Security Requirements:
+- Validate quantum circuit consistency, prevent invalid operations
+
+Algorithmic Complexity Requirements:
+- O(2^n) space for n qubits, O(g * 2^n) time for g gates
+
+Model Parameters:
+- Output Format: cpp
+- Max Tokens: 4000
+- Temperature: 0.1
+
+Please reference these examples:
+Example - Quantum Teleportation Protocol:
+```
+
+#include "quantum_simulator.h"
+
+QuantumSimulator sim(20);
+
+// Create entangled Bell pair
+QuantumCircuit circuit;
+circuit.addGate(HadamardGate(1));  // Hadamard on qubit 1
+circuit.addGate(CNOTGate(1, 2));   // CNOT: control=1, target=2
+
+// Prepare state to teleport |ψ⟩ = α|0⟩ + β|1⟩
+std::complex<double> alpha(0.6, 0.0);
+std::complex<double> beta(0.8, 0.0);
+circuit.addGate(StatePreparationGate(0, alpha, beta));
+
+// Bell measurement on qubits 0 and 1
+circuit.addGate(CNOTGate(0, 1));
+circuit.addGate(HadamardGate(0));
+auto measurement1 = circuit.addMeasurement(0);
+auto measurement2 = circuit.addMeasurement(1);
+
+// Conditional corrections on qubit 2
+circuit.addConditionalGate(PauliXGate(2), measurement2);
+circuit.addConditionalGate(PauliZGate(2), measurement1);
+
+// Final measurement of teleported state
+auto final_measurement = circuit.addMeasurement(2);
+
+// Run simulation with noise model
+NoiseModel noise;
+noise.setDecoherenceRate(0.001);
+noise.setGateErrorRate(0.0001);
+
+auto results = sim.execute(circuit, 1000, noise);
+std::cout << "Teleportation fidelity: " << results.getFidelity() << std::endl;
+
+```
+
+Example - Variational Quantum Eigensolver (VQE):
+```
+
+// Solve H2 molecule ground state with VQE
+MolecularHamiltonian H2 = MolecularHamiltonian::fromGeometry(
+    "H 0.0 0.0 0.0; H 0.0 0.0 0.74", "STO-3G"
+);
+
+// Create ansatz circuit (UCCSD)
+auto ansatz = UCCSDAnsatz(H2.getNumQubits(), H2.getNumElectrons());
+
+// Classical optimizer
+AdamOptimizer optimizer(learning_rate=0.01, max_iterations=1000);
+
+// VQE algorithm
+VQE vqe(sim, H2, ansatz, optimizer);
+auto result = vqe.minimize();
+
+std::cout << "Ground state energy: " << result.energy << " Hartree" << std::endl;
+std::cout << "Optimal parameters: ";
+for (auto param : result.parameters) {
+    std::cout << param << " ";
+}
+
+```
+
+Example - Quantum Error Correction:
+```
+
+// Surface code error correction
+SurfaceCode surface_code(5, 5);  // 5x5 logical qubit
+auto encoded_circuit = surface_code.encodeLogicalZero();
+
+// Add noise to the system
+PhysicalNoiseModel physical_noise;
+physical_noise.setDepolarizingRate(0.001);
+physical_noise.setMeasurementErrorRate(0.01);
+
+// Syndrome extraction and error correction
+for (int cycle = 0; cycle < 10; ++cycle) {
+    // Apply random errors
+    encoded_circuit.addNoiseLayer(physical_noise);
+    
+    // Syndrome measurement
+    auto syndromes = surface_code.measureSyndromes(encoded_circuit);
+    
+    // Decode errors using minimum-weight perfect matching
+    auto corrections = surface_code.decodeErrors(syndromes);
+    
+    // Apply corrections
+    for (auto correction : corrections) {
+        encoded_circuit.addGate(correction);
+    }
+}
+
+// Measure logical qubit
+auto logical_measurement = surface_code.measureLogical(encoded_circuit);
+std::cout << "Logical error rate: " << logical_measurement.errorRate() << std::endl;
+
+```
+
+Please include tests for the following cases:
+- Test quantum gate implementations for unitarity
+- Test measurement statistics match theoretical predictions
+- Test Shor's algorithm factorization correctness
+- Test Grover's algorithm search amplification
+- Test VQE convergence for small molecules
+- Test quantum error correction syndrome detection
+- Test circuit optimization preserves functionality
+- Test noise model implementation accuracy
+- Test multi-threaded simulation consistency
+- Test GPU acceleration numerical equivalence
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

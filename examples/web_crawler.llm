@@ -1,0 +1,33 @@
+@copyright "MIT License" "2025 dbjwhs"
+@language "C++"
+@description "Build a high-performance web crawler with rate limiting and politeness policies"
+@context "Modern C++20 implementation with coroutines and async/await patterns"
+@dependency "libcurl, nlohmann/json, boost::asio"
+@architecture foundation "event_driven" "Uses async I/O and thread pools"
+@architecture component "thread_pool" "size: 16, work_stealing: true"
+@architecture component "rate_limiter" "requests_per_second: 10, burst_capacity: 50"
+@architecture interaction "producer_consumer" "URL queue with multiple worker threads"
+@performance "Crawl up to 1000 URLs per minute while respecting robots.txt"
+@security "Validate URLs, prevent SSRF attacks, handle malicious redirects"
+@complexity "O(n) for URL processing, O(log n) for duplicate detection"
+@variable "max_depth" "5"
+@variable "timeout_seconds" "30"
+@variable "user_agent" "PoliteBot/1.0"
+@example "Basic Crawling" "
+WebCrawler crawler(${max_depth}, \"${user_agent}\");
+crawler.setRateLimit(10); // requests per second
+crawler.addSeed(\"https://example.com\");
+crawler.setContentFilter([](const std::string& content) {
+    return content.find(\"<title>\") != std::string::npos;
+});
+auto results = crawler.crawl();
+"
+@test "Test robots.txt compliance"
+@test "Test rate limiting functionality"
+@test "Test duplicate URL detection"
+@test "Test malformed URL handling"
+@test "Test timeout handling"
+@constraint "Must respect robots.txt and crawl-delay directives"
+@constraint "Handle HTTP redirects (3xx) properly"
+@model "claude-3-sonnet"
+@format "cpp"

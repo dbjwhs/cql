@@ -1,0 +1,95 @@
+Target Model: claude-3-sonnet
+
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 dbjwhs
+```
+
+Please generate C++ code that:
+Implement a 2D/3D physics engine with collision detection and response
+
+Context:
+- High-performance physics simulation using SIMD and spatial partitioning
+
+Architecture Requirements:
+- foundation "ecs" "Entity-Component-System for physics objects"
+- component "rigid_body" "position, velocity, acceleration, mass, inertia"
+- component "collider" "shapes: ["sphere", "box", "capsule", "mesh"]"
+- component "constraint" "types: ["distance", "hinge", "spring", "motor"]"
+- component "world" "gravity: configurable, broad_phase: spatial_hash"
+- interaction "collision_pipeline" "broad_phase → narrow_phase → resolution"
+
+Constraints:
+- Maintain temporal coherence for stable simulation
+- Support both discrete and continuous collision detection
+- Handle degenerate cases (coincident vertices, zero mass)
+
+Dependencies:
+- Eigen3, Intel TBB, GLM
+
+Performance Requirements:
+- Simulate 10k+ rigid bodies at 60Hz with accurate collisions
+
+Security Requirements:
+- Validate physics parameters, prevent infinite forces
+
+Algorithmic Complexity Requirements:
+- O(n log n) for broad phase, O(n²) worst case for narrow phase
+
+Model Parameters:
+- Output Format: cpp
+
+Please reference these examples:
+Example - Physics World Setup:
+```
+
+#include "game_physics.h"
+
+PhysicsWorld world;
+world.setGravity({0, -9.81, 0});
+world.setTimeStep(0.016667);
+
+// Create ground plane
+auto ground = world.createRigidBody();
+ground.setCollider(std::make_shared<BoxCollider>(100, 1, 100));
+ground.setStatic(true);
+ground.setPosition({0, -5, 0});
+
+// Create dynamic box
+auto box = world.createRigidBody();
+box.setCollider(std::make_shared<BoxCollider>(1, 1, 1));
+box.setMass(1.0f);
+box.setPosition({0, 10, 0});
+box.setVelocity({5, 0, 0});
+
+// Add spring constraint
+auto spring = world.createSpringConstraint(ground, box);
+spring.setStiffness(100.0f);
+spring.setDamping(0.9f);
+
+// Simulation loop
+for (int i = 0; i < 1000; ++i) {
+    world.step();
+    
+    if (i % 60 == 0) {  // Print every second
+        auto pos = box.getPosition();
+        std::cout << "Box position: " << pos.x << ", " << pos.y << ", " << pos.z << std::endl;
+    }
+}
+
+```
+
+Please include tests for the following cases:
+- Test collision detection accuracy for all shape combinations
+- Test constraint stability under extreme forces
+- Test energy conservation in isolated systems
+- Test broad-phase culling efficiency
+- Test continuous collision detection for fast objects
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability
+

@@ -1,0 +1,63 @@
+@copyright "MIT License" "2025 dbjwhs"
+@language "C++"
+@description "Implement a 2D/3D physics engine with collision detection and response"
+@context "High-performance physics simulation using SIMD and spatial partitioning"
+@dependency "Eigen3, Intel TBB, GLM"
+@architecture foundation "ecs" "Entity-Component-System for physics objects"
+@architecture component "rigid_body" "position, velocity, acceleration, mass, inertia"
+@architecture component "collider" "shapes: [\"sphere\", \"box\", \"capsule\", \"mesh\"]"
+@architecture component "constraint" "types: [\"distance\", \"hinge\", \"spring\", \"motor\"]"
+@architecture component "world" "gravity: configurable, broad_phase: spatial_hash"
+@architecture interaction "collision_pipeline" "broad_phase → narrow_phase → resolution"
+@performance "Simulate 10k+ rigid bodies at 60Hz with accurate collisions"
+@complexity "O(n log n) for broad phase, O(n²) worst case for narrow phase"
+@variable "gravity" "-9.81"
+@variable "time_step" "0.016667" // 60 FPS
+@variable "solver_iterations" "10"
+@variable "spatial_hash_cell_size" "2.0"
+@example "Physics World Setup" "
+#include \"game_physics.h\"
+
+PhysicsWorld world;
+world.setGravity({0, ${gravity}, 0});
+world.setTimeStep(${time_step});
+
+// Create ground plane
+auto ground = world.createRigidBody();
+ground.setCollider(std::make_shared<BoxCollider>(100, 1, 100));
+ground.setStatic(true);
+ground.setPosition({0, -5, 0});
+
+// Create dynamic box
+auto box = world.createRigidBody();
+box.setCollider(std::make_shared<BoxCollider>(1, 1, 1));
+box.setMass(1.0f);
+box.setPosition({0, 10, 0});
+box.setVelocity({5, 0, 0});
+
+// Add spring constraint
+auto spring = world.createSpringConstraint(ground, box);
+spring.setStiffness(100.0f);
+spring.setDamping(0.9f);
+
+// Simulation loop
+for (int i = 0; i < 1000; ++i) {
+    world.step();
+    
+    if (i % 60 == 0) {  // Print every second
+        auto pos = box.getPosition();
+        std::cout << \"Box position: \" << pos.x << \", \" << pos.y << \", \" << pos.z << std::endl;
+    }
+}
+"
+@test "Test collision detection accuracy for all shape combinations"
+@test "Test constraint stability under extreme forces"
+@test "Test energy conservation in isolated systems"
+@test "Test broad-phase culling efficiency"
+@test "Test continuous collision detection for fast objects"
+@constraint "Maintain temporal coherence for stable simulation"
+@constraint "Support both discrete and continuous collision detection"
+@constraint "Handle degenerate cases (coincident vertices, zero mass)"
+@security "Validate physics parameters, prevent infinite forces"
+@model "claude-3-sonnet"
+@output_format "cpp"
