@@ -224,9 +224,13 @@ template     - Template management commands
 
 ## Documentation
 
+> **📋 Documentation Strategy Note**: The project currently uses Doxygen for C++ API documentation with automatic GitHub Pages deployment. We're evaluating whether to add Jekyll-based documentation processing for the Markdown guides. This decision is pending future discussion to determine the optimal documentation architecture.
+
 ### 📚 [API Reference Documentation](https://dbjwhs.github.io/cql/)
 
 **Complete auto-generated documentation of all classes, methods, and interfaces is available at our [Doxygen site](https://dbjwhs.github.io/cql/).**
+
+The Doxygen documentation is automatically built and deployed via GitHub Actions on every push to main.
 
 ### User Guides and Manuals
 
@@ -236,11 +240,26 @@ template     - Template management commands
 - [Tutorial](docs/tutorial.md): Step-by-step introduction to CQL
 - [Troubleshooting](docs/troubleshooting.md): Common issues and solutions
 
-You can also generate the Doxygen documentation locally with:
+### Documentation Generation
 
+**Doxygen API Docs (C++ source code):**
 ```bash
-# In the build directory
-make docs
+# Generate locally
+doxygen Doxyfile
+# Output: docs/html/
+
+# Or trigger GitHub Action:
+# Push to main branch → auto-deploys to GitHub Pages
+```
+
+**Local Development:**
+```bash
+# Build and run local tests
+mkdir build && cd build && cmake .. && make
+./cql_test
+
+# Process example files
+./process_llm_files.sh
 ```
 
 ## License
