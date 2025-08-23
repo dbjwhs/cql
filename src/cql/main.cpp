@@ -9,6 +9,7 @@
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/command_line_handler.hpp"
 #include "../../include/cql/template_operations.hpp"
+#include "../../include/cql/documentation_handler.hpp"
 
 // note the file exists in the cpp-snippets repo, you will need to check this out and have it and cql share the
 // same root directory
@@ -44,88 +45,8 @@ LogLevel string_to_log_level(const std::string& level_str) {
 
 
 
-/**
- * @brief Generate documentation for a specific template
- *
- * @param argc Argument count
- * @param argv Argument values
- * @return int Return code (0 for success, 1 for error)
- */
-int handle_docs_command(const int argc, char* argv[]) {
-    if (argc < 3) {
-        std::cerr << "error: template name required" << std::endl;
-        std::cerr << "usage: cql --docs TEMPLATE_NAME" << std::endl;
-        return CQL_ERROR;
-    }
 
-    std::string template_name = argv[2];
 
-    try {
-        cql::TemplateManager manager;
-        const std::string docs = manager.generate_template_documentation(template_name);
-        std::cout << docs << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "error generating template documentation: " << e.what() << std::endl;
-        return CQL_ERROR;
-    }
-    return CQL_NO_ERROR;
-}
-
-/**
- * @brief Generate documentation for all templates
- *
- * @return int Return code (0 for success, 1 for error)
- */
-int handle_docs_all_command() {
-    try {
-        cql::TemplateManager manager;
-        const std::string docs = manager.generate_all_template_documentation();
-        std::cout << docs << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "error generating template documentation: " << e.what() << std::endl;
-        return CQL_ERROR;
-    }
-    return CQL_NO_ERROR;
-}
-
-/**
- * @brief Export documentation to a file
- *
- * @param argc Argument count
- * @param argv Argument values
- * @return int Return code (0 for success, 1 for error)
- */
-int handle_export_command(int argc, char* argv[]) {
-    if (argc < 3) {
-        std::cerr << "error: output path required" << std::endl;
-        std::cerr << "usage: cql --export OUTPUT_PATH [FORMAT]" << std::endl;
-        return CQL_ERROR;
-    }
-
-    std::string output_path = argv[2];
-    std::string format = "markdown"; // default format
-
-    // Check if a format is specified
-    if (argc > 3) {
-        format = argv[3];
-    }
-
-    try {
-        cql::TemplateManager manager;
-
-        if (manager.export_documentation(output_path, format)) {
-            std::cout << "template documentation exported to " << output_path
-                      << " in " << format << " format" << std::endl;
-        } else {
-            std::cerr << "failed to export template documentation" << std::endl;
-            return CQL_ERROR;
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "error exporting template documentation: " << e.what() << std::endl;
-        return CQL_ERROR;
-    }
-    return CQL_NO_ERROR;
-}
 
 /**
  * @brief Process a file with an optional output
@@ -264,11 +185,11 @@ int main(const int argc, char* argv[]) {
             }
             return cql::TemplateOperations::handle_validate_all_command(effective_argv[2]);
         } else if (arg1 == "--docs") {
-            return handle_docs_command(effective_argc, effective_argv);
+            return cql::DocumentationHandler::handle_docs_command(effective_argc, effective_argv);
         } else if (arg1 == "--docs-all") {
-            return handle_docs_all_command();
+            return cql::DocumentationHandler::handle_docs_all_command();
         } else if (arg1 == "--export") {
-            return handle_export_command(effective_argc, effective_argv);
+            return cql::DocumentationHandler::handle_export_command(effective_argc, effective_argv);
         } else if (arg1 == "--clipboard" || arg1 == "-c") {
             if (effective_argc < 3) {
                 std::cerr << "Error: Input file required when using --clipboard option" << std::endl;
