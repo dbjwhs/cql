@@ -112,6 +112,13 @@ public:
      * @return true if input appears safe, false if suspicious
      */
     static bool is_sql_safe(std::string_view input);
+    
+    /**
+     * @brief Sanitize template variables for security validation
+     * @param input Input containing template variables
+     * @return Input with template variables replaced by safe placeholders
+     */
+    static std::string sanitize_template_variables(std::string_view input);
 
 private:
     // Common dangerous patterns

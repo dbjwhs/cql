@@ -5,19 +5,25 @@
 #include <algorithm>
 #include <filesystem>
 #include <cctype>
+#include <regex>
 
 namespace cql {
 
 // Define dangerous patterns
 const std::vector<std::string> InputValidator::SHELL_INJECTION_PATTERNS = {
     "; rm", "; cat", "; ls", "; del", "&&", "||", " | ", "`", "$(cat", "$(rm", "$(ls", 
-    "../", "../../", "~", "/dev/", "/proc/", "/sys/",
-    "rm ", "del ", "format ", " exec ", " eval ", " system "
+    "/dev/", "/proc/", "/sys/",
+    "; rm ", "; cat ", "; ls ", "; del ", "; format ", "; exec ", "; eval ",
+    "&& rm", "&& cat", "&& ls", "&& del", "|| rm", "|| cat", "|| ls", "|| del",
+    "` rm", "` cat", "` ls", "` del", "`rm", "`cat", "`ls", "`del",
+    " system(", " exec(", " eval(", "popen(", "execve("
 };
 
 const std::vector<std::string> InputValidator::SQL_INJECTION_PATTERNS = {
-    "'; ", "\"; ", " or '", " and '", " union ", " select ", " insert ", " delete ", 
-    " drop ", " update ", " exec ", " execute ", "--", "/*", "*/"
+    "'; drop", "'; delete", "'; insert", "'; update", "'; union", "'; select",
+    "\"; drop", "\"; delete", "\"; insert", "\"; update", "\"; union", "\"; select",
+    " union select ", " drop table ", " delete from ", " insert into ",
+    " exec ", " execute ", "-- drop", "-- delete", "/* drop", "/* delete"
 };
 
 const std::vector<std::string> InputValidator::PATH_TRAVERSAL_PATTERNS = {
@@ -134,14 +140,17 @@ void InputValidator::validate_directive_content(std::string_view directive_name,
                                     " (max: " + std::to_string(MAX_DIRECTIVE_LENGTH) + ")");
     }
     
+    // Create a version of content with template variables removed for security checking
+    std::string content_for_validation = sanitize_template_variables(content);
+    
     // Check for shell injection patterns
-    if (!is_shell_safe(content)) {
+    if (!is_shell_safe(content_for_validation)) {
         throw SecurityValidationError("Potential shell injection in directive: " + 
                                     std::string(directive_name));
     }
     
     // Check for SQL injection patterns (in case content is used in queries)
-    if (!is_sql_safe(content)) {
+    if (!is_sql_safe(content_for_validation)) {
         throw SecurityValidationError("Potential SQL injection in directive: " + 
                                     std::string(directive_name));
     }
@@ -273,6 +282,16 @@ bool InputValidator::contains_dangerous_patterns(std::string_view input,
         }
     }
     return false;
+}
+
+std::string InputValidator::sanitize_template_variables(std::string_view input) {
+    std::string sanitized(input);
+    
+    // Replace template variables ${...} with safe placeholder text
+    std::regex template_var_regex(R"(\$\{[^}]+\})");
+    sanitized = std::regex_replace(sanitized, template_var_regex, "TEMPLATE_VAR");
+    
+    return sanitized;
 }
 
 } // namespace cql

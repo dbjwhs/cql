@@ -1,8 +1,5 @@
-Starting CQL Compiler v1.0...
-2025-03-17 05:47:15.487 UTC [INFO] [Thread:0x20607c840] Claude Query Language (CQL) Compiler v1.0
-Parsing command line arguments...
+Starting CQL Compiler v0.1.0 (Aug 22 2025 16:32:40)...
 Received argument: examples/base_data_structure.llm
-2025-03-17 05:47:15.487 UTC [INFO] [Thread:0x20607c840] Processing file: examples/base_data_structure.llm
 Processing file: examples/base_data_structure.llm
 
 Compiled Query
