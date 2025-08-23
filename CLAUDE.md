@@ -8,6 +8,7 @@
 - Run examples: `build/cql --examples`
 - Interactive mode: `build/cql --interactive`
 - Process a file: `build/cql input.llm output.txt`
+- Process with headers: `build/cql input.llm output.txt --include-header`
 - Copy output to clipboard: `build/cql input.llm --clipboard` or `build/cql --clipboard input.llm`
 - API integration: `build/cql --submit input.llm --output-dir ./output`
 

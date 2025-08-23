@@ -1126,21 +1126,31 @@ void run_interactive() {
 }
 
 // process a query file
-bool process_file(const std::string& input_file, const std::string& output_file) {
+bool process_file(const std::string& input_file, const std::string& output_file, bool include_header) {
     try {
         Logger::getInstance().log(LogLevel::INFO, "Processing file: ", input_file);
-        std::cout << "Processing file: " << input_file << std::endl;
+        if (include_header) {
+            std::cout << "Processing file: " << input_file << std::endl;
+        }
 
         const std::string result = QueryProcessor::compile_file(input_file);
 
         if (output_file.empty()) {
-            std::cout << "\nCompiled Query\n";
-            std::cout << "==============\n\n";
-            std::cout << result << std::endl;
+            if (include_header) {
+                // Standard output with headers
+                std::cout << "\nCompiled Query\n";
+                std::cout << "==============\n\n";
+                std::cout << result << std::endl;
+            } else {
+                // Clean output: just the query without headers (default)
+                std::cout << result << std::endl;
+            }
         } else {
             util::write_file(output_file, result);
-            std::cout << "Compiled query written to " << output_file << std::endl;
-            Logger::getInstance().log(LogLevel::INFO, "Compiled query written to ", output_file);
+            if (include_header) {
+                std::cout << "Compiled query written to " << output_file << std::endl;
+                Logger::getInstance().log(LogLevel::INFO, "Compiled query written to ", output_file);
+            }
         }
         return true;
     } catch (const std::exception& e) {

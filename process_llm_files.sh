@@ -23,7 +23,7 @@ find "$INPUT_DIR" -type f -name "*.llm" | while read -r llm_file; do
     # Define the output file path
     output_file="$output_dir/$base_name.txt"
 
-    # Run the cql command
+    # Run the cql command (default is now clean output)
     echo "Processing $llm_file -> $output_file"
     build/cql "$llm_file" > "$output_file"
 done

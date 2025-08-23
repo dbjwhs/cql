@@ -201,7 +201,7 @@ namespace cli {
     void run_interactive();
     
     // process a query file
-    bool process_file(const std::string& input_file, const std::string& output_file);
+    bool process_file(const std::string& input_file, const std::string& output_file, bool include_header = false);
     
     // process a submit command
     bool process_submit_command(const std::string& input_file, 

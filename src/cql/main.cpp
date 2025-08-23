@@ -22,6 +22,7 @@ void print_help() {
               << "  --help, -h              Show this help information\n"
               << "  --interactive, -i       Run in interactive mode\n"
               << "  --clipboard, -c         Copy output to clipboard instead of writing to a file\n"
+              << "  --include-header        Include compiler headers and status messages in output\n"
               << "  --debug-level LEVEL     Set log level (INFO|NORMAL|DEBUG|ERROR|CRITICAL, default: DEBUG)\n"
               << "  --templates, -l         List all available templates\n"
               << "  --template NAME, -T     Use a specific template\n"
@@ -530,7 +531,8 @@ int handle_export_command(int argc, char* argv[]) {
  */
 int handle_file_processing(const std::string& input_file,
     const std::string& output_file,
-    const bool use_clipboard = false) {
+    const bool use_clipboard = false,
+    const bool include_header = false) {
     if (use_clipboard) {
         try {
             Logger::getInstance().log(LogLevel::INFO, "Processing file: ", input_file);
@@ -552,7 +554,7 @@ int handle_file_processing(const std::string& input_file,
             return CQL_ERROR;
         }
     }
-    if (!cql::cli::process_file(input_file, output_file)) {
+    if (!cql::cli::process_file(input_file, output_file, include_header)) {
         return CQL_ERROR;
     }
     return CQL_NO_ERROR;
@@ -654,7 +656,14 @@ int main(const int argc, char* argv[]) {
     // Set the logging level
     logger.setToLevelEnabled(debug_level);
     
-    std::cout << "Starting CQL Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")..." << std::endl;
+    // Check if headers should be included (default is clean output)
+    bool include_headers = find_command_line_option(has_debug_option ? new_argc : argc, 
+                                                    has_debug_option ? new_argv.get() : argv, 
+                                                    "--include-header");
+    
+    if (include_headers) {
+        std::cout << "Starting CQL Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")..." << std::endl;
+    }
     logger.log(LogLevel::INFO, "Starting CQL Compiler v", CQL_VERSION_STRING, " (", CQL_BUILD_TIMESTAMP, ")...");
     
     // Log the debug level that was set
@@ -693,7 +702,9 @@ int main(const int argc, char* argv[]) {
 
         // Parse the first argument from our modified argument array
         const std::string arg1 = new_argv[1];
-        std::cout << "Received argument: " << arg1 << std::endl;
+        if (include_headers) {
+            std::cout << "Received argument: " << arg1 << std::endl;
+        }
 
         // Dispatch to the appropriate handler based on the first argument
         if (arg1 == "--help" || arg1 == "-h") {
@@ -749,7 +760,7 @@ int main(const int argc, char* argv[]) {
                 }
             }
 
-            return handle_file_processing(arg1, output_file, use_clipboard);
+            return handle_file_processing(arg1, output_file, use_clipboard, include_headers);
         }
     } catch (const std::exception& e) {
         logger.log(LogLevel::ERROR, "Fatal error: ", e.what());
