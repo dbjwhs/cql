@@ -141,6 +141,7 @@ set(CQL_MAIN_SOURCES
     src/cql/command_line_handler.cpp
     src/cql/template_operations.cpp
     src/cql/documentation_handler.cpp
+    src/cql/application_controller.cpp
 )
 
 # Define test source files
