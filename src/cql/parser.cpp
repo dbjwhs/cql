@@ -7,6 +7,29 @@
 
 namespace cql {
 
+// Initialize the dispatch table for token type to parser function mapping
+const std::unordered_map<TokenType, Parser::ParseFunction> Parser::m_dispatch_table = {
+    {TokenType::LANGUAGE, &Parser::parse_code_request},
+    {TokenType::CONTEXT, &Parser::parse_context},
+    {TokenType::TEST, &Parser::parse_test},
+    {TokenType::DEPENDENCY, &Parser::parse_dependency},
+    {TokenType::PERFORMANCE, &Parser::parse_performance},
+    {TokenType::COPYRIGHT, &Parser::parse_copyright},
+    {TokenType::ARCHITECTURE, &Parser::parse_architecture},
+    {TokenType::CONSTRAINT, &Parser::parse_constraint},
+    {TokenType::EXAMPLE, &Parser::parse_example},
+    {TokenType::SECURITY, &Parser::parse_security},
+    {TokenType::COMPLEXITY, &Parser::parse_complexity},
+    {TokenType::MODEL, &Parser::parse_model},
+    {TokenType::FORMAT, &Parser::parse_format},
+    {TokenType::VARIABLE, &Parser::parse_variable},
+    {TokenType::OUTPUT_FORMAT, &Parser::parse_output_format},
+    {TokenType::MAX_TOKENS, &Parser::parse_max_tokens},
+    {TokenType::TEMPERATURE, &Parser::parse_temperature},
+    {TokenType::PATTERN, &Parser::parse_pattern},
+    {TokenType::STRUCTURE, &Parser::parse_structure}
+};
+
 // parsererror implementation
 ParserError::ParserError(const std::string& message, const size_t line, const size_t column, std::string  error_code)
     : std::runtime_error("Parser error at line " + std::to_string(line) + ", column " + std::to_string(column) + ": " + message),
@@ -63,67 +86,14 @@ std::vector<std::unique_ptr<QueryNode>> Parser::parse() {
             }
         }
 
-        // parse the appropriate node type
-        switch (m_current_token->m_type) {
-            case TokenType::LANGUAGE:
-                nodes.push_back(parse_code_request());
-                break;
-            case TokenType::CONTEXT:
-                nodes.push_back(parse_context());
-                break;
-            case TokenType::TEST:
-                nodes.push_back(parse_test());
-                break;
-            case TokenType::DEPENDENCY:
-                nodes.push_back(parse_dependency());
-                break;
-            case TokenType::PERFORMANCE:
-                nodes.push_back(parse_performance());
-                break;
-            case TokenType::COPYRIGHT:
-                nodes.push_back(parse_copyright());
-                break;
-            case TokenType::ARCHITECTURE:
-                nodes.push_back(parse_architecture());
-                break;
-            case TokenType::CONSTRAINT:
-                nodes.push_back(parse_constraint());
-                break;
-            case TokenType::EXAMPLE:
-                nodes.push_back(parse_example());
-                break;
-            case TokenType::SECURITY:
-                nodes.push_back(parse_security());
-                break;
-            case TokenType::COMPLEXITY:
-                nodes.push_back(parse_complexity());
-                break;
-            case TokenType::MODEL:
-                nodes.push_back(parse_model());
-                break;
-            case TokenType::FORMAT:
-                nodes.push_back(parse_format());
-                break;
-            case TokenType::VARIABLE:
-                nodes.push_back(parse_variable());
-                break;
-            case TokenType::OUTPUT_FORMAT:
-                nodes.push_back(parse_output_format());
-                break;
-            case TokenType::MAX_TOKENS:
-                nodes.push_back(parse_max_tokens());
-                break;
-            case TokenType::TEMPERATURE:
-                nodes.push_back(parse_temperature());
-                break;
-            case TokenType::PATTERN:
-                nodes.push_back(parse_pattern());
-                break;
-            case TokenType::STRUCTURE:
-                nodes.push_back(parse_structure());
-                break;
-            default:
-                throw ParserError("Unexpected token type", m_current_token->m_line, m_current_token->m_column);
+        // parse the appropriate node type using dispatch table
+        const auto it = m_dispatch_table.find(m_current_token->m_type);
+        if (it != m_dispatch_table.end()) {
+            // Call the appropriate parser function using member function pointer
+            nodes.push_back((this->*(it->second))());
+        } else {
+            throw ParserError("Unexpected token type", m_current_token->m_line, m_current_token->m_column,
+                              parser_errors::UNEXPECTED_TOKEN);
         }
     }
 

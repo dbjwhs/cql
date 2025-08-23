@@ -9,6 +9,7 @@
 #include <string>
 #include <string_view>
 #include <stdexcept>
+#include <unordered_map>
 #include "lexer.hpp"
 #include "nodes.hpp"
 
@@ -52,6 +53,12 @@ public:
 private:
     Lexer m_lexer;
     std::optional<Token> m_current_token;
+    
+    // Type alias for parser function pointer
+    using ParseFunction = std::unique_ptr<QueryNode> (Parser::*)();
+    
+    // Dispatch table for mapping token types to parser functions
+    static const std::unordered_map<TokenType, ParseFunction> m_dispatch_table;
 
     // move to the next token in the input
     void advance();
