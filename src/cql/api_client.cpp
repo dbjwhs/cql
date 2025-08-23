@@ -18,6 +18,7 @@
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/project_utils.hpp"
 #include "../../include/cql/secure_string.hpp"
+#include "../../include/cql/cql.hpp"
 
 namespace cql {
 
@@ -855,6 +856,42 @@ Config Config::load_from_file(const std::string& filename) {
     }
     
     return config;
+}
+
+int ApiClient::handle_submit_command(int argc, char* argv[]) {
+    if (argc < 3) {
+        std::cerr << "Error: Input file required for --submit" << std::endl;
+        std::cerr << "Usage: cql --submit INPUT_FILE [options]" << std::endl;
+        return CQL_ERROR;
+    }
+
+    const std::string input_file = argv[2];
+    std::string output_dir;
+    std::string model;
+    bool overwrite = false;
+    bool create_dirs = false;
+    bool no_save = false;
+
+    // Parse additional options
+    for (int ndx = 3; ndx < argc; ndx++) {
+        if (std::string arg = argv[ndx]; arg == "--model" && ndx + 1 < argc) {
+            model = argv[++ndx];
+        } else if (arg == "--output-dir" && ndx + 1 < argc) {
+            output_dir = argv[++ndx];
+        } else if (arg == "--overwrite") {
+            overwrite = true;
+        } else if (arg == "--create-dirs") {
+            create_dirs = true;
+        } else if (arg == "--no-save") {
+            no_save = true;
+        }
+    }
+
+    // Process submission - delegate to CLI module
+    if (!cql::cli::process_submit_command(input_file, output_dir, model, overwrite, create_dirs, no_save)) {
+        return CQL_ERROR;
+    }
+    return CQL_NO_ERROR;
 }
 
 } // namespace cql

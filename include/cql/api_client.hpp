@@ -485,6 +485,14 @@ public:
      */
     [[nodiscard]] std::string get_last_error() const;
     
+    /**
+     * @brief Handle submit command with command-line arguments
+     * @param argc Argument count
+     * @param argv Argument values
+     * @return int Return code (0 for success, 1 for error)
+     */
+    static int handle_submit_command(int argc, char* argv[]);
+    
 private:
     /// Private implementation details
     struct Impl;
