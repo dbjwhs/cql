@@ -1,0 +1,25 @@
+# Jekyll ignore patterns
+build/
+cmake-build-debug/
+examples/examples-generated/
+test_output/
+temp_test_templates/
+scripts/
+third_party/
+query-test/
+include/
+src/
+*.cpp
+*.hpp
+*.h
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+CMakeLists.txt
+Doxyfile
+custom.log
+process_llm_files.sh
+Makefile
+*.cmake

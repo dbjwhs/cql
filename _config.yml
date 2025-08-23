@@ -1,0 +1,72 @@
+# Jekyll Configuration for CQL Project
+
+# Site settings
+title: "CQL - Claude Query Language"
+description: "A domain-specific language for standardizing technical queries to Large Language Models"
+url: ""
+baseurl: ""
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: jekyll-theme-primer
+
+# Exclude directories and files that should not be processed by Jekyll
+exclude:
+  - build/
+  - cmake-build-debug/
+  - examples/examples-generated/
+  - test_output/
+  - temp_test_templates/
+  - scripts/
+  - third_party/
+  - query-test/
+  - include/
+  - src/
+  - CMakeLists.txt
+  - Doxyfile
+  - custom.log
+  - process_llm_files.sh
+  - "*.cpp"
+  - "*.hpp"
+  - "*.h"
+  - "*.o"
+  - "*.a"
+  - "*.so"
+  - "*.dylib"
+  - "*.dll"
+  - Makefile
+  - "*.cmake"
+
+# Plugins
+plugins:
+  - jekyll-theme-primer
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Kramdown settings
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    block:
+      line_numbers: true
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:name/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+  - scope:
+      path: "docs"
+      type: "pages"
+    values:
+      layout: "default"
