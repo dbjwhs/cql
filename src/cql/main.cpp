@@ -7,43 +7,12 @@
 #include "../../include/cql/template_validator.hpp"
 #include "../../include/cql/template_validator_schema.hpp"
 #include "../../include/cql/api_client.hpp"
+#include "../../include/cql/command_line_handler.hpp"
 
 // note the file exists in the cpp-snippets repo, you will need to check this out and have it and cql share the
 // same root directory
 #include "../../include/cql/project_utils.hpp"
 
-/**
- * @brief Print the help message with usage information
- */
-void print_help() {
-    std::cout << "Claude Query Language (CQL) Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")\n"
-              << "Usage: cql [OPTIONS] [INPUT_FILE] [OUTPUT_FILE]\n\n"
-              << "Options:\n"
-              << "  --help, -h              Show this help information\n"
-              << "  --interactive, -i       Run in interactive mode\n"
-              << "  --clipboard, -c         Copy output to clipboard instead of writing to a file\n"
-              << "  --include-header        Include compiler headers and status messages in output\n"
-              << "  --debug-level LEVEL     Set log level (INFO|NORMAL|DEBUG|ERROR|CRITICAL, default: DEBUG)\n"
-              << "  --templates, -l         List all available templates\n"
-              << "  --template NAME, -T     Use a specific template\n"
-              << "  --template NAME --force Use template even with validation errors\n"
-              << "  --validate NAME         Validate a specific template\n"
-              << "  --validate-all PATH     Validate all templates in the specified path\n"
-              << "  --docs NAME             Generate documentation for a template\n"
-              << "  --docs-all              Generate documentation for all templates\n"
-              << "  --export PATH [format]  Export template documentation to a file\n"
-              << "                          (formats: md, html, txt; default: md)\n\n"
-              << "API Integration Options:\n"
-              << "  --submit                Submit the compiled query to the Claude API\n"
-              << "  --model <model_name>    Specify the Claude model to use (default: claude-3-opus)\n"
-              << "  --output-dir <directory> Directory to save generated code files\n"
-              << "  --overwrite             Overwrite existing files without prompting\n"
-              << "  --create-dirs           Create missing directories for output files\n"
-              << "  --no-save               Display generated code but don't save to files\n\n"
-              << "If INPUT_FILE is provided, it will be processed as a CQL query.\n"
-              << "If OUTPUT_FILE is also provided, the compiled query will be written to it.\n"
-              << "If --clipboard option is used, the output will be copied to the clipboard.\n";
-}
 
 
 /**
@@ -567,86 +536,17 @@ int handle_file_processing(const std::string& input_file,
  * @param argv Argument values
  * @return int Return code (0 for success, 1 for error)
  */
-/**
- * @brief Process command line arguments to find specific options
- * 
- * @param argc Number of arguments
- * @param argv Array of argument strings
- * @param option Option to search for
- * @param value Optional pointer to store option value if found
- * @return true if the option was found, false otherwise
- */
-bool find_command_line_option(const int argc, char* argv[], const std::string& option, std::string* value = nullptr) {
-    for (int ndx = 1; ndx < argc; ++ndx) {
-        if (std::string arg = argv[ndx]; arg == option) {
-            if (value != nullptr && ndx + 1 < argc) {
-                *value = argv[ndx + 1];
-            }
-            return true;
-        }
-    }
-    return false;
-}
-
-/**
- * @brief Find an argument in the command line and remove it along with its value
- * 
- * @param argc Number of arguments
- * @param argv Array of argument strings
- * @param option Option to find and remove
- * @param value String to store the option value if found
- * @param new_argc New argument count after removal
- * @param new_argv Smart pointer to new argument array after removal
- * @return true if option was found and removed
- */
-bool find_and_remove_option(const int argc, char* argv[], const std::string& option,
-                           std::string& value, int& new_argc, std::unique_ptr<char*[]>& new_argv) {
-    // Allocate a new array for modified arguments using a smart pointer
-    new_argv = std::make_unique<char*[]>(argc);
-    new_argc = 0;
-    
-    bool found = false;
-    bool skip_next = false;
-    
-    // Copy program name
-    new_argv[new_argc++] = argv[0];
-    
-    // Process remaining arguments
-    for (int ndx = 1; ndx < argc; ++ndx) {
-        if (skip_next) {
-            skip_next = false;
-            continue;
-        }
-        
-        if (std::string(argv[ndx]) == option && ndx + 1 < argc) {
-            value = argv[ndx + 1];
-            found = true;
-            skip_next = true;
-        } else {
-            new_argv[new_argc++] = argv[ndx];
-        }
-    }
-    return found;
-}
 
 int main(const int argc, char* argv[]) {
+    // Create command line handler
+    cql::CommandLineHandler cmd_handler(argc, argv);
+    
     // Default debug level
     auto debug_level = LogLevel::DEBUG;
     
     // Check for debug level in arguments
     std::string debug_level_str;
-    int new_argc;
-    std::unique_ptr<char*[]> new_argv;
-    
-    // We have a little bit of a chicken-and-egg problem here,
-    // I need to set the logging level before processing any args,
-    // thus we need to find and remove the debug level option if present.
-    // This is the best way I came up with; maybe there is
-    // something better?
-    const bool has_debug_option = find_and_remove_option(argc, argv, "--debug-level",
-                                                  debug_level_str, new_argc, new_argv);
-    
-    if (has_debug_option) {
+    if (cmd_handler.find_and_remove_option("--debug-level", debug_level_str)) {
         debug_level = string_to_log_level(debug_level_str);
     }
     
@@ -657,9 +557,7 @@ int main(const int argc, char* argv[]) {
     logger.setToLevelEnabled(debug_level);
     
     // Check if headers should be included (default is clean output)
-    bool include_headers = find_command_line_option(has_debug_option ? new_argc : argc, 
-                                                    has_debug_option ? new_argv.get() : argv, 
-                                                    "--include-header");
+    bool include_headers = cmd_handler.has_option("--include-header");
     
     if (include_headers) {
         std::cout << "Starting CQL Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")..." << std::endl;
@@ -681,68 +579,70 @@ int main(const int argc, char* argv[]) {
     logger.log(LogLevel::CRITICAL, "This is a CRITICAL message");
 #endif
 
+    // Get updated argc/argv after removing debug option
+    int effective_argc = cmd_handler.get_argc();
+    char** effective_argv = cmd_handler.get_argv();
+    
     // If the only argument was --debug-level, show help
-    if (has_debug_option && new_argc == 1) {
+    if (!debug_level_str.empty() && effective_argc == 1) {
         std::cout << "Log level set to: " << debug_level_str << std::endl;
         std::cout << "No other arguments provided." << std::endl;
-        print_help();
+        cql::CommandLineHandler::print_help();
         return CQL_NO_ERROR;
     }
 
     try {
         // Handle a case with no arguments
-        if (new_argc <= 1) {
-            if (!has_debug_option) {
-                std::cout << "No arguments provided." << std::endl;
-                print_help();
-                std::cout << "\nTo run the application with a file, use: cql input.llm output.txt" << std::endl;
-            }
+        if (effective_argc <= 1) {
+            std::cout << "No arguments provided." << std::endl;
+            cql::CommandLineHandler::print_help();
+            std::cout << "\nTo run the application with a file, use: cql input.llm output.txt" << std::endl;
             return CQL_NO_ERROR;
         }
 
         // Parse the first argument from our modified argument array
-        const std::string arg1 = new_argv[1];
+        const std::string arg1 = effective_argv[1];
         if (include_headers) {
             std::cout << "Received argument: " << arg1 << std::endl;
         }
 
         // Dispatch to the appropriate handler based on the first argument
         if (arg1 == "--help" || arg1 == "-h") {
-            print_help();
+            cql::CommandLineHandler::print_help();
         } else if (arg1 == "--interactive" || arg1 == "-i") {
             cql::cli::run_interactive();
         } else if (arg1 == "--submit") {
-            return handle_submit_command(new_argc, new_argv.get());
+            return handle_submit_command(effective_argc, effective_argv);
         } else if (arg1 == "--templates" || arg1 == "-l") {
             list_templates();
         } else if (arg1 == "--template" || arg1 == "-T") {
-            return handle_template_command(new_argc, new_argv.get());
+            return handle_template_command(effective_argc, effective_argv);
         } else if (arg1 == "--validate") {
-            return handle_validate_command(new_argc, new_argv.get());
+            return handle_validate_command(effective_argc, effective_argv);
         } else if (arg1 == "--validate-all") {
-            if (new_argc < 3) {
+            if (effective_argc < 3) {
                 std::cerr << "Error: Path required for --validate-all" << std::endl;
                 std::cerr << "Usage: cql --validate-all PATH" << std::endl;
                 return CQL_ERROR;
             }
-            return handle_validate_all_command(new_argv[2]);
+            return handle_validate_all_command(effective_argv[2]);
         } else if (arg1 == "--docs") {
-            return handle_docs_command(new_argc, new_argv.get());
+            return handle_docs_command(effective_argc, effective_argv);
         } else if (arg1 == "--docs-all") {
             return handle_docs_all_command();
         } else if (arg1 == "--export") {
-            return handle_export_command(new_argc, new_argv.get());
+            return handle_export_command(effective_argc, effective_argv);
         } else if (arg1 == "--clipboard" || arg1 == "-c") {
-            if (new_argc < 3) {
+            if (effective_argc < 3) {
                 std::cerr << "Error: Input file required when using --clipboard option" << std::endl;
                 return CQL_ERROR;
             }
-            return handle_file_processing(new_argv[2], "", true);
+            return handle_file_processing(effective_argv[2], "", true);
         } else if (arg1.substr(0, 2) == "--") {
             // Unknown option starting with "--"
             std::cerr << "Error: Unknown option: " << arg1 << std::endl;
             std::cerr << "Available options:" << std::endl;
-            print_help();
+            cql::CommandLineHandler::print_help();
             return CQL_ERROR;
         } else {
             // Assume it's an input file
@@ -750,8 +650,8 @@ int main(const int argc, char* argv[]) {
             bool use_clipboard = false;
 
             // Check if any of the arguments is --clipboard/-c
-            for (int i = 2; i < new_argc; ++i) {
-                if (std::string arg = new_argv[i]; arg == "--clipboard" || arg == "-c") {
+            for (int i = 2; i < effective_argc; ++i) {
+                if (std::string arg = effective_argv[i]; arg == "--clipboard" || arg == "-c") {
                     use_clipboard = true;
                     break;
                 } else if (output_file.empty() && arg.substr(0, 2) != "--") {
