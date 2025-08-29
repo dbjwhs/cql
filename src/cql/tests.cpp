@@ -558,39 +558,39 @@ TEST_F(CQLTest, CommentsAndWhitespaceHandling) {
     
     // Test files with comments
     ASSERT_NO_THROW({
-        std::string result = cql::QueryProcessor::compile_file("/Users/dbjones/ng/dbjwhs/cql/test_output/baseline.llm");
+        std::string result = cql::QueryProcessor::compile_file("test_output/baseline.llm");
         ASSERT_FALSE(result.empty()) << "Compilation of baseline.llm failed";
     }) << "baseline.llm should compile without errors";
     
     ASSERT_NO_THROW({
-        std::string result = cql::QueryProcessor::compile_file("/Users/dbjones/ng/dbjwhs/cql/test_output/comment_test.llm");
+        std::string result = cql::QueryProcessor::compile_file("test_output/comment_test.llm");
         ASSERT_FALSE(result.empty()) << "Compilation of comment_test.llm failed";
     }) << "comment_test.llm should compile without errors";
     
     ASSERT_NO_THROW({
-        std::string result = cql::QueryProcessor::compile_file("/Users/dbjones/ng/dbjwhs/cql/test_output/comment_test2.llm");
+        std::string result = cql::QueryProcessor::compile_file("test_output/comment_test2.llm");
         ASSERT_FALSE(result.empty()) << "Compilation of comment_test2.llm failed";
     }) << "comment_test2.llm should compile without errors";
     
     // Test files with whitespace
     ASSERT_NO_THROW({
-        std::string result = cql::QueryProcessor::compile_file("/Users/dbjones/ng/dbjwhs/cql/test_output/whitespace_test.llm");
+        std::string result = cql::QueryProcessor::compile_file("test_output/whitespace_test.llm");
         ASSERT_FALSE(result.empty()) << "Compilation of whitespace_test.llm failed";
     }) << "whitespace_test.llm should compile without errors";
     
     ASSERT_NO_THROW({
-        std::string result = cql::QueryProcessor::compile_file("/Users/dbjones/ng/dbjwhs/cql/test_output/whitespace_var_test.llm");
+        std::string result = cql::QueryProcessor::compile_file("test_output/whitespace_var_test.llm");
         ASSERT_FALSE(result.empty()) << "Compilation of whitespace_var_test.llm failed";
     }) << "whitespace_var_test.llm should compile without errors";
     
     // Test minimal and example files
     ASSERT_NO_THROW({
-        std::string result = cql::QueryProcessor::compile_file("/Users/dbjones/ng/dbjwhs/cql/test_output/minimal_test.llm");
+        std::string result = cql::QueryProcessor::compile_file("test_output/minimal_test.llm");
         ASSERT_FALSE(result.empty()) << "Compilation of minimal_test.llm failed";
     }) << "minimal_test.llm should compile without errors";
     
     ASSERT_NO_THROW({
-        std::string result = cql::QueryProcessor::compile_file("/Users/dbjones/ng/dbjwhs/cql/test_output/example_test.llm");
+        std::string result = cql::QueryProcessor::compile_file("test_output/example_test.llm");
         ASSERT_FALSE(result.empty()) << "Compilation of example_test.llm failed";
     }) << "example_test.llm should compile without errors";
 }
