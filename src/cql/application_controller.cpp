@@ -7,6 +7,7 @@
 #include "../../include/cql/template_operations.hpp"
 #include "../../include/cql/documentation_handler.hpp"
 #include "../../include/cql/api_client.hpp"
+#include "../../include/cql/error_context.hpp"
 #include <iostream>
 
 namespace cql {
@@ -43,8 +44,20 @@ int ApplicationController::handle_file_processing(const std::string& input_file,
             }
             return CQL_NO_ERROR;
         } catch (const std::exception& e) {
-            std::cerr << "Error processing file: " << e.what() << std::endl;
-            Logger::getInstance().log(LogLevel::ERROR, "Error processing file: ", e.what());
+            // Preserve error context with file processing information
+            auto contextual_error = ErrorContextBuilder::from(e)
+                .operation("processing file")
+                .file(input_file)
+                .detail("output_file", output_file)
+                .detail("use_clipboard", use_clipboard ? "true" : "false")
+                .at(__FILE__ ":" + std::to_string(__LINE__))
+                .build();
+            
+            // Log with full context for debugging
+            error_context_utils::log_contextual_exception(contextual_error);
+            
+            // Display user-friendly message
+            std::cerr << "Error: " << contextual_error.get_user_summary() << std::endl;
             return CQL_ERROR;
         }
     }
@@ -172,7 +185,18 @@ int ApplicationController::run(int argc, char* argv[]) {
             return handle_file_processing(arg1, output_file, use_clipboard, include_headers);
         }
     } catch (const std::exception& e) {
-        logger.log(LogLevel::ERROR, "Fatal error: ", e.what());
+        // Preserve error context for application-level errors
+        auto contextual_error = ErrorContextBuilder::from(e)
+            .operation("running CQL application")
+            .detail("argc", std::to_string(effective_argc))
+            .at(__FILE__ ":" + std::to_string(__LINE__))
+            .build();
+        
+        // Log with full context for debugging
+        error_context_utils::log_contextual_exception(contextual_error);
+        
+        // Display user-friendly message for fatal errors
+        std::cerr << "Fatal error: " << contextual_error.get_user_summary() << std::endl;
         return CQL_ERROR;
     }
 

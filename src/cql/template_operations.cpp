@@ -4,6 +4,7 @@
 #include "../../include/cql/template_operations.hpp"
 #include "../../include/cql/cql.hpp"
 #include "../../include/cql/template_validator_schema.hpp"
+#include "../../include/cql/error_context.hpp"
 #include <iostream>
 #include <ranges>
 
@@ -23,9 +24,19 @@ void TemplateOperations::list_templates() {
             try {
                 auto metadata = manager.get_template_metadata(tmpl);
                 std::cout << "  " << tmpl << " - " << metadata.description << std::endl;
-            } catch (const std::exception&) {
-                // if we can't get metadata, just show the name
-                std::cout << "  " << tmpl << std::endl;
+            } catch (const std::exception& e) {
+                // Preserve error context but don't fail the entire operation
+                auto contextual_error = ErrorContextBuilder::from(e)
+                    .operation("retrieving template metadata")
+                    .template_name(tmpl)
+                    .at(__FILE__ ":" + std::to_string(__LINE__))
+                    .build();
+                
+                // Log the error for debugging but continue with template listing
+                error_context_utils::log_contextual_exception(contextual_error);
+                
+                // Show template name without metadata
+                std::cout << "  " << tmpl << " (metadata unavailable)" << std::endl;
             }
         }
     }

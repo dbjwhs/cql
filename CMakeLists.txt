@@ -134,6 +134,7 @@ set(CQL_CORE_SOURCES
     src/cql/secure_string.cpp
     src/cql/input_validator.cpp
     src/cql/json_utils.cpp
+    src/cql/error_context.cpp
     src/cql/cli.cpp
 )
 

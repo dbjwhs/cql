@@ -24,6 +24,7 @@
 #include "../../include/cql/response_processor.hpp"
 #include "../../include/cql/input_validator.hpp"
 #include "../../include/cql/json_utils.hpp"
+#include "../../include/cql/error_context.hpp"
 #include "../../include/cql/test_utils.hpp"
 #include "../../third_party/include/nlohmann/json.hpp"
 
@@ -1096,5 +1097,204 @@ TestResult test_lexer_standalone() { return TestResult::pass(); }
 TestResult test_parser_standalone() { return TestResult::pass(); }
 TestResult test_compiler_standalone() { return TestResult::pass(); }
 TestResult test_examples_compilation() { return TestResult::pass(); }
+
+/**
+ * Test for error context preservation system
+ */
+TEST_F(CQLTest, ErrorContextPreservation) {
+    std::cout << "Testing error context preservation system..." << std::endl;
+    
+    // Test basic contextual exception creation
+    {
+        try {
+            throw std::runtime_error("Original error message");
+        } catch (const std::exception& e) {
+            auto contextual_error = ErrorContextBuilder::from(e)
+                .operation("testing basic context")
+                .at("test_location")
+                .detail("test_key", "test_value")
+                .build();
+            
+            ASSERT_EQ(contextual_error.get_original_message(), "Original error message") 
+                << "Original message should be preserved";
+            
+            ASSERT_EQ(contextual_error.get_context_chain().size(), 1) 
+                << "Should have one context layer";
+            
+            const auto& layer = contextual_error.get_context_chain()[0];
+            ASSERT_EQ(layer.operation, "testing basic context") << "Operation should be preserved";
+            ASSERT_EQ(layer.location, "test_location") << "Location should be preserved";
+            ASSERT_EQ(layer.details.at("test_key"), "test_value") << "Details should be preserved";
+        }
+    }
+    
+    // Test context chain building
+    {
+        try {
+            throw std::runtime_error("Inner error");
+        } catch (const std::exception& e) {
+            auto contextual_error = ErrorContextBuilder::from(e)
+                .operation("inner operation")
+                .at("inner_location")
+                .detail("inner_key", "inner_value")
+                .build();
+            
+            // Add another layer of context
+            contextual_error.add_context("outer operation", "outer_location");
+            contextual_error.add_detail("outer_key", "outer_value");
+            
+            ASSERT_EQ(contextual_error.get_context_chain().size(), 2) 
+                << "Should have two context layers";
+            
+            // Check that contexts are in the right order (first added first)
+            const auto& first_layer = contextual_error.get_context_chain()[0];
+            ASSERT_EQ(first_layer.operation, "inner operation") << "First layer should be inner";
+            
+            const auto& second_layer = contextual_error.get_context_chain()[1];
+            ASSERT_EQ(second_layer.operation, "outer operation") << "Second layer should be outer";
+            ASSERT_EQ(second_layer.details.at("outer_key"), "outer_value") << "Outer details should be preserved";
+        }
+    }
+    
+    // Test user summary formatting
+    {
+        try {
+            throw std::runtime_error("File not found");
+        } catch (const std::exception& e) {
+            auto contextual_error = ErrorContextBuilder::from(e)
+                .operation("loading configuration file")
+                .file("/path/to/config.json")
+                .template_name("test_template")
+                .build();
+            
+            std::string summary = contextual_error.get_user_summary();
+            ASSERT_TRUE(summary.find("loading configuration file") != std::string::npos) 
+                << "Summary should include operation";
+            ASSERT_TRUE(summary.find("config.json") != std::string::npos) 
+                << "Summary should include filename";
+            ASSERT_TRUE(summary.find("test_template") != std::string::npos) 
+                << "Summary should include template name";
+            ASSERT_TRUE(summary.find("File not found") != std::string::npos) 
+                << "Summary should include original error";
+        }
+    }
+    
+    // Test structured information format
+    {
+        try {
+            throw std::runtime_error("Test error");
+        } catch (const std::exception& e) {
+            auto contextual_error = ErrorContextBuilder::from(e)
+                .operation("test operation")
+                .at("test_location")
+                .detail("param1", "value1")
+                .detail("param2", "value2")
+                .build();
+            
+            std::string structured = contextual_error.get_structured_info();
+            ASSERT_TRUE(structured.find("original_error: Test error") != std::string::npos) 
+                << "Structured info should include original error";
+            ASSERT_TRUE(structured.find("context_layers: 1") != std::string::npos) 
+                << "Structured info should include layer count";
+            ASSERT_TRUE(structured.find("layer_0_operation: test operation") != std::string::npos) 
+                << "Structured info should include operation";
+            ASSERT_TRUE(structured.find("layer_0_param1: value1") != std::string::npos) 
+                << "Structured info should include parameters";
+        }
+    }
+    
+    // Test complete error message formatting
+    {
+        try {
+            throw std::runtime_error("Database connection failed");
+        } catch (const std::exception& e) {
+            auto contextual_error = ErrorContextBuilder::from(e)
+                .operation("initializing application")
+                .at("main.cpp:123")
+                .detail("database_url", "localhost:5432")
+                .build();
+            
+            contextual_error.add_context("starting service", "service.cpp:456");
+            contextual_error.add_detail("service_name", "cql_service");
+            
+            std::string full_message = contextual_error.what();
+            ASSERT_TRUE(full_message.find("Database connection failed") != std::string::npos) 
+                << "Full message should include original error";
+            ASSERT_TRUE(full_message.find("Context chain") != std::string::npos) 
+                << "Full message should include context chain header";
+            ASSERT_TRUE(full_message.find("starting service") != std::string::npos) 
+                << "Full message should include most recent context";
+            ASSERT_TRUE(full_message.find("initializing application") != std::string::npos) 
+                << "Full message should include earlier context";
+        }
+    }
+    
+    // Test error sanitization utilities
+    {
+        std::string sensitive_error = "API key sk-1234567890abcdefghijklmnopqrstuvwxyz failed at /home/user/secret/config.json:0x7fff123456";
+        std::string sanitized = error_context_utils::sanitize_error_for_user(sensitive_error);
+        
+        ASSERT_TRUE(sanitized.find("sk-1234567890abcdefghijklmnopqrstuvwxyz") == std::string::npos) 
+            << "API key should be redacted";
+        ASSERT_TRUE(sanitized.find("<redacted>") != std::string::npos) 
+            << "Should contain redaction marker";
+        ASSERT_TRUE(sanitized.find("config.json") != std::string::npos) 
+            << "Should preserve filename";
+        ASSERT_TRUE(sanitized.find("/home/user/secret/") == std::string::npos) 
+            << "Should remove sensitive path";
+        ASSERT_TRUE(sanitized.find("0x7fff123456") == std::string::npos) 
+            << "Should remove memory address";
+        ASSERT_TRUE(sanitized.find("<address>") != std::string::npos) 
+            << "Should contain address redaction marker";
+    }
+    
+    // Test file context utility wrapper
+    {
+        bool exception_caught = false;
+        std::string filename = "test_file.txt";
+        
+        try {
+            error_context_utils::with_file_context(filename, "reading file", []() {
+                throw std::runtime_error("File read error");
+                return 42; // Never reached
+            });
+        } catch (const ContextualException& e) {
+            exception_caught = true;
+            ASSERT_TRUE(e.get_user_summary().find("reading file") != std::string::npos) 
+                << "Should preserve operation context";
+            ASSERT_TRUE(e.get_user_summary().find("test_file.txt") != std::string::npos) 
+                << "Should preserve file context";
+            ASSERT_EQ(e.get_original_message(), "File read error") 
+                << "Should preserve original error";
+        }
+        
+        ASSERT_TRUE(exception_caught) << "Contextual exception should have been thrown";
+    }
+    
+    // Test template context utility wrapper
+    {
+        bool exception_caught = false;
+        std::string template_name = "test_template";
+        
+        try {
+            error_context_utils::with_template_context(template_name, "validating template", []() {
+                throw std::runtime_error("Validation failed");
+                return true; // Never reached
+            });
+        } catch (const ContextualException& e) {
+            exception_caught = true;
+            ASSERT_TRUE(e.get_user_summary().find("validating template") != std::string::npos) 
+                << "Should preserve operation context";
+            ASSERT_TRUE(e.get_user_summary().find("test_template") != std::string::npos) 
+                << "Should preserve template context";
+            ASSERT_EQ(e.get_original_message(), "Validation failed") 
+                << "Should preserve original error";
+        }
+        
+        ASSERT_TRUE(exception_caught) << "Contextual exception should have been thrown";
+    }
+    
+    std::cout << "✅ Error context preservation tests passed - error context is now properly preserved!" << std::endl;
+}
 
 } // namespace cql::test
