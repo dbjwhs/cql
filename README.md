@@ -65,6 +65,55 @@ make
 ./cql --help
 ```
 
+## 🔐 Security Features
+
+CQL has been hardened against common security vulnerabilities with enterprise-grade security measures:
+
+### 🛡️ Critical Security Protections
+
+#### **SecureString with Memory Locking**
+- **Custom Secure Allocator**: Uses `mlock()`/`VirtualLock()` to prevent API keys from being swapped to disk
+- **Platform-Specific Zeroing**: `SecureZeroMemory`/`explicit_bzero` prevents data recovery from memory dumps
+- **Memory Barriers**: Compiler-resistant security that can't be optimized away
+- **Move-Only Semantics**: Copy disabled to prevent accidental data duplication
+
+```cpp
+SecureString api_key("sk-1234..."); // Memory locked, auto-zeroed on destruction
+```
+
+#### **Symlink Attack Prevention**
+- **Path Canonicalization**: `std::filesystem::canonical()` resolves all symlinks before validation
+- **TOCTOU Protection**: Single path resolution step prevents time-of-check-time-of-use vulnerabilities
+- **Forbidden Directory Blocking**: Prevents access to `/.git/`, `/secrets/`, `/private/` directories
+- **Multi-Level Chain Detection**: Resolves complex symlink chains completely
+
+#### **Comprehensive Input Validation**
+- **25+ Length Constants**: Defined limits for all input types prevent DoS attacks
+- **Query Length Limits**: 50KB max to prevent resource exhaustion
+- **Template Size Limits**: 100KB max for templates, 10MB for files
+- **Response Size Protection**: 100MB limit prevents memory exhaustion attacks
+
+### 🔒 Security By Design
+
+- **Principle of Least Privilege**: Only sensitive data uses SecureString overhead
+- **Defense in Depth**: Multiple layers of validation and sanitization
+- **Secure by Default**: All security features enabled automatically
+- **Zero Configuration**: No security settings to misconfigure
+
+### 📋 Security Audit Results
+
+✅ **Path Traversal**: Protected via symlink resolution  
+✅ **Memory Disclosure**: API keys locked and zeroed  
+✅ **DoS Protection**: Input length validation  
+✅ **Injection Attacks**: Pattern detection and sanitization  
+✅ **File System Access**: Restricted to safe directories  
+
+### 🚨 Security Considerations
+
+- **Memory Limits**: `mlock()` has system limits - check `ulimit -l`
+- **Permissions**: Symlink tests may require filesystem permissions
+- **Platform Support**: Full security features on Unix/Windows only
+
 ## Command-Line Usage
 
 ### Basic Commands
