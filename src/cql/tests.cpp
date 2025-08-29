@@ -22,6 +22,7 @@
 #include "../../include/cql/template_validator_schema.hpp"
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/response_processor.hpp"
+#include "../../include/cql/input_validator.hpp"
 #include "../../include/cql/test_utils.hpp"
 #include "../../third_party/include/nlohmann/json.hpp"
 
@@ -593,6 +594,127 @@ TEST_F(CQLTest, CommentsAndWhitespaceHandling) {
         std::string result = cql::QueryProcessor::compile_file("test_output/example_test.llm");
         ASSERT_FALSE(result.empty()) << "Compilation of example_test.llm failed";
     }) << "example_test.llm should compile without errors";
+}
+
+/**
+ * Test for input length validation
+ */
+TEST_F(CQLTest, InputLengthValidation) {
+    std::cout << "Testing input length validation..." << std::endl;
+    
+    // Test query length validation
+    {
+        // Create a query that exceeds MAX_QUERY_LENGTH
+        std::string long_query = "@copyright \"MIT\" \"2025\"\n@language \"C++\"\n@description \"";
+        long_query.append(InputValidator::MAX_QUERY_LENGTH, 'x');
+        long_query += "\"";
+        
+        ASSERT_THROW({
+            QueryProcessor::compile(long_query);
+        }, std::exception) << "Query exceeding MAX_QUERY_LENGTH should fail";
+    }
+    
+    // Test template name validation
+    {
+        TemplateManager tm("./test_templates");
+        
+        // Test empty template name
+        ASSERT_THROW({
+            tm.save_template("", "content");
+        }, std::exception) << "Empty template name should fail";
+        
+        // Test template name too long
+        std::string long_name(InputValidator::MAX_TEMPLATE_NAME_LENGTH + 1, 'x');
+        ASSERT_THROW({
+            tm.save_template(long_name, "content");
+        }, std::exception) << "Template name exceeding MAX_TEMPLATE_NAME_LENGTH should fail";
+        
+        // Test template name with invalid characters
+        ASSERT_THROW({
+            tm.save_template("test@template", "content");
+        }, std::exception) << "Template name with invalid characters should fail";
+        
+        // Test template name with path traversal
+        ASSERT_THROW({
+            tm.save_template("../test", "content");
+        }, std::exception) << "Template name with path traversal should fail";
+        
+        // Test valid template name
+        ASSERT_NO_THROW({
+            tm.save_template("valid_template-123", "@copyright \"MIT\" \"2025\"\n@language \"C++\"\n@description \"test\"");
+        }) << "Valid template name should succeed";
+    }
+    
+    // Test variable validation
+    {
+        // Test variable name too long
+        std::string long_var_name(InputValidator::MAX_VARIABLE_NAME_LENGTH + 1, 'x');
+        ASSERT_THROW({
+            InputValidator::validate_variable(long_var_name, "value");
+        }, SecurityValidationError) << "Variable name exceeding limit should fail";
+        
+        // Test variable value too long
+        std::string long_var_value(InputValidator::MAX_VARIABLE_VALUE_LENGTH + 1, 'x');
+        ASSERT_THROW({
+            InputValidator::validate_variable("test_var", long_var_value);
+        }, SecurityValidationError) << "Variable value exceeding limit should fail";
+        
+        // Test invalid variable name
+        ASSERT_THROW({
+            InputValidator::validate_variable("123invalid", "value");
+        }, SecurityValidationError) << "Invalid variable name should fail";
+        
+        // Test valid variable
+        ASSERT_NO_THROW({
+            InputValidator::validate_variable("valid_var_123", "test value");
+        }) << "Valid variable should succeed";
+    }
+    
+    // Test category name validation
+    {
+        // Test category name too long
+        std::string long_category(InputValidator::MAX_CATEGORY_NAME_LENGTH + 1, 'x');
+        ASSERT_THROW({
+            InputValidator::validate_category_name(long_category);
+        }, SecurityValidationError) << "Category name exceeding limit should fail";
+        
+        // Test category with path traversal
+        ASSERT_THROW({
+            InputValidator::validate_category_name("../category");
+        }, SecurityValidationError) << "Category with path traversal should fail";
+        
+        // Test valid category
+        ASSERT_NO_THROW({
+            InputValidator::validate_category_name("valid/category_123");
+        }) << "Valid category name should succeed";
+    }
+    
+    // Test directive content length validation
+    {
+        // Create directive content exceeding MAX_DIRECTIVE_LENGTH
+        std::string long_content(InputValidator::MAX_DIRECTIVE_LENGTH + 1, 'x');
+        ASSERT_THROW({
+            InputValidator::validate_directive_content("test", long_content);
+        }, SecurityValidationError) << "Directive content exceeding limit should fail";
+    }
+    
+    // Test path length validation
+    {
+        // Create path exceeding MAX_PATH_LENGTH
+        std::string long_path(InputValidator::MAX_PATH_LENGTH + 1, 'x');
+        ASSERT_THROW({
+            InputValidator::validate_file_path(long_path);
+        }, SecurityValidationError) << "Path exceeding MAX_PATH_LENGTH should fail";
+    }
+    
+    // Test filename length validation
+    {
+        // Create filename exceeding MAX_FILENAME_LENGTH
+        std::string long_filename(InputValidator::MAX_FILENAME_LENGTH + 1, 'x');
+        ASSERT_THROW({
+            InputValidator::validate_filename(long_filename);
+        }, SecurityValidationError) << "Filename exceeding MAX_FILENAME_LENGTH should fail";
+    }
 }
 
 // test_phase2_example_compilation implementation

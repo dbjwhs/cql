@@ -36,9 +36,17 @@ TemplateManager::TemplateManager(std::string template_dir)
 }
 
 void TemplateManager::save_template(const std::string& name, const std::string& content) const {
-    // ensure the template has a valid name
-    if (name.empty()) {
-        throw std::runtime_error("Template name cannot be empty");
+    // Validate template name using InputValidator
+    try {
+        InputValidator::validate_template_name(name);
+    } catch (const SecurityValidationError& e) {
+        throw std::runtime_error(e.what());
+    }
+    
+    // Validate template content length
+    if (content.size() > InputValidator::MAX_TEMPLATE_CONTENT_LENGTH) {
+        throw std::runtime_error("Template content too large (max: " + 
+                               std::to_string(InputValidator::MAX_TEMPLATE_CONTENT_LENGTH) + " characters)");
     }
     
     // ensure templates directory structure is valid

@@ -297,4 +297,93 @@ std::string InputValidator::sanitize_template_variables(std::string_view input) 
     return sanitized;
 }
 
+void InputValidator::validate_template_name(std::string_view name) {
+    if (name.empty()) {
+        throw SecurityValidationError("Template name cannot be empty");
+    }
+    
+    if (name.size() > MAX_TEMPLATE_NAME_LENGTH) {
+        throw SecurityValidationError("Template name too long (max: " + 
+                                    std::to_string(MAX_TEMPLATE_NAME_LENGTH) + ")");
+    }
+    
+    // Template names should only contain alphanumeric, underscore, hyphen
+    // Allow category names with forward slash but not at the beginning or end
+    std::regex valid_name_regex("^[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*$");
+    if (!std::regex_match(std::string(name), valid_name_regex)) {
+        throw SecurityValidationError("Template name contains invalid characters");
+    }
+    
+    // Check for path traversal attempts in template names
+    if (name.find("..") != std::string_view::npos || 
+        name.find("\\") != std::string_view::npos) {
+        throw SecurityValidationError("Template name contains path traversal characters");
+    }
+}
+
+void InputValidator::validate_variable(std::string_view name, std::string_view value) {
+    // Validate variable name
+    if (name.empty()) {
+        throw SecurityValidationError("Variable name cannot be empty");
+    }
+    
+    if (name.size() > MAX_VARIABLE_NAME_LENGTH) {
+        throw SecurityValidationError("Variable name too long (max: " + 
+                                    std::to_string(MAX_VARIABLE_NAME_LENGTH) + ")");
+    }
+    
+    // Variable names should be valid identifiers
+    std::regex valid_var_regex("^[a-zA-Z_][a-zA-Z0-9_]*$");
+    if (!std::regex_match(std::string(name), valid_var_regex)) {
+        throw SecurityValidationError("Variable name is not a valid identifier");
+    }
+    
+    // Validate variable value
+    if (value.size() > MAX_VARIABLE_VALUE_LENGTH) {
+        throw SecurityValidationError("Variable value too long (max: " + 
+                                    std::to_string(MAX_VARIABLE_VALUE_LENGTH) + ")");
+    }
+    
+    // Check for injection patterns in variable value
+    if (!is_shell_safe(value)) {
+        throw SecurityValidationError("Variable value contains potential shell injection");
+    }
+}
+
+void InputValidator::validate_query_length(std::string_view query) {
+    if (query.size() > MAX_QUERY_LENGTH) {
+        throw SecurityValidationError("Query too long (max: " + 
+                                    std::to_string(MAX_QUERY_LENGTH) + " characters)");
+    }
+}
+
+void InputValidator::validate_response_size(std::string_view response) {
+    if (response.size() > MAX_RESPONSE_SIZE) {
+        throw SecurityValidationError("Response too large (max: " + 
+                                    std::to_string(MAX_RESPONSE_SIZE / (1024 * 1024)) + " MB)");
+    }
+}
+
+void InputValidator::validate_category_name(std::string_view category) {
+    if (category.empty()) {
+        throw SecurityValidationError("Category name cannot be empty");
+    }
+    
+    if (category.size() > MAX_CATEGORY_NAME_LENGTH) {
+        throw SecurityValidationError("Category name too long (max: " + 
+                                    std::to_string(MAX_CATEGORY_NAME_LENGTH) + ")");
+    }
+    
+    // Category names should only contain alphanumeric, underscore, hyphen, forward slash
+    std::regex valid_category_regex("^[a-zA-Z0-9_-]+(/[a-zA-Z0-9_-]+)*$");
+    if (!std::regex_match(std::string(category), valid_category_regex)) {
+        throw SecurityValidationError("Category name contains invalid characters");
+    }
+    
+    // Check for path traversal
+    if (category.find("..") != std::string_view::npos) {
+        throw SecurityValidationError("Category name contains path traversal pattern");
+    }
+}
+
 } // namespace cql

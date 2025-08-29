@@ -201,7 +201,7 @@ TEST_F(SecurityTest, TemplateManagerSecurity) {
     }, std::invalid_argument);
     
     // Test that path traversal in save operations is prevented
-    EXPECT_THROW(manager.save_template("../malicious", "content"), std::invalid_argument);
+    EXPECT_THROW(manager.save_template("../malicious", "content"), std::runtime_error);
 }
 
 // Test API client security features

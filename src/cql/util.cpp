@@ -8,6 +8,7 @@
 #include <optional>
 #include "../../include/cql/cql.hpp"
 #include "../../include/cql/project_utils.hpp"
+#include "../../include/cql/input_validator.hpp"
 
 namespace cql::util {
 
@@ -103,6 +104,9 @@ namespace cql {
  * focusing on content issues rather than just syntax problems.
  */
 std::string QueryProcessor::compile(const std::string_view query_str) {
+    // Validate query length first
+    InputValidator::validate_query_length(query_str);
+    
     // Store parser errors to report them after validation
     std::optional<std::string> parser_error;
     std::vector<std::unique_ptr<QueryNode>> nodes;

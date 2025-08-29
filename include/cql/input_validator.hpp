@@ -34,10 +34,41 @@ public:
     /**
      * @brief Maximum allowed input length for various input types
      */
+    // File and path limits
     static constexpr size_t MAX_DIRECTIVE_LENGTH = 10000;
     static constexpr size_t MAX_FILENAME_LENGTH = 255;
     static constexpr size_t MAX_PATH_LENGTH = 4096;
+    static constexpr size_t MAX_FILE_SIZE = 10 * 1024 * 1024;  // 10 MB
+    
+    // API and network limits
     static constexpr size_t MAX_API_KEY_LENGTH = 200;
+    static constexpr size_t MAX_URL_LENGTH = 2048;
+    static constexpr size_t MAX_RESPONSE_SIZE = 100 * 1024 * 1024;  // 100 MB
+    
+    // Template and variable limits
+    static constexpr size_t MAX_TEMPLATE_NAME_LENGTH = 128;
+    static constexpr size_t MAX_CATEGORY_NAME_LENGTH = 64;
+    static constexpr size_t MAX_VARIABLE_NAME_LENGTH = 64;
+    static constexpr size_t MAX_VARIABLE_VALUE_LENGTH = 1024;
+    static constexpr size_t MAX_TEMPLATE_CONTENT_LENGTH = 100000;
+    
+    // Query and compilation limits
+    static constexpr size_t MAX_QUERY_LENGTH = 50000;
+    static constexpr size_t MAX_COMPILED_OUTPUT_LENGTH = 100000;
+    static constexpr size_t MAX_EXAMPLE_LENGTH = 5000;
+    static constexpr size_t MAX_TEST_CASE_LENGTH = 500;
+    
+    // Directive-specific limits
+    static constexpr size_t MAX_COPYRIGHT_LENGTH = 500;
+    static constexpr size_t MAX_DESCRIPTION_LENGTH = 1000;
+    static constexpr size_t MAX_CONTEXT_LENGTH = 2000;
+    static constexpr size_t MAX_CONSTRAINT_LENGTH = 500;
+    static constexpr size_t MAX_ARCHITECTURE_LENGTH = 500;
+    
+    // Security limits
+    static constexpr size_t MAX_LOG_MESSAGE_LENGTH = 1000;
+    static constexpr size_t MAX_ERROR_MESSAGE_LENGTH = 500;
+    static constexpr size_t MAX_IDENTIFIER_LENGTH = 128;
     
     /**
      * @brief Validate file path for security issues
@@ -119,6 +150,42 @@ public:
      * @return Input with template variables replaced by safe placeholders
      */
     static std::string sanitize_template_variables(std::string_view input);
+    
+    /**
+     * @brief Validate template name length and format
+     * @param name Template name to validate
+     * @throws SecurityValidationError if name is invalid
+     */
+    static void validate_template_name(std::string_view name);
+    
+    /**
+     * @brief Validate variable name and value
+     * @param name Variable name
+     * @param value Variable value
+     * @throws SecurityValidationError if invalid
+     */
+    static void validate_variable(std::string_view name, std::string_view value);
+    
+    /**
+     * @brief Validate query length
+     * @param query Query text to validate
+     * @throws SecurityValidationError if query is too long
+     */
+    static void validate_query_length(std::string_view query);
+    
+    /**
+     * @brief Validate response size
+     * @param response Response text to validate
+     * @throws SecurityValidationError if response is too large
+     */
+    static void validate_response_size(std::string_view response);
+    
+    /**
+     * @brief Validate category name
+     * @param category Category name to validate
+     * @throws SecurityValidationError if invalid
+     */
+    static void validate_category_name(std::string_view category);
 
 private:
     // Common dangerous patterns
