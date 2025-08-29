@@ -777,7 +777,7 @@ TEST_F(CQLTest, SymlinkSecurityValidation) {
         }, SecurityValidationError) << "Empty paths should be rejected";
         
         ASSERT_THROW({
-            InputValidator::resolve_path_securely("");
+            [[maybe_unused]] auto result = InputValidator::resolve_path_securely("");
         }, SecurityValidationError) << "Empty paths should fail resolution";
     }
     

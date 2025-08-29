@@ -143,7 +143,7 @@ int TemplateOperations::handle_template_command(int argc, char* argv[]) {
         // Check for missing variables
         std::string template_content = manager.load_template(template_name);
         auto template_vars = TemplateManager::collect_variables(template_content);
-        handle_missing_variables(validation_result, template_vars, variables);
+        [[maybe_unused]] auto missing_vars = handle_missing_variables(validation_result, template_vars, variables);
 
         // Instantiate and compile template
         std::string instantiated = manager.instantiate_template(template_name, variables);

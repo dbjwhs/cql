@@ -62,19 +62,19 @@ public:
      * @brief Get the base URL of the mock server
      * @return The base URL as a string
      */
-    std::string get_url() const;
+    [[nodiscard]] std::string get_url() const;
     
     /**
      * @brief Get a list of received requests
      * @return Vector of request bodies
      */
-    std::vector<std::string> get_requests() const;
+    [[nodiscard]] std::vector<std::string> get_requests() const;
     
     /**
      * @brief Check if the server is running
      * @return true if running, false otherwise
      */
-    bool is_running() const;
+    [[nodiscard]] bool is_running() const;
     
 private:
     int m_port;
@@ -93,7 +93,7 @@ private:
  * @param content The content to include in the response
  * @return JSON response string mimicking the Claude API
  */
-std::string create_mock_claude_response(const std::string& content);
+[[nodiscard]] std::string create_mock_claude_response(const std::string& content);
 
 /**
  * @brief Create a mock error response
@@ -102,7 +102,7 @@ std::string create_mock_claude_response(const std::string& content);
  * @param error_message Error message
  * @return JSON error response string
  */
-std::string create_mock_error_response(int status_code, 
+[[nodiscard]] std::string create_mock_error_response(int status_code, 
                                       const std::string& error_type,
                                       const std::string& error_message);
 

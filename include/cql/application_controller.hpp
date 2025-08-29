@@ -23,7 +23,7 @@ public:
      * @param argv Argument values
      * @return int Return code (0 for success, 1 for error)
      */
-    static int run(int argc, char* argv[]);
+    [[nodiscard]] static int run(int argc, char* argv[]);
 
 private:
     /**
@@ -31,7 +31,7 @@ private:
      * @param level_str String representation of log level
      * @return LogLevel enum value
      */
-    static LogLevel string_to_log_level(const std::string& level_str);
+    [[nodiscard]] static LogLevel string_to_log_level(const std::string& level_str);
 
     /**
      * @brief Handle file processing operations
@@ -41,7 +41,7 @@ private:
      * @param include_header Include compiler headers and status messages
      * @return int Return code (0 for success, 1 for error)
      */
-    static int handle_file_processing(const std::string& input_file,
+    [[nodiscard]] static int handle_file_processing(const std::string& input_file,
                                       const std::string& output_file,
                                       bool use_clipboard = false,
                                       bool include_header = false);

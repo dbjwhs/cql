@@ -35,7 +35,7 @@ public:
      * @param manager Template manager to use
      * @return TemplateValidator Initialized validator
      */
-    static TemplateValidator initialize_template_validator(const TemplateManager& manager);
+    [[nodiscard]] static TemplateValidator initialize_template_validator(const TemplateManager& manager);
 
     /**
      * @brief Process variables for template instantiation
@@ -44,7 +44,7 @@ public:
      * @param start_index Starting index in argv
      * @return std::map<std::string, std::string> Map of variable names to values
      */
-    static std::map<std::string, std::string> process_template_variables(int argc, char* argv[], int start_index);
+    [[nodiscard]] static std::map<std::string, std::string> process_template_variables(int argc, char* argv[], int start_index);
 
     /**
      * @brief Check for --force flag in arguments
@@ -53,7 +53,7 @@ public:
      * @param start_index Starting index in argv
      * @return bool True if --force flag is present
      */
-    static bool has_force_flag(int argc, char* argv[], int start_index);
+    [[nodiscard]] static bool has_force_flag(int argc, char* argv[], int start_index);
 
     /**
      * @brief Handle missing variables in templates
@@ -62,7 +62,7 @@ public:
      * @param variables User-provided variables
      * @return std::vector<std::string> List of missing variable names
      */
-    static std::vector<std::string> handle_missing_variables(
+    [[nodiscard]] static std::vector<std::string> handle_missing_variables(
         const TemplateValidationResult& validation_result,
         const std::map<std::string, std::string>& template_vars,
         const std::map<std::string, std::string>& variables);
@@ -73,7 +73,7 @@ public:
      * @param argv Argument values
      * @return int Return code (0 for success, 1 for error)
      */
-    static int handle_template_command(int argc, char* argv[]);
+    [[nodiscard]] static int handle_template_command(int argc, char* argv[]);
 
     /**
      * @brief Display validation results in a formatted manner
@@ -88,14 +88,14 @@ public:
      * @param argv Argument values
      * @return int Return code (0 for success, 1 for error)
      */
-    static int handle_validate_command(int argc, char* argv[]);
+    [[nodiscard]] static int handle_validate_command(int argc, char* argv[]);
 
     /**
      * @brief Validate all templates in a directory
      * @param templates_path Path to templates directory
      * @return int Return code (0 for success, 1 for error)
      */
-    static int handle_validate_all_command(const std::string& templates_path);
+    [[nodiscard]] static int handle_validate_all_command(const std::string& templates_path);
 };
 
 } // namespace cql

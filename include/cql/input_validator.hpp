@@ -77,7 +77,7 @@ public:
      * @return Canonical absolute path with symlinks resolved
      * @throws SecurityValidationError if resolution fails or path is unsafe
      */
-    static std::string resolve_path_securely(std::string_view path);
+    [[nodiscard]] static std::string resolve_path_securely(std::string_view path);
     
     /**
      * @brief Validate file path for security issues (with symlink resolution)
@@ -91,7 +91,7 @@ public:
      * @param path Input path
      * @return Sanitized path safe for use
      */
-    static std::string sanitize_file_path(std::string_view path);
+    [[nodiscard]] static std::string sanitize_file_path(std::string_view path);
     
     /**
      * @brief Validate filename for security issues
@@ -121,14 +121,14 @@ public:
      * @param input Input string to check
      * @return true if input appears safe, false if suspicious
      */
-    static bool is_shell_safe(std::string_view input);
+    [[nodiscard]] static bool is_shell_safe(std::string_view input);
     
     /**
      * @brief Sanitize input for safe logging (remove sensitive patterns)
      * @param input Input to sanitize
      * @return Sanitized string safe for logging
      */
-    static std::string sanitize_for_logging(std::string_view input);
+    [[nodiscard]] static std::string sanitize_for_logging(std::string_view input);
     
     /**
      * @brief Check if string contains only safe characters
@@ -136,7 +136,7 @@ public:
      * @param allowed_chars Set of allowed characters (regex pattern)
      * @return true if safe, false otherwise
      */
-    static bool contains_only_safe_chars(std::string_view input, 
+    [[nodiscard]] static bool contains_only_safe_chars(std::string_view input, 
                                        std::string_view allowed_chars);
     
     /**
@@ -151,14 +151,14 @@ public:
      * @param input Input to check
      * @return true if input appears safe, false if suspicious
      */
-    static bool is_sql_safe(std::string_view input);
+    [[nodiscard]] static bool is_sql_safe(std::string_view input);
     
     /**
      * @brief Sanitize template variables for security validation
      * @param input Input containing template variables
      * @return Input with template variables replaced by safe placeholders
      */
-    static std::string sanitize_template_variables(std::string_view input);
+    [[nodiscard]] static std::string sanitize_template_variables(std::string_view input);
     
     /**
      * @brief Validate template name length and format
@@ -208,7 +208,7 @@ private:
      * @param patterns Vector of dangerous patterns to check against
      * @return true if input contains dangerous patterns
      */
-    static bool contains_dangerous_patterns(std::string_view input,
+    [[nodiscard]] static bool contains_dangerous_patterns(std::string_view input,
                                           const std::vector<std::string>& patterns);
 };
 

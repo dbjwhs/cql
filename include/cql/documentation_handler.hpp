@@ -22,13 +22,13 @@ public:
      * @param argv Argument values
      * @return int Return code (0 for success, 1 for error)
      */
-    static int handle_docs_command(int argc, char* argv[]);
+    [[nodiscard]] static int handle_docs_command(int argc, char* argv[]);
 
     /**
      * @brief Generate documentation for all templates
      * @return int Return code (0 for success, 1 for error)
      */
-    static int handle_docs_all_command();
+    [[nodiscard]] static int handle_docs_all_command();
 
     /**
      * @brief Export documentation to a file
@@ -36,7 +36,7 @@ public:
      * @param argv Argument values
      * @return int Return code (0 for success, 1 for error)
      */
-    static int handle_export_command(int argc, char* argv[]);
+    [[nodiscard]] static int handle_export_command(int argc, char* argv[]);
 };
 
 } // namespace cql

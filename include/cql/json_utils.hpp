@@ -34,7 +34,7 @@ public:
      * @param streaming Enable streaming response
      * @return Complete API request JSON object
      */
-    static nlohmann::json create_api_request(
+    [[nodiscard]] static nlohmann::json create_api_request(
         const std::string& model,
         const std::string& query,
         int max_tokens = 1024,
@@ -48,7 +48,7 @@ public:
      * @param role Message role (default: "user")
      * @return Messages array suitable for Claude API
      */
-    static nlohmann::json create_messages_array(
+    [[nodiscard]] static nlohmann::json create_messages_array(
         const std::string& content,
         const std::string& role = "user"
     );
@@ -64,7 +64,7 @@ public:
      * @param message_id Message ID (optional)
      * @return Complete mock API response JSON
      */
-    static nlohmann::json create_mock_response(
+    [[nodiscard]] static nlohmann::json create_mock_response(
         const std::string& content,
         const std::string& model = "claude-3-opus-20240229",
         const std::string& message_id = "msg_mock123456789"
@@ -77,7 +77,7 @@ public:
      * @param error_message Error message
      * @return Complete error response JSON
      */
-    static nlohmann::json create_error_response(
+    [[nodiscard]] static nlohmann::json create_error_response(
         int status_code,
         const std::string& error_type,
         const std::string& error_message
@@ -89,7 +89,7 @@ public:
      * @param output_tokens Output token count
      * @return Usage statistics JSON object
      */
-    static nlohmann::json create_usage_stats(
+    [[nodiscard]] static nlohmann::json create_usage_stats(
         int input_tokens,
         int output_tokens
     );
@@ -103,7 +103,7 @@ public:
      * @param json_str JSON string to parse
      * @return Parsed JSON object or std::nullopt on error
      */
-    static std::optional<nlohmann::json> safe_parse(const std::string& json_str);
+    [[nodiscard]] static std::optional<nlohmann::json> safe_parse(const std::string& json_str);
     
     /**
      * @brief Extract string field from JSON with default
@@ -112,7 +112,7 @@ public:
      * @param default_value Default value if field missing
      * @return Field value or default
      */
-    static std::string get_string(
+    [[nodiscard]] static std::string get_string(
         const nlohmann::json& json, 
         const std::string& field, 
         const std::string& default_value = ""
@@ -125,7 +125,7 @@ public:
      * @param default_value Default value if field missing
      * @return Field value or default
      */
-    static int get_int(
+    [[nodiscard]] static int get_int(
         const nlohmann::json& json, 
         const std::string& field, 
         int default_value = 0
@@ -138,7 +138,7 @@ public:
      * @param default_value Default value if field missing
      * @return Field value or default
      */
-    static double get_double(
+    [[nodiscard]] static double get_double(
         const nlohmann::json& json, 
         const std::string& field, 
         double default_value = 0.0
@@ -151,7 +151,7 @@ public:
      * @param default_value Default value if field missing
      * @return Field value or default
      */
-    static bool get_bool(
+    [[nodiscard]] static bool get_bool(
         const nlohmann::json& json, 
         const std::string& field, 
         bool default_value = false
@@ -171,7 +171,7 @@ public:
      * @param temperature Output parameter for temperature
      * @return true if parsing succeeded, false otherwise
      */
-    static bool parse_config(
+    [[nodiscard]] static bool parse_config(
         const nlohmann::json& config_json,
         std::string& api_key,
         std::string& model,
@@ -190,14 +190,14 @@ public:
      * @param indent Number of spaces for indentation (default: 2)
      * @return Formatted JSON string
      */
-    static std::string to_pretty_string(const nlohmann::json& json, int indent = 2);
+    [[nodiscard]] static std::string to_pretty_string(const nlohmann::json& json, int indent = 2);
     
     /**
      * @brief Convert JSON to compact string (no formatting)
      * @param json JSON object to convert
      * @return Compact JSON string
      */
-    static std::string to_compact_string(const nlohmann::json& json);
+    [[nodiscard]] static std::string to_compact_string(const nlohmann::json& json);
 };
 
 } // namespace cql
