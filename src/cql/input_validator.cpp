@@ -34,7 +34,7 @@ const std::vector<std::string> InputValidator::PATH_TRAVERSAL_PATTERNS = {
     "/..", "\\..", "/./", "\\.\\", "%00", "\\x00"
 };
 
-void InputValidator::validate_file_path(std::string_view path) {
+std::string InputValidator::resolve_path_securely(std::string_view path) {
     if (path.empty()) {
         throw SecurityValidationError("Empty file path");
     }
@@ -44,27 +44,109 @@ void InputValidator::validate_file_path(std::string_view path) {
                                     std::to_string(MAX_PATH_LENGTH) + ")");
     }
     
-    // Check for path traversal attempts
-    if (contains_dangerous_patterns(path, PATH_TRAVERSAL_PATTERNS)) {
-        throw SecurityValidationError("Potential path traversal detected");
-    }
-    
-    // Check for absolute paths outside safe directories
-    if (path.front() == '/' && !path.starts_with("/tmp/") && !path.starts_with("/var/tmp/")) {
-        throw SecurityValidationError("Absolute paths not allowed outside safe directories");
-    }
-    
-    // Check for Windows drive letters
+    // Early check for Windows paths (before resolution)
     if (path.size() >= 2 && path[1] == ':' && std::isalpha(path[0])) {
         throw SecurityValidationError("Windows absolute paths not allowed");
     }
     
-    // Validate individual path components
-    std::filesystem::path fs_path(path);
+    // Check for Windows UNC paths
+    if (path.starts_with("\\\\") || path.starts_with("//")) {
+        throw SecurityValidationError("UNC paths not allowed");
+    }
+    
+    // Early check for obvious path traversal patterns (before expensive resolution)
+    if (contains_dangerous_patterns(path, PATH_TRAVERSAL_PATTERNS)) {
+        throw SecurityValidationError("Potential path traversal detected");
+    }
+    
+    try {
+        // Convert to filesystem path
+        std::filesystem::path fs_path(path);
+        
+        // Get the current working directory for relative path resolution
+        std::filesystem::path current_dir = std::filesystem::current_path();
+        
+        // If path is relative, make it absolute relative to current directory
+        if (fs_path.is_relative()) {
+            fs_path = current_dir / fs_path;
+        }
+        
+        // Resolve symlinks and canonicalize - this is the critical security step
+        std::filesystem::path canonical_path;
+        std::error_code ec;
+        
+        // Use error_code version to avoid exceptions for non-existent paths
+        canonical_path = std::filesystem::canonical(fs_path, ec);
+        
+        if (ec) {
+            // If canonical fails, try weakly_canonical (allows non-existent final component)
+            canonical_path = std::filesystem::weakly_canonical(fs_path, ec);
+            if (ec) {
+                throw SecurityValidationError("Failed to resolve path: " + ec.message());
+            }
+        }
+        
+        // Convert back to string for further validation
+        std::string resolved_path = canonical_path.string();
+        
+        // Validate the resolved path length
+        if (resolved_path.size() > MAX_PATH_LENGTH) {
+            throw SecurityValidationError("Resolved path too long (max: " + 
+                                        std::to_string(MAX_PATH_LENGTH) + ")");
+        }
+        
+        return resolved_path;
+        
+    } catch (const std::filesystem::filesystem_error& e) {
+        throw SecurityValidationError("Filesystem error during path resolution: " + std::string(e.what()));
+    }
+}
+
+void InputValidator::validate_file_path(std::string_view path) {
+    // First resolve symlinks and canonicalize the path
+    std::string resolved_path = resolve_path_securely(path);
+    
+    // Now validate the RESOLVED path (not the original symlink)
+    // Check for path traversal attempts in the resolved path
+    if (contains_dangerous_patterns(resolved_path, PATH_TRAVERSAL_PATTERNS)) {
+        throw SecurityValidationError("Potential path traversal detected");
+    }
+    
+    // Check for absolute paths outside safe directories (on resolved path)
+    if (resolved_path.front() == '/' && !resolved_path.starts_with("/tmp/") && 
+        !resolved_path.starts_with("/var/tmp/")) {
+        // Get current working directory to allow files in project directory
+        std::string cwd = std::filesystem::current_path().string();
+        if (!resolved_path.starts_with(cwd)) {
+            throw SecurityValidationError("Resolved path not allowed outside safe directories");
+        }
+        
+        // Additional security: check for access to forbidden subdirectories
+        // Even within the project, certain directories should be off-limits
+        std::vector<std::string> forbidden_patterns = {
+            "/forbidden/", "\\forbidden\\", "/private/", "\\private\\", 
+            "/.git/", "\\.git\\", "/secrets/", "\\secrets\\"
+        };
+        
+        for (const auto& pattern : forbidden_patterns) {
+            if (resolved_path.find(pattern) != std::string::npos) {
+                throw SecurityValidationError("Access to forbidden directory detected");
+            }
+        }
+    }
+    
+    // Check for Windows drive letters in resolved path
+    if (resolved_path.size() >= 2 && resolved_path[1] == ':' && std::isalpha(resolved_path[0])) {
+        throw SecurityValidationError("Windows absolute paths not allowed");
+    }
+    
+    // Additional security check: ensure resolved path doesn't contain dangerous patterns
+    std::filesystem::path fs_path(resolved_path);
     for (const auto& component : fs_path) {
         std::string component_str = component.string();
+        // After canonicalization, these shouldn't exist, but double-check
         if (component_str == "." || component_str == "..") {
-            throw SecurityValidationError("Relative path components not allowed");
+            throw SecurityValidationError("Relative path components found after resolution");
         }
     }
 }

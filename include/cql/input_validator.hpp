@@ -9,6 +9,7 @@
 #include <vector>
 #include <stdexcept>
 #include <regex>
+#include <filesystem>
 
 namespace cql {
 
@@ -71,7 +72,15 @@ public:
     static constexpr size_t MAX_IDENTIFIER_LENGTH = 128;
     
     /**
-     * @brief Validate file path for security issues
+     * @brief Resolve symlinks and canonicalize path securely
+     * @param path File path to resolve
+     * @return Canonical absolute path with symlinks resolved
+     * @throws SecurityValidationError if resolution fails or path is unsafe
+     */
+    static std::string resolve_path_securely(std::string_view path);
+    
+    /**
+     * @brief Validate file path for security issues (with symlink resolution)
      * @param path File path to validate
      * @throws SecurityValidationError if path is unsafe
      */

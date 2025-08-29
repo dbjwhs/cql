@@ -670,6 +670,123 @@ TEST_F(CQLTest, HardenedSecureString) {
 }
 
 /**
+ * Test for symlink attack prevention and secure path resolution
+ */
+TEST_F(CQLTest, SymlinkSecurityValidation) {
+    std::cout << "Testing symlink attack prevention..." << std::endl;
+    
+    // Create test directories and files
+    std::filesystem::create_directories("test_output/secure_test");
+    std::filesystem::create_directories("test_output/forbidden");
+    
+    // Create a normal file
+    std::ofstream normal_file("test_output/secure_test/normal_file.txt");
+    normal_file << "This is a normal file";
+    normal_file.close();
+    
+    // Create a sensitive file outside allowed directory
+    std::ofstream sensitive_file("test_output/forbidden/sensitive.txt");
+    sensitive_file << "This should not be accessible";
+    sensitive_file.close();
+    
+    // Test 1: Normal file access should work
+    {
+        ASSERT_NO_THROW({
+            InputValidator::validate_file_path("test_output/secure_test/normal_file.txt");
+        }) << "Normal file access should be allowed";
+        
+        std::string resolved = InputValidator::resolve_path_securely("test_output/secure_test/normal_file.txt");
+        ASSERT_FALSE(resolved.empty()) << "Path resolution should succeed for normal files";
+        ASSERT_TRUE(std::filesystem::exists(resolved)) << "Resolved path should exist";
+    }
+    
+    // Test 2: Direct path traversal should be blocked
+    {
+        ASSERT_THROW({
+            InputValidator::validate_file_path("test_output/secure_test/../forbidden/sensitive.txt");
+        }, SecurityValidationError) << "Direct path traversal should be blocked";
+    }
+    
+    // Test 3: Create and test symlink attacks
+    if (std::filesystem::exists("test_output/secure_test/symlink_attack")) {
+        std::filesystem::remove("test_output/secure_test/symlink_attack");
+    }
+    
+    // Create symlink pointing to forbidden file
+    std::error_code ec;
+    std::filesystem::create_symlink("../forbidden/sensitive.txt", 
+                                   "test_output/secure_test/symlink_attack", ec);
+    
+    if (!ec) {  // Only test if symlink creation succeeded (may fail without permissions)
+        ASSERT_THROW({
+            InputValidator::validate_file_path("test_output/secure_test/symlink_attack");
+        }, SecurityValidationError) << "Symlink to forbidden file should be blocked";
+        
+        // The resolved path should point to the actual target
+        ASSERT_THROW({
+            std::string resolved = InputValidator::resolve_path_securely("test_output/secure_test/symlink_attack");
+            // If resolution succeeds, validation should still fail
+            InputValidator::validate_file_path(resolved);
+        }, SecurityValidationError) << "Symlink target should be validated, not just the link name";
+    }
+    
+    // Test 4: Symlink chains should be fully resolved
+    if (!ec) {  // Only if we can create symlinks
+        // Create a chain: symlink1 -> symlink2 -> forbidden file
+        if (std::filesystem::exists("test_output/secure_test/symlink_chain")) {
+            std::filesystem::remove("test_output/secure_test/symlink_chain");
+        }
+        
+        std::filesystem::create_symlink("symlink_attack", 
+                                       "test_output/secure_test/symlink_chain", ec);
+        
+        if (!ec) {
+            ASSERT_THROW({
+                InputValidator::validate_file_path("test_output/secure_test/symlink_chain");
+            }, SecurityValidationError) << "Symlink chains should be fully resolved and blocked";
+        }
+    }
+    
+    // Test 5: Relative path resolution
+    {
+        // Change to a different directory to test relative path resolution
+        std::string original_cwd = std::filesystem::current_path().string();
+        
+        ASSERT_NO_THROW({
+            // Test that relative paths are resolved relative to current directory
+            std::string resolved = InputValidator::resolve_path_securely("./test_output/secure_test/normal_file.txt");
+            ASSERT_TRUE(std::filesystem::path(resolved).is_absolute()) 
+                << "Relative paths should be resolved to absolute paths";
+        }) << "Relative path resolution should work";
+    }
+    
+    // Test 6: Non-existent files should still resolve paths safely
+    {
+        ASSERT_NO_THROW({
+            std::string resolved = InputValidator::resolve_path_securely("test_output/secure_test/nonexistent.txt");
+            ASSERT_FALSE(resolved.empty()) << "Non-existent file paths should still resolve";
+        }) << "Non-existent files should resolve paths without throwing";
+    }
+    
+    // Test 7: Empty and invalid paths
+    {
+        ASSERT_THROW({
+            InputValidator::validate_file_path("");
+        }, SecurityValidationError) << "Empty paths should be rejected";
+        
+        ASSERT_THROW({
+            InputValidator::resolve_path_securely("");
+        }, SecurityValidationError) << "Empty paths should fail resolution";
+    }
+    
+    // Cleanup
+    std::filesystem::remove_all("test_output/secure_test");
+    std::filesystem::remove_all("test_output/forbidden");
+    
+    std::cout << "✅ Symlink attack prevention tests passed - paths are now securely resolved!" << std::endl;
+}
+
+/**
  * Test for input length validation
  */
 TEST_F(CQLTest, InputLengthValidation) {
