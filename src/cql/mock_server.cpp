@@ -14,6 +14,7 @@
 #include <nlohmann/json.hpp>
 #include "../../include/cql/project_utils.hpp"
 #include "../../include/cql/mock_server.hpp"
+#include "../../include/cql/json_utils.hpp"
 
 namespace cql::test {
 
@@ -86,44 +87,26 @@ void MockServer::run_server() const {
 
 // Create a mock response for the Claude API
 std::string create_mock_claude_response(const std::string& content) {
-    nlohmann::json response = nlohmann::json::object();
-    response["id"] = "msg_mock123456789";
-    response["type"] = "message";
-    response["role"] = "assistant";
-    response["model"] = "claude-3-opus-20240229";
+    nlohmann::json response = JsonUtils::create_mock_response(
+        content,
+        "claude-3-opus-20240229",
+        "msg_mock123456789"
+    );
     
-    nlohmann::json content_obj = nlohmann::json::array();
-    nlohmann::json content_item = nlohmann::json::object();
-    content_item["type"] = "text";
-    content_item["text"] = content;
-    content_obj.push_back(content_item);
-    response["content"] = content_obj;
-    
-    response["stop_reason"] = "end_turn";
-    response["stop_sequence"] = nullptr;
-    
-    nlohmann::json usage = nlohmann::json::object();
-    usage["input_tokens"] = 100;
-    usage["output_tokens"] = 500;
-    response["usage"] = usage;
-    
-    return response.dump(2);
+    return JsonUtils::to_pretty_string(response);
 }
 
 // Create a mock error response
 std::string create_mock_error_response(int status_code, 
                                      const std::string& error_type,
                                      const std::string& error_message) {
-    nlohmann::json response = nlohmann::json::object();
+    nlohmann::json response = JsonUtils::create_error_response(
+        status_code,
+        error_type,
+        error_message
+    );
     
-    nlohmann::json error = nlohmann::json::object();
-    error["type"] = error_type;
-    error["message"] = error_message;
-    error["status"] = status_code;
-    
-    response["error"] = error;
-    
-    return response.dump(2);
+    return JsonUtils::to_pretty_string(response);
 }
 
 } // namespace cql::test

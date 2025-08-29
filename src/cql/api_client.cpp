@@ -18,6 +18,7 @@
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/project_utils.hpp"
 #include "../../include/cql/secure_string.hpp"
+#include "../../include/cql/json_utils.hpp"
 #include "../../include/cql/cql.hpp"
 
 namespace cql {
@@ -111,7 +112,11 @@ struct ApiClient::Impl {
                 }
                 
                 try {
-                    nlohmann::json event = nlohmann::json::parse(json_str);
+                    auto event_opt = JsonUtils::safe_parse(json_str);
+                    if (!event_opt) {
+                        continue; // Skip invalid JSON
+                    }
+                    nlohmann::json event = *event_opt;
                     
                     // Create a response object for this chunk
                     ApiResponse chunk_response;
@@ -151,25 +156,16 @@ struct ApiClient::Impl {
 
     // Prepare the request for the Claude API
     struct curl_slist* prepare_request(const std::string& query, std::string& request_data, const bool streaming = false) {
-        // Construct the request JSON
-        nlohmann::json request_json = {
-            {"model", m_config.get_model()},
-            {"max_tokens", m_config.get_max_tokens()},
-            {"temperature", m_config.get_temperature()},
-            {"messages", {
-                {
-                    {"role", "user"},
-                    {"content", query}
-                }
-            }}
-        };
+        // Use unified JSON utilities to create request
+        nlohmann::json request_json = JsonUtils::create_api_request(
+            m_config.get_model(),
+            query,
+            m_config.get_max_tokens(),
+            m_config.get_temperature(),
+            streaming || m_config.is_streaming_enabled()
+        );
         
-        // Add streaming option if requested
-        if (streaming || m_config.is_streaming_enabled()) {
-            request_json["stream"] = true;
-        }
-        
-        request_data = request_json.dump();
+        request_data = JsonUtils::to_compact_string(request_json);
         
         // Construct the full URL by combining base URL and endpoint
         const std::string api_url = m_config.get_api_base_url() + "/v1/messages";
@@ -801,36 +797,27 @@ Config Config::load_from_file(const std::string& filename) {
         nlohmann::json json_config;
         file >> json_config;
         
-        // Extract values
+        // Extract API configuration using unified JSON utilities
         if (json_config.contains("api") && json_config["api"].is_object()) {
-            auto api = json_config["api"];
+            const auto& api = json_config["api"];
             
-            if (api.contains("key") && api["key"].is_string()) {
-                config.m_api_key = SecureString(api["key"].get<std::string>());
+            // Use JsonUtils for safer field extraction
+            std::string api_key = JsonUtils::get_string(api, "key");
+            if (!api_key.empty()) {
+                config.m_api_key = SecureString(api_key);
             }
             
-            if (api.contains("model") && api["model"].is_string()) {
-                config.m_model = api["model"];
-            }
-            
-            if (api.contains("base_url") && api["base_url"].is_string()) {
-                config.m_api_base_url = api["base_url"];
-            }
-            
-            if (api.contains("timeout") && api["timeout"].is_number()) {
-                config.m_timeout = api["timeout"];
-            }
-            
-            if (api.contains("max_retries") && api["max_retries"].is_number()) {
-                config.m_max_retries = api["max_retries"];
-            }
+            config.m_model = JsonUtils::get_string(api, "model", config.m_model);
+            config.m_api_base_url = JsonUtils::get_string(api, "base_url", config.m_api_base_url);
+            config.m_timeout = JsonUtils::get_int(api, "timeout", config.m_timeout);
+            config.m_max_retries = JsonUtils::get_int(api, "max_retries", config.m_max_retries);
         }
         
         if (json_config.contains("output") && json_config["output"].is_object()) {
-            auto output = json_config["output"];
+            const auto& output = json_config["output"];
             
-            if (output.contains("default_directory") && output["default_directory"].is_string()) {
-                config.m_output_directory = output["default_directory"];
+            config.m_output_directory = JsonUtils::get_string(output, "default_directory", config.m_output_directory);
+            if (!config.m_output_directory.empty()) {
                 
                 // Replace ~ with home directory
                 if (!config.m_output_directory.empty() && config.m_output_directory[0] == '~') {

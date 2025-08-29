@@ -23,6 +23,7 @@
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/response_processor.hpp"
 #include "../../include/cql/input_validator.hpp"
+#include "../../include/cql/json_utils.hpp"
 #include "../../include/cql/test_utils.hpp"
 #include "../../third_party/include/nlohmann/json.hpp"
 
@@ -784,6 +785,124 @@ TEST_F(CQLTest, SymlinkSecurityValidation) {
     std::filesystem::remove_all("test_output/forbidden");
     
     std::cout << "✅ Symlink attack prevention tests passed - paths are now securely resolved!" << std::endl;
+}
+
+/**
+ * Test for unified JSON utilities
+ */
+TEST_F(CQLTest, JsonUtilities) {
+    std::cout << "Testing unified JSON utilities..." << std::endl;
+    
+    // Test API request creation
+    {
+        nlohmann::json request = JsonUtils::create_api_request(
+            "claude-3-opus",
+            "Test query",
+            1024,
+            0.5,
+            true
+        );
+        
+        ASSERT_EQ(request["model"], "claude-3-opus") << "Model should be set correctly";
+        ASSERT_EQ(request["max_tokens"], 1024) << "Max tokens should be set correctly";
+        ASSERT_EQ(request["temperature"], 0.5) << "Temperature should be set correctly";
+        ASSERT_TRUE(request["stream"]) << "Streaming should be enabled";
+        ASSERT_TRUE(request.contains("messages")) << "Messages array should be present";
+        ASSERT_EQ(request["messages"][0]["content"], "Test query") << "Query content should be set";
+        ASSERT_EQ(request["messages"][0]["role"], "user") << "Role should default to user";
+    }
+    
+    // Test mock response creation
+    {
+        nlohmann::json response = JsonUtils::create_mock_response(
+            "Mock response content",
+            "claude-3-sonnet",
+            "msg_test123"
+        );
+        
+        ASSERT_EQ(response["id"], "msg_test123") << "Message ID should be set";
+        ASSERT_EQ(response["model"], "claude-3-sonnet") << "Model should be set";
+        ASSERT_EQ(response["role"], "assistant") << "Role should be assistant";
+        ASSERT_TRUE(response.contains("content")) << "Content array should be present";
+        ASSERT_EQ(response["content"][0]["text"], "Mock response content") << "Content text should be set";
+        ASSERT_TRUE(response.contains("usage")) << "Usage stats should be present";
+    }
+    
+    // Test error response creation
+    {
+        nlohmann::json error_response = JsonUtils::create_error_response(
+            400,
+            "invalid_request",
+            "Test error message"
+        );
+        
+        ASSERT_TRUE(error_response.contains("error")) << "Error object should be present";
+        ASSERT_EQ(error_response["error"]["status"], 400) << "Status code should be set";
+        ASSERT_EQ(error_response["error"]["type"], "invalid_request") << "Error type should be set";
+        ASSERT_EQ(error_response["error"]["message"], "Test error message") << "Error message should be set";
+    }
+    
+    // Test safe JSON parsing
+    {
+        std::string valid_json = R"({"key": "value", "number": 42})";
+        auto result = JsonUtils::safe_parse(valid_json);
+        ASSERT_TRUE(result.has_value()) << "Valid JSON should parse successfully";
+        ASSERT_EQ((*result)["key"], "value") << "Parsed value should be correct";
+        ASSERT_EQ((*result)["number"], 42) << "Parsed number should be correct";
+        
+        std::string invalid_json = R"({"invalid": json})";
+        auto invalid_result = JsonUtils::safe_parse(invalid_json);
+        ASSERT_FALSE(invalid_result.has_value()) << "Invalid JSON should return nullopt";
+    }
+    
+    // Test field extraction utilities
+    {
+        nlohmann::json test_obj = nlohmann::json::parse(R"({
+            "string_field": "test_value",
+            "int_field": 123,
+            "double_field": 45.67,
+            "bool_field": true
+        })");
+        
+        // Test string extraction
+        ASSERT_EQ(JsonUtils::get_string(test_obj, "string_field"), "test_value") 
+            << "String field should be extracted correctly";
+        ASSERT_EQ(JsonUtils::get_string(test_obj, "missing_field", "default"), "default") 
+            << "Missing string field should return default";
+        
+        // Test integer extraction
+        ASSERT_EQ(JsonUtils::get_int(test_obj, "int_field"), 123) 
+            << "Integer field should be extracted correctly";
+        ASSERT_EQ(JsonUtils::get_int(test_obj, "missing_field", 999), 999) 
+            << "Missing integer field should return default";
+        
+        // Test double extraction
+        ASSERT_DOUBLE_EQ(JsonUtils::get_double(test_obj, "double_field"), 45.67) 
+            << "Double field should be extracted correctly";
+        ASSERT_DOUBLE_EQ(JsonUtils::get_double(test_obj, "missing_field", 1.23), 1.23) 
+            << "Missing double field should return default";
+        
+        // Test boolean extraction
+        ASSERT_TRUE(JsonUtils::get_bool(test_obj, "bool_field")) 
+            << "Boolean field should be extracted correctly";
+        ASSERT_FALSE(JsonUtils::get_bool(test_obj, "missing_field", false)) 
+            << "Missing boolean field should return default";
+    }
+    
+    // Test formatting utilities
+    {
+        nlohmann::json test_json = {{"key", "value"}, {"number", 42}};
+        
+        std::string pretty = JsonUtils::to_pretty_string(test_json, 4);
+        ASSERT_TRUE(pretty.find("\n") != std::string::npos) << "Pretty string should contain newlines";
+        
+        std::string compact = JsonUtils::to_compact_string(test_json);
+        ASSERT_TRUE(compact.find("\n") == std::string::npos) << "Compact string should not contain newlines";
+        ASSERT_TRUE(compact.find("\"key\":\"value\"") != std::string::npos) 
+            << "Compact string should contain expected content";
+    }
+    
+    std::cout << "✅ JSON utilities tests passed - redundant JSON logic eliminated!" << std::endl;
 }
 
 /**

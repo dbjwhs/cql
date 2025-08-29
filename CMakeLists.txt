@@ -133,6 +133,7 @@ set(CQL_CORE_SOURCES
     src/cql/clipboard_stub.cpp
     src/cql/secure_string.cpp
     src/cql/input_validator.cpp
+    src/cql/json_utils.cpp
     src/cql/cli.cpp
 )
 
