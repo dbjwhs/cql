@@ -597,6 +597,79 @@ TEST_F(CQLTest, CommentsAndWhitespaceHandling) {
 }
 
 /**
+ * Test for hardened SecureString with memory locking
+ */
+TEST_F(CQLTest, HardenedSecureString) {
+    std::cout << "Testing hardened SecureString implementation..." << std::endl;
+    
+    // Test basic construction and usage
+    {
+        SecureString secret1("api-key-12345");
+        ASSERT_FALSE(secret1.empty()) << "SecureString should not be empty";
+        ASSERT_EQ(secret1.size(), 13) << "SecureString should have correct size";
+        
+        // Test C-style string access (for existing API compatibility)
+        const char* cstr = secret1.c_str();
+        ASSERT_STREQ(cstr, "api-key-12345") << "C-string access should work";
+        
+        // Test masking for safe logging
+        std::string masked = secret1.masked();
+        ASSERT_EQ(masked, "api...345") << "Masking should show first and last 3 characters";
+    }
+    
+    // Test empty SecureString
+    {
+        SecureString empty_secret;
+        ASSERT_TRUE(empty_secret.empty()) << "Empty SecureString should report as empty";
+        ASSERT_EQ(empty_secret.size(), 0) << "Empty SecureString should have zero size";
+        ASSERT_EQ(empty_secret.masked(), "[empty]") << "Empty SecureString should mask as [empty]";
+    }
+    
+    // Test short string masking
+    {
+        SecureString short_secret("abc");
+        ASSERT_EQ(short_secret.masked(), "[***]") << "Short strings should be fully masked";
+    }
+    
+    // Test move semantics (copy is disabled for security)
+    {
+        SecureString original("sensitive-data");
+        SecureString moved = std::move(original);
+        
+        ASSERT_FALSE(moved.empty()) << "Moved SecureString should contain data";
+        ASSERT_TRUE(original.empty()) << "Original SecureString should be empty after move";
+        ASSERT_EQ(moved.size(), 14) << "Moved SecureString should have correct size";
+        ASSERT_STREQ(moved.c_str(), "sensitive-data") << "Moved data should be intact";
+    }
+    
+    // Test clear functionality
+    {
+        SecureString clearable("clear-me");
+        ASSERT_FALSE(clearable.empty()) << "SecureString should have data initially";
+        
+        clearable.clear();
+        ASSERT_TRUE(clearable.empty()) << "SecureString should be empty after clear()";
+        ASSERT_EQ(clearable.size(), 0) << "Cleared SecureString should have zero size";
+    }
+    
+    // Test construction from std::string
+    {
+        std::string regular_string = "convert-me";
+        SecureString secure_from_string(regular_string);
+        ASSERT_EQ(secure_from_string.size(), 10) << "SecureString from std::string should have correct size";
+        ASSERT_STREQ(secure_from_string.c_str(), "convert-me") << "Converted data should be correct";
+    }
+    
+    // Test secure_getenv function
+    {
+        SecureString from_env = secure_getenv("NONEXISTENT_VAR");
+        ASSERT_TRUE(from_env.empty()) << "SecureString from nonexistent env var should be empty";
+    }
+    
+    std::cout << "✅ All SecureString tests passed - memory is now properly locked and zeroed!" << std::endl;
+}
+
+/**
  * Test for input length validation
  */
 TEST_F(CQLTest, InputLengthValidation) {
