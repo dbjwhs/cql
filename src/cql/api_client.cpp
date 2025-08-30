@@ -25,7 +25,7 @@ namespace cql {
 
 // Private implementation structure for ApiClient
 struct ApiClient::Impl {
-    Config m_config;                         ///< Client configuration
+    ApiClientConfig m_config;                         ///< Client configuration
     ApiClientStatus m_status;                ///< Current client status
     std::string m_last_error;                ///< Last error message
     CURL* m_curl;                            ///< CURL handle
@@ -40,7 +40,7 @@ struct ApiClient::Impl {
     mutable std::atomic<bool> m_streaming_active{false};    ///< Whether streaming is active
     mutable StreamingCallback m_streaming_callback;         ///< Callback for streaming responses
 
-    explicit Impl(const Config& config) 
+    explicit Impl(const ApiClientConfig& config) 
         : m_config(config),
           m_status(ApiClientStatus::Ready),
           m_curl(nullptr),
@@ -520,7 +520,7 @@ struct ApiClient::Impl {
 
 // ApiClient implementation
 
-ApiClient::ApiClient(const Config& config) {
+ApiClient::ApiClient(const ApiClientConfig& config) {
     if (!config.validate_api_key()) {
         // Log the error for debugging purposes
         Logger::getInstance().log(LogLevel::ERROR, 
@@ -729,8 +729,8 @@ std::string ApiClient::get_last_error() const {
 
 // Config implementation
 
-Config Config::load_from_default_locations() {
-    Config config{};
+ApiClientConfig ApiClientConfig::load_from_default_locations() {
+    ApiClientConfig config{};
     
     // Try to load from environment variables first (securely)
     config.m_api_key = secure_getenv("LLM_API_KEY");
@@ -783,8 +783,8 @@ Config Config::load_from_default_locations() {
     return config;
 }
 
-Config Config::load_from_file(const std::string& filename) {
-    Config config;
+ApiClientConfig ApiClientConfig::load_from_file(const std::string& filename) {
+    ApiClientConfig config;
     
     try {
         // Read the file

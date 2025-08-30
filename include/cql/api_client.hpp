@@ -126,20 +126,20 @@ struct ApiResponse {
 };
 
 /**
- * @class Config
+ * @class ApiClientConfig
  * @brief Configuration for the API client
  */
-class Config {
+class ApiClientConfig {
 public:
     /**
      * @brief Default constructor
      */
-    Config() = default;
+    ApiClientConfig() = default;
     
     /**
      * @brief Copy constructor (explicitly handle SecureString)
      */
-    Config(const Config& other) 
+    ApiClientConfig(const ApiClientConfig& other) 
         : m_api_key(SecureString(other.m_api_key.data())),
           m_model(other.m_model),
           m_api_base_url(other.m_api_base_url),
@@ -156,12 +156,12 @@ public:
     /**
      * @brief Move constructor
      */
-    Config(Config&& other) noexcept = default;
+    ApiClientConfig(ApiClientConfig&& other) noexcept = default;
     
     /**
      * @brief Copy assignment (explicitly handle SecureString)
      */
-    Config& operator=(const Config& other) {
+    ApiClientConfig& operator=(const ApiClientConfig& other) {
         if (this != &other) {
             m_api_key = SecureString(other.m_api_key.data());
             m_model = other.m_model;
@@ -182,20 +182,20 @@ public:
     /**
      * @brief Move assignment
      */
-    Config& operator=(Config&& other) noexcept = default;
+    ApiClientConfig& operator=(ApiClientConfig&& other) noexcept = default;
     
     /**
      * @brief Load configuration from default locations (env vars, config file)
-     * @return Config object with loaded settings
+     * @return ApiClientConfig object with loaded settings
      */
-    static Config load_from_default_locations();
+    static ApiClientConfig load_from_default_locations();
     
     /**
      * @brief Load configuration from a specific file
      * @param filename Path to the configuration file
-     * @return Config object with loaded settings
+     * @return ApiClientConfig object with loaded settings
      */
-    static Config load_from_file(const std::string& filename);
+    static ApiClientConfig load_from_file(const std::string& filename);
     
     /**
      * @brief Get the API key
@@ -381,7 +381,7 @@ public:
      * @brief Constructor
      * @param config Configuration for the API client
      */
-    explicit ApiClient(const Config& config);
+    explicit ApiClient(const ApiClientConfig& config);
     
     /**
      * @brief Destructor

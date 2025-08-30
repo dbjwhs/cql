@@ -36,7 +36,7 @@ public:
      * @brief Constructor
      * @param config Configuration for the response processor
      */
-    explicit ResponseProcessor(Config config);
+    explicit ResponseProcessor(ApiClientConfig config);
     
     /**
      * @brief Process an API response and extract code blocks
@@ -137,7 +137,7 @@ private:
     [[nodiscard]] static std::string determine_key_from_content(const CodeBlock& block);
     
     // Member variables
-    Config m_config;                 ///< Configuration for the processor
+    ApiClientConfig m_config;                 ///< Configuration for the processor
     std::string m_output_directory;  ///< Directory to save generated files
     bool m_overwrite_existing;       ///< Whether to overwrite existing files
     bool m_create_directories;       ///< Whether to create missing directories
@@ -150,7 +150,7 @@ private:
  * @param config The configuration for saving
  * @return true if saved successfully, false otherwise
  */
-bool save_generated_file(const GeneratedFile& file, const std::string& directory, const Config& config);
+bool save_generated_file(const GeneratedFile& file, const std::string& directory, const ApiClientConfig& config);
 
 } // namespace cql
 

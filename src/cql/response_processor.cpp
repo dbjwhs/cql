@@ -16,7 +16,7 @@
 
 namespace cql {
 
-ResponseProcessor::ResponseProcessor(Config config)
+ResponseProcessor::ResponseProcessor(ApiClientConfig config)
     : m_config(std::move(config)),
       m_output_directory(m_config.get_output_directory()),
       m_overwrite_existing(m_config.should_overwrite_existing_files()),
@@ -439,7 +439,7 @@ std::vector<GeneratedFile> ResponseProcessor::organize_code_blocks(const std::ve
     return files;
 }
 
-bool save_generated_file(const GeneratedFile& file, const std::string& directory, const Config& config) {
+bool save_generated_file(const GeneratedFile& file, const std::string& directory, const ApiClientConfig& config) {
     Logger::getInstance().log(LogLevel::INFO, "Saving generated file: ", file.m_filename);
     
     // Resolve a full path
