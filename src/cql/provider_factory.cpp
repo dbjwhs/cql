@@ -2,6 +2,7 @@
 // Copyright (c) 2025 dbjwhs
 
 #include "../../include/cql/provider_factory.hpp"
+#include "../../include/cql/anthropic_provider.hpp"
 #include "../../include/cql/config.hpp"
 #include "../../include/cql/project_utils.hpp"
 #include <stdexcept>
@@ -144,20 +145,14 @@ std::vector<std::unique_ptr<AIProvider>> ProviderFactory::create_fallback_chain(
 
 // Register built-in providers
 void ProviderFactory::register_builtin_providers() {
-    // Note: These will be implemented in separate files as we create each provider
-    // For now, we'll add a placeholder that wraps the existing ApiClient
-    
-    // This will be moved to anthropic_provider.cpp once we create it
+    // Anthropic Claude provider
     register_provider("anthropic", [](const Config& config) -> std::unique_ptr<AIProvider> {
-        // Placeholder - will be replaced with actual AnthropicProvider
         Logger::getInstance().log(LogLevel::INFO, 
-            "Creating Anthropic provider (placeholder implementation)");
+            "Creating Anthropic provider");
         Logger::getInstance().log(LogLevel::DEBUG,
             "Config received - API key configured: ", !config.get_api_key("anthropic").empty());
         
-        // TODO: This is a placeholder that throws. Will be replaced with:
-        // return std::make_unique<AnthropicProvider>(config);
-        throw std::runtime_error("Anthropic provider implementation pending - see Phase 1.3");
+        return std::make_unique<AnthropicProvider>(config);
     });
     
     // Future providers will be registered here
