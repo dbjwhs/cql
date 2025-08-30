@@ -192,6 +192,77 @@ TEST_F(HttpClientTest, MultipleAsyncRequests) {
     EXPECT_GE(successful_requests, 3) << "Too many requests failed in CI environment";
 }
 
+TEST_F(HttpClientTest, RetryOnServerError) {
+    // Test retry on 5xx errors
+    Request req;
+    req.url = "https://httpbin.org/status/503";  // Service Unavailable
+    req.method = "GET";
+    req.retry_policy.max_retries = 2;
+    req.retry_policy.initial_delay = std::chrono::milliseconds(100);
+    
+    auto start = std::chrono::steady_clock::now();
+    auto response = m_client->send(req);
+    auto elapsed = std::chrono::steady_clock::now() - start;
+    
+    // Should retry twice but still fail
+    EXPECT_FALSE(response.is_success());
+    EXPECT_EQ(response.status_code, 503);
+    
+    // Should have taken at least the retry delays (100ms + 200ms)
+    EXPECT_GE(elapsed, std::chrono::milliseconds(300));
+}
+
+TEST_F(HttpClientTest, RetryWithExponentialBackoff) {
+    // Test exponential backoff calculation
+    RetryPolicy policy;
+    policy.initial_delay = std::chrono::milliseconds(100);
+    policy.backoff_multiplier = 2.0;
+    policy.max_delay = std::chrono::milliseconds(1000);
+    policy.enable_jitter = false;  // Disable jitter for predictable testing
+    
+    // Test delay calculations
+    EXPECT_EQ(policy.calculate_delay(0).count(), 100);  // 100ms
+    EXPECT_EQ(policy.calculate_delay(1).count(), 200);  // 100 * 2^1 = 200ms
+    EXPECT_EQ(policy.calculate_delay(2).count(), 400);  // 100 * 2^2 = 400ms
+    EXPECT_EQ(policy.calculate_delay(3).count(), 800);  // 100 * 2^3 = 800ms
+    EXPECT_EQ(policy.calculate_delay(4).count(), 1000); // Capped at max_delay
+}
+
+TEST_F(HttpClientTest, NoRetryOnClientError) {
+    // Test that 4xx errors don't trigger retry
+    Request req;
+    req.url = "https://httpbin.org/status/404";  // Not Found
+    req.method = "GET";
+    req.retry_policy.max_retries = 3;
+    req.retry_policy.initial_delay = std::chrono::milliseconds(50);
+    
+    auto start = std::chrono::steady_clock::now();
+    auto response = m_client->send(req);
+    auto elapsed = std::chrono::steady_clock::now() - start;
+    
+    // Should not retry on 404
+    EXPECT_FALSE(response.is_success());
+    EXPECT_EQ(response.status_code, 404);
+    
+    // Should complete quickly without retries (allow more time for network latency)
+    EXPECT_LT(elapsed, std::chrono::seconds(2));
+}
+
+TEST_F(HttpClientTest, RetryOnRateLimitError) {
+    // Test retry on 429 (Too Many Requests)
+    Request req;
+    req.url = "https://httpbin.org/status/429";
+    req.method = "GET";
+    req.retry_policy.max_retries = 1;
+    req.retry_policy.initial_delay = std::chrono::milliseconds(100);
+    
+    auto response = m_client->send(req);
+    
+    // Should retry once but still fail
+    EXPECT_FALSE(response.is_success());
+    EXPECT_EQ(response.status_code, 429);
+}
+
 TEST_F(HttpClientTest, ConfigWithCustomSettings) {
     ClientConfig config;
     config.default_timeout = std::chrono::seconds(5);

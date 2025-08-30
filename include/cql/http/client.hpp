@@ -23,7 +23,45 @@ namespace defaults {
     constexpr bool VERIFY_SSL = true;
     constexpr bool ENABLE_COOKIES = false;
     constexpr bool ENABLE_COMPRESSION = true;
+    constexpr int MAX_RETRIES = 3;
+    constexpr std::chrono::milliseconds INITIAL_RETRY_DELAY{1000};  // 1 second
+    constexpr double BACKOFF_MULTIPLIER = 2.0;
+    constexpr std::chrono::milliseconds MAX_RETRY_DELAY{30000};     // 30 seconds
 }
+
+/**
+ * @brief Retry policy configuration
+ * 
+ * Defines how HTTP requests should be retried on failure with
+ * exponential backoff and jitter.
+ */
+struct RetryPolicy {
+    int max_retries = defaults::MAX_RETRIES;                              ///< Maximum number of retry attempts
+    std::chrono::milliseconds initial_delay = defaults::INITIAL_RETRY_DELAY; ///< Initial delay before first retry
+    double backoff_multiplier = defaults::BACKOFF_MULTIPLIER;             ///< Multiplier for exponential backoff
+    std::chrono::milliseconds max_delay = defaults::MAX_RETRY_DELAY;      ///< Maximum delay between retries
+    bool enable_jitter = true;                                            ///< Add randomization to retry delays
+    
+    /**
+     * @brief Determine if a response should trigger a retry
+     * @param status_code HTTP status code
+     * @return true if the request should be retried
+     */
+    [[nodiscard]] static bool should_retry(int status_code) {
+        // Retry on server errors (5xx) and specific client errors
+        return (status_code >= 500 && status_code < 600) ||  // Server errors
+               status_code == 429 ||                          // Too Many Requests
+               status_code == 408 ||                          // Request Timeout
+               status_code == 0;                              // Network error
+    }
+    
+    /**
+     * @brief Calculate delay for the next retry attempt
+     * @param attempt Current attempt number (0-based)
+     * @return Delay duration before next retry
+     */
+    [[nodiscard]] std::chrono::milliseconds calculate_delay(int attempt) const;
+};
 
 /**
  * @brief HTTP request structure
@@ -40,6 +78,7 @@ struct Request {
     int max_redirects = defaults::MAX_REDIRECTS;       ///< Maximum redirects to follow
     bool verify_ssl = defaults::VERIFY_SSL;            ///< Whether to verify SSL certificates
     std::optional<std::string> proxy;                  ///< Optional proxy URL
+    RetryPolicy retry_policy;                          ///< Retry policy for failed requests
 };
 
 /**

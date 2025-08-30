@@ -92,7 +92,11 @@ ProviderResponse AnthropicProvider::generate(const ProviderRequest& request) {
         http_request.body = request_body;
         http_request.headers = create_headers();
         http_request.timeout = std::chrono::seconds(120);
-        Logger::getInstance().log(LogLevel::DEBUG, "HTTP request prepared with ", http_request.headers.size(), " headers");
+        
+        // Configure retry policy from config
+        http_request.retry_policy.max_retries = m_config.get_max_retries("anthropic");
+        Logger::getInstance().log(LogLevel::DEBUG, "HTTP request prepared with ", http_request.headers.size(), 
+                                " headers and max_retries: ", http_request.retry_policy.max_retries);
         
         // Send request
         Logger::getInstance().log(LogLevel::DEBUG, "Sending HTTP request to Anthropic API");
@@ -183,7 +187,11 @@ void AnthropicProvider::generate_stream(const ProviderRequest& request, Streamin
         http_request.body = request_body;
         http_request.headers = create_headers();
         http_request.timeout = std::chrono::seconds(300); // Longer timeout for streaming
-        Logger::getInstance().log(LogLevel::DEBUG, "Streaming HTTP request prepared with timeout: 300s");
+        
+        // Configure retry policy from config (usually fewer retries for streaming)
+        http_request.retry_policy.max_retries = std::min(1, m_config.get_max_retries("anthropic"));
+        Logger::getInstance().log(LogLevel::DEBUG, "Streaming HTTP request prepared with timeout: 300s and max_retries: ", 
+                                http_request.retry_policy.max_retries);
         
         // Send streaming request
         Logger::getInstance().log(LogLevel::DEBUG, "Starting streaming HTTP request");

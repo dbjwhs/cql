@@ -10,8 +10,29 @@
 #include <condition_variable>
 #include <atomic>
 #include <cstring>
+#include <random>
+#include <cmath>
 
 namespace cql::http {
+
+// Implementation of RetryPolicy::calculate_delay
+std::chrono::milliseconds RetryPolicy::calculate_delay(int attempt) const {
+    // Calculate base delay with exponential backoff
+    double delay_ms = initial_delay.count() * std::pow(backoff_multiplier, attempt);
+    
+    // Apply max delay cap
+    delay_ms = std::min(delay_ms, static_cast<double>(max_delay.count()));
+    
+    // Add jitter if enabled (random variation of ±25%)
+    if (enable_jitter && delay_ms > 0) {
+        static thread_local std::random_device rd;
+        static thread_local std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dis(0.75, 1.25);
+        delay_ms *= dis(gen);
+    }
+    
+    return std::chrono::milliseconds(static_cast<long>(delay_ms));
+}
 
 namespace {
 
@@ -290,28 +311,62 @@ Response CurlClient::send(const Request& req) {
     Logger::getInstance().log(LogLevel::INFO, 
         "Sending ", req.method, " request to: ", req.url);
     
-    // Create CURL handle
-    CURL* curl = curl_easy_init();
-    if (!curl) {
-        throw std::runtime_error("Failed to create CURL handle");
+    Response last_response;
+    int attempt = 0;
+    
+    // Retry loop with exponential backoff
+    while (attempt <= req.retry_policy.max_retries) {
+        // Create CURL handle for each attempt (ensures clean state)
+        CURL* curl = curl_easy_init();
+        if (!curl) {
+            throw std::runtime_error("Failed to create CURL handle");
+        }
+        
+        // Ensure cleanup
+        struct CurlCleanup {
+            CURL* handle;
+            struct curl_slist* headers = nullptr;
+            ~CurlCleanup() {
+                if (headers) curl_slist_free_all(headers);
+                if (handle) curl_easy_cleanup(handle);
+            }
+        } cleanup{curl};
+        
+        std::string response_body;
+        std::map<std::string, std::string> response_headers;
+        
+        configure_curl(curl, req, response_body, response_headers);
+        
+        // Execute the request
+        last_response = execute_request(curl, response_body, response_headers);
+        
+        // Check if we should retry
+        if (!RetryPolicy::should_retry(last_response.status_code) || 
+            attempt >= req.retry_policy.max_retries) {
+            // Success or max retries reached
+            if (attempt > 0) {
+                Logger::getInstance().log(LogLevel::INFO,
+                    "Request completed after ", attempt, " retries");
+            }
+            return last_response;
+        }
+        
+        // Calculate delay before retry
+        auto delay = req.retry_policy.calculate_delay(attempt);
+        
+        Logger::getInstance().log(LogLevel::INFO,
+            "Request failed with status ", last_response.status_code,
+            ", retrying in ", delay.count(), "ms (attempt ", attempt + 1,
+            " of ", req.retry_policy.max_retries, ")");
+        
+        // Wait before retry
+        std::this_thread::sleep_for(delay);
+        
+        attempt++;
     }
     
-    // Ensure cleanup
-    struct CurlCleanup {
-        CURL* handle;
-        struct curl_slist* headers = nullptr;
-        ~CurlCleanup() {
-            if (headers) curl_slist_free_all(headers);
-            if (handle) curl_easy_cleanup(handle);
-        }
-    } cleanup{curl};
-    
-    std::string response_body;
-    std::map<std::string, std::string> response_headers;
-    
-    configure_curl(curl, req, response_body, response_headers);
-    
-    return execute_request(curl, response_body, response_headers);
+    // Should not reach here, but return last response just in case
+    return last_response;
 }
 
 std::future<Response> CurlClient::send_async(const Request& req) {
