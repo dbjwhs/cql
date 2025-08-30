@@ -1161,11 +1161,11 @@ bool process_file(const std::string& input_file, const std::string& output_file,
 }
 
 // Prepare the configuration for API submission
-Config prepare_api_config(const std::string& model, const std::string& output_dir
+ApiClientConfig prepare_api_config(const std::string& model, const std::string& output_dir
     , const bool overwrite, const bool create_dirs, const bool no_save) {
 
     // Load the configuration
-    Config config = Config::load_from_default_locations();
+    ApiClientConfig config = ApiClientConfig::load_from_default_locations();
     
     // Override with command-line arguments
     if (!model.empty()) {
@@ -1195,7 +1195,7 @@ std::string compile_query_for_api(const std::string& input_file) {
 }
 
 // Submit a compiled query to the API
-ApiResponse submit_to_api(const std::string& compiled_query, Config config) {
+ApiResponse submit_to_api(const std::string& compiled_query, ApiClientConfig config) {
     Logger::getInstance().log(LogLevel::INFO, "Submitting to Claude API...");
     std::cout << "Submitting to Claude API (model: " << config.get_model() << ")..." << std::endl;
     
@@ -1213,7 +1213,7 @@ ApiResponse submit_to_api(const std::string& compiled_query, Config config) {
 }
 
 // Process API response into files
-std::vector<GeneratedFile> process_api_response(const ApiResponse& response, Config config) {
+std::vector<GeneratedFile> process_api_response(const ApiResponse& response, ApiClientConfig config) {
     ResponseProcessor processor(std::move(config));
     std::vector<GeneratedFile> files = processor.process_response(response.m_raw_response);
     
@@ -1228,7 +1228,7 @@ std::vector<GeneratedFile> process_api_response(const ApiResponse& response, Con
 }
 
 // Save generated files to disk
-void save_generated_files(const std::vector<GeneratedFile>& files, const Config& config) {
+void save_generated_files(const std::vector<GeneratedFile>& files, const ApiClientConfig& config) {
     // Skip saving if no-save mode is enabled
     if (config.no_save_mode()) {
         Logger::getInstance().log(LogLevel::INFO, "Files not saved (--no-save option used)");
@@ -1256,7 +1256,7 @@ bool process_submit_command(const std::string& input_file, const std::string& ou
     const bool overwrite, const bool create_dirs, const bool no_save) {
     try {
         // Prepare the configuration
-        const Config config = prepare_api_config(model, output_dir, overwrite, create_dirs, no_save);
+        const ApiClientConfig config = prepare_api_config(model, output_dir, overwrite, create_dirs, no_save);
         
         // Compile the query
         const std::string compiled_query = compile_query_for_api(input_file);

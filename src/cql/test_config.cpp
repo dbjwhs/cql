@@ -135,7 +135,7 @@ TEST_F(ConfigTest, ConfigFromEnvVars) {
     set_env_vars(env_vars);
     
     // Load configuration
-    Config config = Config::load_from_default_locations();
+    ApiClientConfig config = ApiClientConfig::load_from_default_locations();
     
     // Verify values
     ASSERT_EQ(config.get_api_key(), "test_api_key_from_env") 
@@ -161,7 +161,7 @@ TEST_F(ConfigTest, ConfigFromEnvVars) {
     // Suppress error logs only for the specific part where we expect errors
     {
         Logger::StderrSuppressionGuard stderr_guard;
-        Config invalid_config = Config::load_from_default_locations();
+        ApiClientConfig invalid_config = ApiClientConfig::load_from_default_locations();
         
         // Should keep default values for invalid inputs
         ASSERT_NE(invalid_config.get_timeout(), 0)
@@ -195,7 +195,7 @@ TEST_F(ConfigTest, ConfigFromFile) {
     ASSERT_TRUE(file_created) << "Should be able to create test config file";
     
     // Load configuration from the file
-    Config config = Config::load_from_file(config_file);
+    ApiClientConfig config = ApiClientConfig::load_from_file(config_file);
     
     // Verify values
     ASSERT_EQ(config.get_api_key(), "test_api_key_from_file")
@@ -226,7 +226,7 @@ TEST_F(ConfigTest, ConfigFromFile) {
     // Suppress error logs only for the specific part where we expect errors
     {
         Logger::StderrSuppressionGuard stderr_guard;
-        ASSERT_THROW(Config::load_from_file(config_file), std::exception)
+        ASSERT_THROW(ApiClientConfig::load_from_file(config_file), std::exception)
             << "Exception should be thrown when loading invalid JSON";
     }
 }
@@ -273,12 +273,12 @@ TEST_F(ConfigTest, ConfigOverridePrecedence) {
     set_env_vars(env_vars);
     
     // Create a local config first by loading from the config file directly
-    Config file_config = Config::load_from_file(llm_dir + "/config.json");
+    ApiClientConfig file_config = ApiClientConfig::load_from_file(llm_dir + "/config.json");
     ASSERT_EQ(file_config.get_api_key(), "api_key_from_file")
         << "API key should be loaded from file";
     
     // Then load using the default locations which should include env vars
-    Config config = Config::load_from_default_locations();
+    ApiClientConfig config = ApiClientConfig::load_from_default_locations();
     
     // Verify precedence: env vars should override file values
     // The issue is that in the current implementation, load_from_default_locations()

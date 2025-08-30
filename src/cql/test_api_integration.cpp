@@ -75,7 +75,7 @@ TEST_F(APITest, CustomBaseURL) {
     server.start();
     
     // Create a config that points to our mock server
-    Config config;
+    ApiClientConfig config;
     config.set_api_key("test_key_valid_for_testing_12345678901234567890");
     config.set_api_base_url(server.get_url());
     
@@ -145,7 +145,7 @@ TEST_F(APITest, Integration) {
     std::string mock_server_url = server.get_url();
     
     // Create a config that points to our mock server
-    Config config;
+    ApiClientConfig config;
     config.set_api_key("dummy_api_key_for_testing_12345678901234567890");
     config.set_model("claude-3-test-model");
     config.set_api_base_url(mock_server_url);
@@ -224,7 +224,7 @@ TEST_F(APITest, ErrorHandlingAndRetry) {
     Logger::StderrSuppressionGuard global_stderr_guard;
     
     // Create a config with a valid API key
-    Config config;
+    ApiClientConfig config;
     config.set_api_key("test_key_valid_for_testing_12345678901234567890");
     
     // Test if retryable errors are correctly identified
@@ -269,7 +269,7 @@ TEST_F(APITest, ErrorHandlingAndRetry) {
     {
         Logger::StderrSuppressionGuard stderr_guard;
         try {
-            Config invalid_config;
+            ApiClientConfig invalid_config;
             invalid_config.set_api_key("short_key");
             ApiClient client(invalid_config);
         } catch (const std::exception&) {
@@ -311,7 +311,7 @@ TEST_F(APITest, Streaming) {
     server.start();
     
     // Create a config that points to our mock server
-    Config config;
+    ApiClientConfig config;
     config.set_api_key("test_key_valid_for_testing_12345678901234567890");
     config.set_api_base_url(server.get_url());
     config.set_streaming_enabled(true);

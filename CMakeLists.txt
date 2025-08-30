@@ -129,6 +129,7 @@ set(CQL_CORE_SOURCES
     src/cql/response_processor.cpp
     src/cql/mock_server.cpp
     src/cql/provider_factory.cpp
+    src/cql/config.cpp
     src/cql/http/curl_client.cpp
     src/cql/stubs.cpp  # Include stubs.cpp in core sources
     src/cql/clipboard_impl.cpp

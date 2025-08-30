@@ -176,7 +176,7 @@ TEST_F(SecurityTest, LoggingSanitization) {
 
 // Test secure configuration loading
 TEST_F(SecurityTest, SecureConfigurationLoading) {
-    Config config;
+    ApiClientConfig config;
     
     // Test that API key is properly stored securely
     config.set_api_key("sk-1234567890abcdefghijklmnopqrstuvwxyz12345");
@@ -206,7 +206,7 @@ TEST_F(SecurityTest, TemplateManagerSecurity) {
 
 // Test API client security features
 TEST_F(SecurityTest, APIClientSecurity) {
-    Config config;
+    ApiClientConfig config;
     config.set_api_key("test_key_valid_for_testing_12345678901234567890");
     config.set_api_base_url("https://api.anthropic.com");
     
