@@ -46,7 +46,7 @@ std::unique_ptr<AIProvider> ProviderFactory::create_provider(
         }
         
         if (!provider->is_configured()) {
-            Logger::getInstance().log(LogLevel::WARNING, 
+            Logger::getInstance().log(LogLevel::NORMAL, 
                 "Provider ", provider_name, " is not properly configured");
         }
         
@@ -129,7 +129,7 @@ std::vector<std::unique_ptr<AIProvider>> ProviderFactory::create_fallback_chain(
             Logger::getInstance().log(LogLevel::INFO, 
                 "Added ", provider_name, " to fallback chain");
         } catch (const std::exception& e) {
-            Logger::getInstance().log(LogLevel::WARNING, 
+            Logger::getInstance().log(LogLevel::NORMAL, 
                 "Failed to add ", provider_name, " to fallback chain: ", e.what());
             // Continue with other providers in the chain
         }
@@ -148,7 +148,7 @@ void ProviderFactory::register_builtin_providers() {
     // For now, we'll add a placeholder that wraps the existing ApiClient
     
     // This will be moved to anthropic_provider.cpp once we create it
-    register_provider("anthropic", [](const Config& config) -> std::unique_ptr<AIProvider> {
+    register_provider("anthropic", [](const Config& /* config */) -> std::unique_ptr<AIProvider> {
         // Placeholder - will be replaced with actual AnthropicProvider
         Logger::getInstance().log(LogLevel::INFO, 
             "Creating Anthropic provider (using legacy ApiClient wrapper)");
