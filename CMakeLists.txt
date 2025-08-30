@@ -129,6 +129,7 @@ set(CQL_CORE_SOURCES
     src/cql/response_processor.cpp
     src/cql/mock_server.cpp
     src/cql/provider_factory.cpp
+    src/cql/anthropic_provider.cpp
     src/cql/config.cpp
     src/cql/http/curl_client.cpp
     src/cql/stubs.cpp  # Include stubs.cpp in core sources
@@ -158,6 +159,7 @@ set(CQL_TEST_SOURCES
     src/cql/test_config.cpp
     src/cql/test_security.cpp
     src/cql/test_http_client.cpp
+    src/cql/test_anthropic_provider.cpp
 )
 
 # Find required packages
