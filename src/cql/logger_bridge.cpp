@@ -115,14 +115,9 @@ void LoggerBridge::setFileOutputEnabled(bool enabled) {
 }
 
 bool LoggerBridge::isFileOutputEnabled() const {
-    if (!LoggerManager::is_initialized()) {
-        return true; // Default behavior
-    }
-    
-    if (get_historic_bridge()) {
-        // HistoricLoggerBridge doesn't expose this method, so assume enabled
-        return true;
-    }
+    // Historic Logger always had file output enabled by default
+    // For backward compatibility, we maintain this behavior
+    // The actual file output state is managed by the underlying HistoricLoggerBridge
     return true;
 }
 
