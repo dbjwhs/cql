@@ -110,6 +110,7 @@ void CommandLineHandler::print_help() {
               << "Usage: cql [OPTIONS] [INPUT_FILE] [OUTPUT_FILE]\n\n"
               << "Options:\n"
               << "  --help, -h              Show this help information\n"
+              << "  --version, -v           Show version information\n"
               << "  --interactive, -i       Run in interactive mode\n"
               << "  --clipboard, -c         Copy output to clipboard instead of writing to a file\n"
               << "  --include-header        Include compiler headers and status messages in output\n"

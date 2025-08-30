@@ -68,6 +68,15 @@ int ApplicationController::handle_file_processing(const std::string& input_file,
 }
 
 int ApplicationController::run(int argc, char* argv[]) {
+    // Check for --version flag early, before any logging
+    if (argc > 1) {
+        std::string first_arg = argv[1];
+        if (first_arg == "--version" || first_arg == "-v") {
+            std::cout << "Claude Query Language (CQL) Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")" << std::endl;
+            return CQL_NO_ERROR;
+        }
+    }
+    
     // Create command line handler
     CommandLineHandler cmd_handler(argc, argv);
     
