@@ -23,7 +23,10 @@ std::chrono::milliseconds RetryPolicy::calculate_delay(int attempt) const {
     // Apply max delay cap
     delay_ms = std::min(delay_ms, static_cast<double>(max_delay.count()));
     
-    // Add jitter if enabled (random variation of ±25%)
+    // Add jitter if enabled to prevent thundering herd problem
+    // Jitter adds random variation (±25%) to retry delays, preventing multiple
+    // clients from retrying at exactly the same time after a service outage.
+    // This helps distribute the load when many clients are retrying simultaneously.
     if (enable_jitter && delay_ms > 0) {
         static thread_local std::random_device rd;
         static thread_local std::mt19937 gen(rd());
