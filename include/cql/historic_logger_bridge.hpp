@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <iomanip>
 #include <chrono>
+#include <atomic>
 
 namespace cql {
 
@@ -69,9 +70,9 @@ private:
     std::string m_log_file_path;
     
     // Level enablement - matches historic Logger behavior
-    bool m_enabled_levels[5] = {true, true, true, true, true}; // INFO, NORMAL, DEBUG, ERROR, CRITICAL
-    bool m_file_output_enabled = true;
-    bool m_stderr_enabled = true;
+    std::atomic<bool> m_enabled_levels[5] = {true, true, true, true, true}; // INFO, NORMAL, DEBUG, ERROR, CRITICAL
+    std::atomic<bool> m_file_output_enabled = true;
+    std::atomic<bool> m_stderr_enabled = true;
     
     /**
      * @brief Convert new LogLevel to historic LogLevel index

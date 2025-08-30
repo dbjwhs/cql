@@ -84,7 +84,22 @@ void LoggerManager::shutdown() {
 
 void LoggerManager::log(LogLevel level, const std::string& message) {
     try {
-        get_logger().log(level, message);
+        // Lock the mutex for the entire log operation to prevent logger destruction
+        std::lock_guard<std::mutex> lock(s_logger_mutex);
+        
+        if (!s_initialized.load()) {
+            // Auto-initialize with default console logger if not already initialized
+            s_logger = std::make_unique<DefaultConsoleLogger>();
+            s_initialized = true;
+        }
+        
+        if (!s_logger) {
+            // Fallback to console logger if somehow the logger is null
+            ensure_fallback_logger();
+            s_fallback_logger->log(level, message);
+        } else {
+            s_logger->log(level, message);
+        }
     } catch (const std::exception& e) {
         // Fallback to console output if logger fails
         ensure_fallback_logger();
@@ -95,7 +110,19 @@ void LoggerManager::log(LogLevel level, const std::string& message) {
 
 bool LoggerManager::is_level_enabled(LogLevel level) {
     try {
-        return get_logger().is_level_enabled(level);
+        std::lock_guard<std::mutex> lock(s_logger_mutex);
+        
+        if (!s_initialized.load()) {
+            // Default to all levels enabled if not initialized
+            return true;
+        }
+        
+        if (!s_logger) {
+            // Default to all levels enabled if logger is null
+            return true;
+        }
+        
+        return s_logger->is_level_enabled(level);
     } catch (const std::exception&) {
         // Fallback behavior - assume level is enabled
         return true;

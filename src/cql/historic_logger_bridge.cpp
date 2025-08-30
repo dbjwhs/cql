@@ -11,15 +11,31 @@ namespace cql {
 HistoricLoggerBridge::HistoricLoggerBridge(const std::string& log_file_path) 
     : m_log_file_path(log_file_path) {
     
-    // Validate path exists (matching historic behavior)
-    if (!std::filesystem::exists(std::filesystem::path(log_file_path).parent_path())) {
-        throw std::runtime_error("Invalid path provided: " + log_file_path);
+    // Try to open the log file, but don't fail if we can't
+    // This allows the logger to work even if file output isn't available
+    auto parent_path = std::filesystem::path(log_file_path).parent_path();
+    
+    // If parent path doesn't exist, try to create it
+    if (!parent_path.empty() && !std::filesystem::exists(parent_path)) {
+        try {
+            std::filesystem::create_directories(parent_path);
+        } catch (const std::exception&) {
+            // If we can't create the directory, disable file output
+            m_file_output_enabled = false;
+            return;
+        }
     }
     
-    // Open log file in append mode (matching historic behavior)
-    m_log_file.open(log_file_path, std::ios::app);
-    if (!m_log_file.is_open()) {
-        throw std::runtime_error("Failed to open log file: " + log_file_path);
+    // Try to open log file in append mode
+    try {
+        m_log_file.open(log_file_path, std::ios::app);
+        if (!m_log_file.is_open()) {
+            // If we can't open the file, disable file output but continue
+            m_file_output_enabled = false;
+        }
+    } catch (const std::exception&) {
+        // If any exception occurs, disable file output but continue
+        m_file_output_enabled = false;
     }
 }
 
@@ -129,8 +145,16 @@ void HistoricLoggerBridge::write_log_message_historic(LogLevel level, const std:
     
     // Write to file if file output is enabled (matching historic behavior)
     if (m_file_output_enabled && m_log_file.is_open()) {
-        m_log_file << formatted_message;
-        m_log_file.flush();
+        try {
+            m_log_file << formatted_message;
+            m_log_file.flush();
+        } catch (const std::exception&) {
+            // If file write fails, disable file output to prevent future issues
+            m_file_output_enabled = false;
+            if (m_log_file.is_open()) {
+                m_log_file.close();
+            }
+        }
     }
     
     // Write to console (matching historic behavior)

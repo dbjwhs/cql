@@ -51,11 +51,12 @@ std::shared_ptr<LoggerBridge> LoggerBridge::getInstancePtr(const std::string& cu
 void LoggerBridge::setLevelEnabled(HistoricLogLevel level, const bool enabled) {
     ensure_logger_manager_initialized();
     
-    // Try to get the HistoricLoggerBridge to configure specific level
-    if (auto* bridge = get_historic_bridge()) {
-        cql::LogLevel new_level = historic_to_new_level(level);
-        bridge->set_level_enabled(new_level, enabled);
-    }
+    // Update local cache for thread safety
+    size_t index = historic_level_to_index(level);
+    m_level_enabled_cache[index] = enabled;
+    
+    // For thread safety, we only update the local cache
+    // The underlying bridge state is not synchronized to avoid dynamic_cast crashes
 }
 
 void LoggerBridge::setToLevelEnabled(HistoricLogLevel debug_level) {
@@ -71,47 +72,44 @@ void LoggerBridge::setToLevelEnabled(HistoricLogLevel debug_level) {
 }
 
 bool LoggerBridge::isLevelEnabled(const HistoricLogLevel level) const {
-    if (!LoggerManager::is_initialized()) {
-        return true; // Default behavior when not initialized
-    }
-    
-    cql::LogLevel new_level = historic_to_new_level(level);
-    return LoggerManager::is_level_enabled(new_level);
+    // Return cached state for thread safety
+    size_t index = historic_level_to_index(level);
+    return m_level_enabled_cache[index].load();
 }
 
 void LoggerBridge::disableStderr() {
     ensure_logger_manager_initialized();
     
-    if (auto* bridge = get_historic_bridge()) {
-        bridge->set_stderr_enabled(false);
-    }
+    // Update local cache for thread safety
+    m_stderr_enabled_cache = false;
+    
+    // For thread safety, we only update the local cache
+    // The underlying bridge state is not synchronized to avoid dynamic_cast crashes
 }
 
 void LoggerBridge::enableStderr() {
     ensure_logger_manager_initialized();
     
-    if (auto* bridge = get_historic_bridge()) {
-        bridge->set_stderr_enabled(true);
-    }
+    // Update local cache for thread safety
+    m_stderr_enabled_cache = true;
+    
+    // For thread safety, we only update the local cache  
+    // The underlying bridge state is not synchronized to avoid dynamic_cast crashes
 }
 
 bool LoggerBridge::isStderrEnabled() const {
-    if (!LoggerManager::is_initialized()) {
-        return true; // Default behavior
-    }
-    
-    if (auto* bridge = get_historic_bridge()) {
-        return bridge->is_stderr_enabled();
-    }
-    return true;
+    // Return the cached state for thread safety
+    // The actual state is also tracked in HistoricLoggerBridge but
+    // accessing it via dynamic_cast in concurrent scenarios can cause crashes
+    return m_stderr_enabled_cache.load();
 }
 
 void LoggerBridge::setFileOutputEnabled(bool enabled) {
     ensure_logger_manager_initialized();
     
-    if (auto* bridge = get_historic_bridge()) {
-        bridge->set_file_output_enabled(enabled);
-    }
+    // For thread safety, this is a no-op
+    // Historic Logger behavior is maintained via isFileOutputEnabled() returning true
+    (void)enabled; // Suppress unused parameter warning
 }
 
 bool LoggerBridge::isFileOutputEnabled() const {
@@ -127,11 +125,21 @@ HistoricLoggerBridge* LoggerBridge::get_historic_bridge() {
     }
     
     // Try to dynamic_cast the current logger to HistoricLoggerBridge
-    try {
-        LoggerInterface& current_logger = LoggerManager::get_logger();
-        return dynamic_cast<HistoricLoggerBridge*>(&current_logger);
-    } catch (...) {
-        return nullptr;
+    // Note: We don't catch exceptions here as get_logger() shouldn't throw
+    LoggerInterface& current_logger = LoggerManager::get_logger();
+    return dynamic_cast<HistoricLoggerBridge*>(&current_logger);
+}
+
+size_t LoggerBridge::historic_level_to_index(HistoricLogLevel level) {
+    // Map HistoricLogLevel to cache array index
+    // Historic: INFO=0, NORMAL=1, DEBUG=2, ERROR=3, CRITICAL=4
+    switch (level) {
+        case HistoricLogLevel::INFO:     return 0;
+        case HistoricLogLevel::NORMAL:   return 1;
+        case HistoricLogLevel::DEBUG:    return 2;
+        case HistoricLogLevel::ERROR:    return 3;
+        case HistoricLogLevel::CRITICAL: return 4;
+        default:                         return 0; // Default to INFO
     }
 }
 

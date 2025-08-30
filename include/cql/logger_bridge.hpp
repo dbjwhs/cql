@@ -46,6 +46,12 @@ private:
     // Track whether we initialized our own historic bridge
     inline static bool m_owns_logger_manager = false;
     
+    // Track stderr state locally for thread safety
+    mutable std::atomic<bool> m_stderr_enabled_cache{true};
+    
+    // Track level enablement state locally for thread safety
+    mutable std::atomic<bool> m_level_enabled_cache[5] = {true, true, true, true, true}; // INFO, NORMAL, DEBUG, ERROR, CRITICAL
+    
     // Constructor is private to control instantiation
     explicit LoggerBridge(const std::string& path);
 
@@ -174,6 +180,9 @@ private:
     
     // Get the HistoricLoggerBridge from LoggerManager (if it exists)
     static HistoricLoggerBridge* get_historic_bridge();
+    
+    // Helper to convert HistoricLogLevel to cache array index
+    static size_t historic_level_to_index(HistoricLogLevel level);
 };
 
 // Convert historic LogLevel enum to new LogLevel enum
