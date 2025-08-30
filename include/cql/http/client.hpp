@@ -14,6 +14,17 @@
 
 namespace cql::http {
 
+// HTTP Client Configuration Constants
+namespace defaults {
+    constexpr std::chrono::seconds DEFAULT_TIMEOUT{30};
+    constexpr int MAX_REDIRECTS = 5;
+    constexpr int MAX_CONNECTIONS = 10;
+    constexpr size_t MAX_RESPONSE_SIZE = 100 * 1024 * 1024; // 100MB
+    constexpr bool VERIFY_SSL = true;
+    constexpr bool ENABLE_COOKIES = false;
+    constexpr bool ENABLE_COMPRESSION = true;
+}
+
 /**
  * @brief HTTP request structure
  * 
@@ -25,9 +36,9 @@ struct Request {
     std::string method = "POST";                        ///< HTTP method (GET, POST, etc.)
     std::map<std::string, std::string> headers;         ///< HTTP headers
     std::string body;                                   ///< Request body (for POST/PUT)
-    std::chrono::seconds timeout{30};                   ///< Request timeout
-    int max_redirects = 5;                             ///< Maximum redirects to follow
-    bool verify_ssl = true;                            ///< Whether to verify SSL certificates
+    std::chrono::seconds timeout = defaults::DEFAULT_TIMEOUT;  ///< Request timeout
+    int max_redirects = defaults::MAX_REDIRECTS;       ///< Maximum redirects to follow
+    bool verify_ssl = defaults::VERIFY_SSL;            ///< Whether to verify SSL certificates
     std::optional<std::string> proxy;                  ///< Optional proxy URL
 };
 
@@ -149,16 +160,16 @@ public:
  * @brief Configuration for HTTP client
  */
 struct ClientConfig {
-    std::chrono::seconds default_timeout{30};          ///< Default request timeout
-    int max_connections = 10;                          ///< Maximum concurrent connections
-    int max_redirects = 5;                             ///< Maximum redirects to follow
-    bool verify_ssl = true;                            ///< SSL certificate verification
+    std::chrono::seconds default_timeout = defaults::DEFAULT_TIMEOUT;  ///< Default request timeout
+    int max_connections = defaults::MAX_CONNECTIONS;   ///< Maximum concurrent connections
+    int max_redirects = defaults::MAX_REDIRECTS;       ///< Maximum redirects to follow
+    bool verify_ssl = defaults::VERIFY_SSL;            ///< SSL certificate verification
     std::optional<std::string> proxy;                  ///< Proxy server URL
     std::optional<std::string> ca_bundle_path;         ///< Custom CA bundle path
     std::map<std::string, std::string> default_headers; ///< Headers to include in all requests
-    bool enable_cookies = false;                       ///< Enable cookie jar
-    bool enable_compression = true;                    ///< Enable gzip/deflate compression
-    size_t max_response_size = 100 * 1024 * 1024;     ///< Maximum response size (100MB default)
+    bool enable_cookies = defaults::ENABLE_COOKIES;    ///< Enable cookie jar
+    bool enable_compression = defaults::ENABLE_COMPRESSION; ///< Enable gzip/deflate compression
+    size_t max_response_size = defaults::MAX_RESPONSE_SIZE;  ///< Maximum response size
 };
 
 /**
