@@ -46,7 +46,7 @@ std::unique_ptr<AIProvider> ProviderFactory::create_provider(
         }
         
         if (!provider->is_configured()) {
-            Logger::getInstance().log(LogLevel::WARNING, 
+            Logger::getInstance().log(LogLevel::NORMAL, 
                 "Provider ", provider_name, " is not properly configured");
         }
         
@@ -129,7 +129,7 @@ std::vector<std::unique_ptr<AIProvider>> ProviderFactory::create_fallback_chain(
             Logger::getInstance().log(LogLevel::INFO, 
                 "Added ", provider_name, " to fallback chain");
         } catch (const std::exception& e) {
-            Logger::getInstance().log(LogLevel::WARNING, 
+            Logger::getInstance().log(LogLevel::NORMAL, 
                 "Failed to add ", provider_name, " to fallback chain: ", e.what());
             // Continue with other providers in the chain
         }
@@ -151,9 +151,13 @@ void ProviderFactory::register_builtin_providers() {
     register_provider("anthropic", [](const Config& config) -> std::unique_ptr<AIProvider> {
         // Placeholder - will be replaced with actual AnthropicProvider
         Logger::getInstance().log(LogLevel::INFO, 
-            "Creating Anthropic provider (using legacy ApiClient wrapper)");
-        // For now, return nullptr - will be implemented in next commit
-        throw std::runtime_error("Anthropic provider not yet implemented");
+            "Creating Anthropic provider (placeholder implementation)");
+        Logger::getInstance().log(LogLevel::DEBUG,
+            "Config received - API key configured: ", !config.get_api_key("anthropic").empty());
+        
+        // TODO: This is a placeholder that throws. Will be replaced with:
+        // return std::make_unique<AnthropicProvider>(config);
+        throw std::runtime_error("Anthropic provider implementation pending - see Phase 1.3");
     });
     
     // Future providers will be registered here
