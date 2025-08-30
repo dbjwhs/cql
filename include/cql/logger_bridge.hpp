@@ -46,6 +46,9 @@ private:
     // Track whether we initialized our own historic bridge
     inline static bool m_owns_logger_manager = false;
     
+    // Track stderr state locally for thread safety
+    mutable std::atomic<bool> m_stderr_enabled_cache{true};
+    
     // Constructor is private to control instantiation
     explicit LoggerBridge(const std::string& path);
 

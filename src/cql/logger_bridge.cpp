@@ -82,6 +82,8 @@ bool LoggerBridge::isLevelEnabled(const HistoricLogLevel level) const {
 void LoggerBridge::disableStderr() {
     ensure_logger_manager_initialized();
     
+    m_stderr_enabled_cache = false;
+    
     if (auto* bridge = get_historic_bridge()) {
         bridge->set_stderr_enabled(false);
     }
@@ -90,27 +92,18 @@ void LoggerBridge::disableStderr() {
 void LoggerBridge::enableStderr() {
     ensure_logger_manager_initialized();
     
+    m_stderr_enabled_cache = true;
+    
     if (auto* bridge = get_historic_bridge()) {
         bridge->set_stderr_enabled(true);
     }
 }
 
 bool LoggerBridge::isStderrEnabled() const {
-    // Historic Logger had stderr enabled by default
-    // The actual stderr state is managed by the underlying HistoricLoggerBridge
-    // For backward compatibility, we return true if LoggerManager isn't initialized
-    if (!LoggerManager::is_initialized()) {
-        return true;
-    }
-    
-    // Try to get the HistoricLoggerBridge to check stderr state
-    LoggerInterface& current_logger = LoggerManager::get_logger();
-    if (auto* bridge = dynamic_cast<HistoricLoggerBridge*>(&current_logger)) {
-        return bridge->is_stderr_enabled();
-    }
-    
-    // Default to enabled for backward compatibility
-    return true;
+    // Return the cached state for thread safety
+    // The actual state is also tracked in HistoricLoggerBridge but
+    // accessing it via dynamic_cast in concurrent scenarios can cause crashes
+    return m_stderr_enabled_cache.load();
 }
 
 void LoggerBridge::setFileOutputEnabled(bool enabled) {
