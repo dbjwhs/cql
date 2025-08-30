@@ -157,6 +157,7 @@ set(CQL_TEST_SOURCES
     src/cql/test_architecture_patterns.cpp
     src/cql/test_api_integration.cpp
     src/cql/test_config.cpp
+    src/cql/test_config_enhanced.cpp
     src/cql/test_security.cpp
     src/cql/test_http_client.cpp
     src/cql/test_anthropic_provider.cpp
