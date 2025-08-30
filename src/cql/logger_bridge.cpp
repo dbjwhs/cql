@@ -51,10 +51,18 @@ std::shared_ptr<LoggerBridge> LoggerBridge::getInstancePtr(const std::string& cu
 void LoggerBridge::setLevelEnabled(HistoricLogLevel level, const bool enabled) {
     ensure_logger_manager_initialized();
     
-    // Try to get the HistoricLoggerBridge to configure specific level
-    if (auto* bridge = get_historic_bridge()) {
-        cql::LogLevel new_level = historic_to_new_level(level);
-        bridge->set_level_enabled(new_level, enabled);
+    // Update local cache for thread safety
+    size_t index = historic_level_to_index(level);
+    m_level_enabled_cache[index] = enabled;
+    
+    // Also try to update the underlying bridge (safe to fail)
+    try {
+        if (auto* bridge = get_historic_bridge()) {
+            cql::LogLevel new_level = historic_to_new_level(level);
+            bridge->set_level_enabled(new_level, enabled);
+        }
+    } catch (...) {
+        // Ignore dynamic_cast failures - cache state is still correct
     }
 }
 
@@ -71,12 +79,9 @@ void LoggerBridge::setToLevelEnabled(HistoricLogLevel debug_level) {
 }
 
 bool LoggerBridge::isLevelEnabled(const HistoricLogLevel level) const {
-    if (!LoggerManager::is_initialized()) {
-        return true; // Default behavior when not initialized
-    }
-    
-    cql::LogLevel new_level = historic_to_new_level(level);
-    return LoggerManager::is_level_enabled(new_level);
+    // Return cached state for thread safety
+    size_t index = historic_level_to_index(level);
+    return m_level_enabled_cache[index].load();
 }
 
 void LoggerBridge::disableStderr() {
@@ -109,8 +114,13 @@ bool LoggerBridge::isStderrEnabled() const {
 void LoggerBridge::setFileOutputEnabled(bool enabled) {
     ensure_logger_manager_initialized();
     
-    if (auto* bridge = get_historic_bridge()) {
-        bridge->set_file_output_enabled(enabled);
+    // Try to update the underlying bridge (safe to fail)
+    try {
+        if (auto* bridge = get_historic_bridge()) {
+            bridge->set_file_output_enabled(enabled);
+        }
+    } catch (...) {
+        // Ignore dynamic_cast failures
     }
 }
 
@@ -130,6 +140,19 @@ HistoricLoggerBridge* LoggerBridge::get_historic_bridge() {
     // Note: We don't catch exceptions here as get_logger() shouldn't throw
     LoggerInterface& current_logger = LoggerManager::get_logger();
     return dynamic_cast<HistoricLoggerBridge*>(&current_logger);
+}
+
+size_t LoggerBridge::historic_level_to_index(HistoricLogLevel level) {
+    // Map HistoricLogLevel to cache array index
+    // Historic: INFO=0, NORMAL=1, DEBUG=2, ERROR=3, CRITICAL=4
+    switch (level) {
+        case HistoricLogLevel::INFO:     return 0;
+        case HistoricLogLevel::NORMAL:   return 1;
+        case HistoricLogLevel::DEBUG:    return 2;
+        case HistoricLogLevel::ERROR:    return 3;
+        case HistoricLogLevel::CRITICAL: return 4;
+        default:                         return 0; // Default to INFO
+    }
 }
 
 // StderrSuppressionGuard implementation
