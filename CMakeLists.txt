@@ -140,6 +140,9 @@ set(CQL_CORE_SOURCES
     src/cql/json_utils.cpp
     src/cql/error_context.cpp
     src/cql/cli.cpp
+    src/cql/logger_interface.cpp
+    src/cql/logger_manager.cpp
+    src/cql/logger_adapters.cpp
 )
 
 set(CQL_MAIN_SOURCES
@@ -161,6 +164,7 @@ set(CQL_TEST_SOURCES
     src/cql/test_security.cpp
     src/cql/test_http_client.cpp
     src/cql/test_anthropic_provider.cpp
+    src/cql/test_pluggable_logger.cpp
 )
 
 # Find required packages
