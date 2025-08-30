@@ -96,13 +96,20 @@ void LoggerBridge::enableStderr() {
 }
 
 bool LoggerBridge::isStderrEnabled() const {
+    // Historic Logger had stderr enabled by default
+    // The actual stderr state is managed by the underlying HistoricLoggerBridge
+    // For backward compatibility, we return true if LoggerManager isn't initialized
     if (!LoggerManager::is_initialized()) {
-        return true; // Default behavior
+        return true;
     }
     
-    if (auto* bridge = get_historic_bridge()) {
+    // Try to get the HistoricLoggerBridge to check stderr state
+    LoggerInterface& current_logger = LoggerManager::get_logger();
+    if (auto* bridge = dynamic_cast<HistoricLoggerBridge*>(&current_logger)) {
         return bridge->is_stderr_enabled();
     }
+    
+    // Default to enabled for backward compatibility
     return true;
 }
 
@@ -127,12 +134,9 @@ HistoricLoggerBridge* LoggerBridge::get_historic_bridge() {
     }
     
     // Try to dynamic_cast the current logger to HistoricLoggerBridge
-    try {
-        LoggerInterface& current_logger = LoggerManager::get_logger();
-        return dynamic_cast<HistoricLoggerBridge*>(&current_logger);
-    } catch (...) {
-        return nullptr;
-    }
+    // Note: We don't catch exceptions here as get_logger() shouldn't throw
+    LoggerInterface& current_logger = LoggerManager::get_logger();
+    return dynamic_cast<HistoricLoggerBridge*>(&current_logger);
 }
 
 // StderrSuppressionGuard implementation
