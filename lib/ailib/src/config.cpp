@@ -15,11 +15,20 @@ namespace cql {
 Config Config::load_from_environment() {
     Config config;
     
-    // Load from environment variables
-    if (const char* api_key = std::getenv("CQL_API_KEY")) {
-        config.set_api_key("anthropic", api_key);
+    // Load from environment variables using secure_getenv for API keys
+    // Priority: provider-specific (ANTHROPIC_API_KEY) > generic (CQL_API_KEY)
+    SecureString anthropic_key = secure_getenv("ANTHROPIC_API_KEY");
+    if (!anthropic_key.empty()) {
+        config.m_api_keys["anthropic"] = std::move(anthropic_key);
         Logger::getInstance().log(LogLevel::INFO, 
-            "Loaded API key from CQL_API_KEY environment variable");
+            "Loaded API key from ANTHROPIC_API_KEY environment variable");
+    } else {
+        SecureString legacy_key = secure_getenv("CQL_API_KEY");
+        if (!legacy_key.empty()) {
+            config.m_api_keys["anthropic"] = std::move(legacy_key);
+            Logger::getInstance().log(LogLevel::INFO, 
+                "Loaded API key from CQL_API_KEY environment variable (legacy)");
+        }
     }
     
     if (const char* provider = std::getenv("CQL_DEFAULT_PROVIDER")) {
@@ -28,10 +37,15 @@ Config Config::load_from_environment() {
             "Default provider set to: ", provider);
     }
     
-    if (const char* model = std::getenv("CQL_MODEL")) {
+    // Support provider-specific model environment variables  
+    if (const char* model = std::getenv("ANTHROPIC_MODEL")) {
+        config.set_model("anthropic", model);
+        Logger::getInstance().log(LogLevel::INFO, 
+            "Anthropic model set to: ", model);
+    } else if (const char* model = std::getenv("CQL_MODEL")) {
         config.set_model(config.get_default_provider(), model);
         Logger::getInstance().log(LogLevel::INFO, 
-            "Model set to: ", model);
+            "Default provider model set to: ", model);
     }
     
     if (const char* temp_str = std::getenv("CQL_TEMPERATURE")) {
@@ -306,7 +320,7 @@ void Config::merge_with(const Config& other) {
     // Merge maps
     for (const auto& [provider, key] : other.m_api_keys) {
         if (!key.empty()) {
-            m_api_keys[provider] = key;
+            m_api_keys[provider] = SecureString(key.data());
         }
     }
     
@@ -432,7 +446,7 @@ bool Config::parse_json_config(const std::string& json_content) {
                     "Parsing configuration for provider: ", provider_name);
                 
                 if (provider_config.contains("api_key")) {
-                    m_api_keys[provider_name] = provider_config["api_key"].get<std::string>();
+                    m_api_keys[provider_name] = SecureString(provider_config["api_key"].get<std::string>());
                 }
                 
                 if (provider_config.contains("model")) {

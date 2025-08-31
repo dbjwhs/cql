@@ -119,9 +119,11 @@ public:
     explicit SecureString(const char* str);
     
     /**
-     * @brief Copy constructor (disabled for security)
+     * @brief Copy constructor (creates secure copy of data)
+     * @param other Source SecureString to copy from
+     * @note This creates a new secure copy - use sparingly for security
      */
-    SecureString(const SecureString& other) = delete;
+    SecureString(const SecureString& other);
     
     /**
      * @brief Move constructor
@@ -130,9 +132,12 @@ public:
     SecureString(SecureString&& other) noexcept;
     
     /**
-     * @brief Copy assignment (disabled for security)
+     * @brief Copy assignment (creates secure copy of data)
+     * @param other Source SecureString to copy from
+     * @return Reference to this object
+     * @note This creates a new secure copy - use sparingly for security
      */
-    SecureString& operator=(const SecureString& other) = delete;
+    SecureString& operator=(const SecureString& other);
     
     /**
      * @brief Move assignment

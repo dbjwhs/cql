@@ -7,7 +7,9 @@
 #include <vector>
 #include <optional>
 #include <map>
+#include <unordered_map>
 #include <chrono>
+#include "ailib/auth/secure_store.hpp"
 
 namespace cql {
 
@@ -50,11 +52,11 @@ public:
     // API configuration
     [[nodiscard]] std::string get_api_key(const std::string& provider) const {
         auto it = m_api_keys.find(provider);
-        return (it != m_api_keys.end()) ? it->second : "";
+        return (it != m_api_keys.end()) ? it->second.data() : "";
     }
     
     void set_api_key(const std::string& provider, const std::string& key) {
-        m_api_keys[provider] = key;
+        m_api_keys[provider] = SecureString(key);
     }
     
     // Model configuration  
@@ -163,7 +165,7 @@ private:
     // Core configuration
     std::string m_default_provider = "anthropic";
     std::vector<std::string> m_fallback_chain;
-    std::map<std::string, std::string> m_api_keys;
+    std::unordered_map<std::string, SecureString> m_api_keys;
     std::map<std::string, std::string> m_models;
     std::map<std::string, std::string> m_base_urls;
     
