@@ -437,7 +437,13 @@ ProviderResponse AnthropicProvider::parse_response(const nlohmann::json& json_re
         // Extract additional metadata
         response.metadata["id"] = json_response.value("id", "");
         response.metadata["stop_reason"] = json_response.value("stop_reason", "");
-        response.metadata["stop_sequence"] = json_response.value("stop_sequence", "");
+        
+        // Handle stop_sequence which can be null
+        if (json_response.contains("stop_sequence") && !json_response["stop_sequence"].is_null()) {
+            response.metadata["stop_sequence"] = json_response["stop_sequence"].get<std::string>();
+        } else {
+            response.metadata["stop_sequence"] = "";
+        }
         Logger::getInstance().log(LogLevel::DEBUG, "Extracted metadata - id: ", response.metadata["id"],
             ", stop_reason: ", response.metadata["stop_reason"]);
         
