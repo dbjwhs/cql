@@ -8,6 +8,8 @@
 #include "../include/cql/project_utils.hpp"
 #include <chrono>
 #include <thread>
+#include <cstdlib>
+#include <cstring>
 
 namespace cql {
 
@@ -33,6 +35,21 @@ protected:
         // Check if API key is available
         std::string api_key = m_config.get_api_key("anthropic");
         m_has_api_key = !api_key.empty() && api_key.length() >= 30;
+        
+        // Debug logging to help troubleshoot API key issues
+        Logger::getInstance().log(LogLevel::NORMAL, 
+            "DEBUG: API key from config - empty: ", api_key.empty(), 
+            ", length: ", api_key.length());
+        
+        // Also check raw environment variables
+        const char* env_anthropic = std::getenv("ANTHROPIC_API_KEY");
+        const char* env_cql = std::getenv("CQL_API_KEY");
+        Logger::getInstance().log(LogLevel::NORMAL, 
+            "DEBUG: ANTHROPIC_API_KEY env var - present: ", (env_anthropic != nullptr),
+            ", length: ", env_anthropic ? strlen(env_anthropic) : 0);
+        Logger::getInstance().log(LogLevel::NORMAL, 
+            "DEBUG: CQL_API_KEY env var - present: ", (env_cql != nullptr),
+            ", length: ", env_cql ? strlen(env_cql) : 0);
         
         if (!m_has_api_key) {
             Logger::getInstance().log(LogLevel::NORMAL, 
