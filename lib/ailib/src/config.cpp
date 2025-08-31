@@ -1,9 +1,9 @@
 // MIT License
 // Copyright (c) 2025 dbjwhs
 
-#include "../../include/cql/config.hpp"
-#include "../../include/cql/project_utils.hpp"
-#include "../../include/cql/json_utils.hpp"
+#include "ailib/core/config.hpp"
+#include "../../../include/cql/project_utils.hpp"
+#include "ailib/detail/json_utils.hpp"
 #include <cstdlib>
 #include <fstream>
 #include <filesystem>

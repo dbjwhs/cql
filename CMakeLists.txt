@@ -63,6 +63,7 @@ endif()
 # Set include directories
 include_directories(
     ${PROJECT_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/lib/ailib/include
     ${PROJECT_SOURCE_DIR}/../..
 )
 
@@ -128,16 +129,15 @@ set(CQL_CORE_SOURCES
     src/cql/api_client.cpp
     src/cql/response_processor.cpp
     src/cql/mock_server.cpp
-    src/cql/provider_factory.cpp
-    src/cql/anthropic_provider.cpp
-    src/cql/config.cpp
-    src/cql/http/curl_client.cpp
-    src/cql/stubs.cpp  # Include stubs.cpp in core sources
+    lib/ailib/src/providers/factory.cpp
+    lib/ailib/src/providers/anthropic.cpp
+    lib/ailib/src/config.cpp
+    lib/ailib/src/http/curl_client.cpp
     src/cql/clipboard_impl.cpp
     src/cql/clipboard_stub.cpp
-    src/cql/secure_string.cpp
     src/cql/input_validator.cpp
-    src/cql/json_utils.cpp
+    lib/ailib/src/json_utils.cpp
+    lib/ailib/src/auth/secure_store.cpp
     src/cql/error_context.cpp
     src/cql/cli.cpp
     src/cql/logger_interface.cpp
@@ -161,11 +161,11 @@ set(CQL_TEST_SOURCES
     src/cql/tests.cpp
     src/cql/test_architecture_patterns.cpp
     src/cql/test_api_integration.cpp
-    src/cql/test_config.cpp
-    src/cql/test_config_enhanced.cpp
+    lib/ailib/tests/test_config.cpp
+    lib/ailib/tests/test_config_enhanced.cpp
     src/cql/test_security.cpp
-    src/cql/test_http_client.cpp
-    src/cql/test_anthropic_provider.cpp
+    lib/ailib/tests/test_http_client.cpp
+    lib/ailib/tests/test_anthropic_provider.cpp
     src/cql/test_pluggable_logger.cpp
     src/cql/test_logger_bridge.cpp
 )

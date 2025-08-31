@@ -17,8 +17,8 @@
 #include <nlohmann/json.hpp>
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/project_utils.hpp"
-#include "../../include/cql/secure_string.hpp"
-#include "../../include/cql/json_utils.hpp"
+#include "ailib/auth/secure_store.hpp"
+#include "ailib/detail/json_utils.hpp"
 #include "../../include/cql/cql.hpp"
 
 namespace cql {

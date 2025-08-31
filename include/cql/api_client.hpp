@@ -12,7 +12,7 @@
 #include <string_view>
 #include <future>
 #include <optional>
-#include "secure_string.hpp"
+#include "ailib/auth/secure_store.hpp"
 
 namespace cql {
 

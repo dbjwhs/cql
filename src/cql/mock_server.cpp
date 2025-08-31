@@ -14,7 +14,7 @@
 #include <nlohmann/json.hpp>
 #include "../../include/cql/project_utils.hpp"
 #include "../../include/cql/mock_server.hpp"
-#include "../../include/cql/json_utils.hpp"
+#include "ailib/detail/json_utils.hpp"
 
 namespace cql::test {
 
