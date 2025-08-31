@@ -316,7 +316,7 @@ void Config::merge_with(const Config& other) {
     // Merge maps
     for (const auto& [provider, key] : other.m_api_keys) {
         if (!key.empty()) {
-            m_api_keys[provider] = key;
+            m_api_keys[provider] = SecureString(key.data());
         }
     }
     
@@ -442,7 +442,7 @@ bool Config::parse_json_config(const std::string& json_content) {
                     "Parsing configuration for provider: ", provider_name);
                 
                 if (provider_config.contains("api_key")) {
-                    m_api_keys[provider_name] = provider_config["api_key"].get<std::string>();
+                    m_api_keys[provider_name] = SecureString(provider_config["api_key"].get<std::string>());
                 }
                 
                 if (provider_config.contains("model")) {

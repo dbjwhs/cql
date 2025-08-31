@@ -120,8 +120,20 @@ SecureString::SecureString(const char* str) : m_data(str ? str : "") {
     // Memory locking is handled automatically by SecureAllocator
 }
 
+SecureString::SecureString(const SecureString& other) : m_data(other.m_data.begin(), other.m_data.end()) {
+    // Copy constructor - creates secure copy of data, SecureAllocator handles memory locking
+}
+
 SecureString::SecureString(SecureString&& other) noexcept : m_data(std::move(other.m_data)) {
     // Move constructor - SecureAllocator handles secure cleanup automatically
+}
+
+SecureString& SecureString::operator=(const SecureString& other) {
+    if (this != &other) {
+        // Copy assignment - SecureAllocator automatically zeros old memory when reassigning
+        m_data.assign(other.m_data.begin(), other.m_data.end());
+    }
+    return *this;
 }
 
 SecureString& SecureString::operator=(SecureString&& other) noexcept {
