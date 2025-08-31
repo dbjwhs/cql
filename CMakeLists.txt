@@ -133,6 +133,7 @@ set(CQL_CORE_SOURCES
     lib/ailib/src/providers/anthropic.cpp
     lib/ailib/src/config.cpp
     lib/ailib/src/http/curl_client.cpp
+    src/cql/stubs.cpp
     src/cql/clipboard_impl.cpp
     src/cql/clipboard_stub.cpp
     src/cql/input_validator.cpp
