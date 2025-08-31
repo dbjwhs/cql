@@ -1,7 +1,7 @@
 // MIT License
 // Copyright (c) 2025 dbjwhs
 
-#include "../../include/cql/json_utils.hpp"
+#include "ailib/detail/json_utils.hpp"
 #include <stdexcept>
 
 namespace cql {

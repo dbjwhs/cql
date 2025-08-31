@@ -2,7 +2,7 @@
 // Copyright (c) 2025 dbjwhs
 
 #include <gtest/gtest.h>
-#include "../../include/cql/config.hpp"
+#include "ailib/core/config.hpp"
 #include <filesystem>
 #include <fstream>
 #include <cstdlib>

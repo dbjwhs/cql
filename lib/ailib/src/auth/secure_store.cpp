@@ -1,7 +1,7 @@
 // MIT License
 // Copyright (c) 2025 dbjwhs
 
-#include "../../include/cql/secure_string.hpp"
+#include "ailib/auth/secure_store.hpp"
 #include <cstdlib>
 #include <algorithm>
 #include <new>

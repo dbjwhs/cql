@@ -2,8 +2,8 @@
 // Copyright (c) 2025 dbjwhs
 
 #include <gtest/gtest.h>
-#include "../../include/cql/anthropic_provider.hpp"
-#include "../../include/cql/config.hpp"
+#include "ailib/providers/anthropic.hpp"
+#include "ailib/core/config.hpp"
 
 namespace cql::test {
 

@@ -23,7 +23,7 @@
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/response_processor.hpp"
 #include "../../include/cql/input_validator.hpp"
-#include "../../include/cql/json_utils.hpp"
+#include "ailib/detail/json_utils.hpp"
 #include "../../include/cql/error_context.hpp"
 #include "../../include/cql/test_utils.hpp"
 #include "../../third_party/include/nlohmann/json.hpp"
