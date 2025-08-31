@@ -1,9 +1,9 @@
 // MIT License
 // Copyright (c) 2025 dbjwhs
 
-#include "../../include/cql/anthropic_provider.hpp"
-#include "../../include/cql/json_utils.hpp"
-#include "../../include/cql/project_utils.hpp"
+#include "ailib/providers/anthropic.hpp"
+#include "ailib/detail/json_utils.hpp"
+#include "../../../../include/cql/project_utils.hpp"
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <future>

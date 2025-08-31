@@ -1,10 +1,10 @@
 // MIT License
 // Copyright (c) 2025 dbjwhs
 
-#include "../../include/cql/provider_factory.hpp"
-#include "../../include/cql/anthropic_provider.hpp"
-#include "../../include/cql/config.hpp"
-#include "../../include/cql/project_utils.hpp"
+#include "ailib/providers/factory.hpp"
+#include "ailib/providers/anthropic.hpp"
+#include "ailib/core/config.hpp"
+#include "../../../../include/cql/project_utils.hpp"
 #include <stdexcept>
 #include <algorithm>
 

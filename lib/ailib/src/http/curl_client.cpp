@@ -1,8 +1,8 @@
 // MIT License
 // Copyright (c) 2025 dbjwhs
 
-#include "../../../include/cql/http/client.hpp"
-#include "../../../include/cql/project_utils.hpp"
+#include "ailib/http/client.hpp"
+#include "../../../../include/cql/project_utils.hpp"
 #include <curl/curl.h>
 #include <sstream>
 #include <thread>
