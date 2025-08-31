@@ -65,8 +65,11 @@ if (response.is_success()) {
 cql::SecureString api_key("your-sensitive-key");
 config.set_api_key("anthropic", api_key.data());
 
-// Load from environment with security
+// Load from environment with security (provider-specific preferred)
 auto env_key = cql::secure_getenv("ANTHROPIC_API_KEY");
+if (env_key.empty()) {
+    env_key = cql::secure_getenv("CQL_API_KEY");  // Legacy fallback
+}
 if (!env_key.empty()) {
     config.set_api_key("anthropic", env_key.data());
 }
@@ -318,10 +321,13 @@ if (estimated_cost.has_value()) {
 ### API Key Management
 
 ```cpp
-// DO: Use environment variables
-auto api_key = cql::secure_getenv("ANTHROPIC_API_KEY");
+// DO: Use environment variables (provider-specific preferred)
+auto api_key = cql::secure_getenv("ANTHROPIC_API_KEY");  // Preferred
 if (api_key.empty()) {
-    throw std::runtime_error("ANTHROPIC_API_KEY environment variable not set");
+    api_key = cql::secure_getenv("CQL_API_KEY");  // Legacy fallback
+}
+if (api_key.empty()) {
+    throw std::runtime_error("ANTHROPIC_API_KEY or CQL_API_KEY environment variable not set");
 }
 
 // DO: Use SecureString for sensitive data
