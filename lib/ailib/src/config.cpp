@@ -15,16 +15,20 @@ namespace cql {
 Config Config::load_from_environment() {
     Config config;
     
-    // Load from environment variables - support both new and legacy formats
+    // Load from environment variables using secure_getenv for API keys
     // Priority: provider-specific (ANTHROPIC_API_KEY) > generic (CQL_API_KEY)
-    if (const char* api_key = std::getenv("ANTHROPIC_API_KEY")) {
-        config.set_api_key("anthropic", api_key);
+    SecureString anthropic_key = secure_getenv("ANTHROPIC_API_KEY");
+    if (!anthropic_key.empty()) {
+        config.m_api_keys["anthropic"] = std::move(anthropic_key);
         Logger::getInstance().log(LogLevel::INFO, 
             "Loaded API key from ANTHROPIC_API_KEY environment variable");
-    } else if (const char* api_key = std::getenv("CQL_API_KEY")) {
-        config.set_api_key("anthropic", api_key);
-        Logger::getInstance().log(LogLevel::INFO, 
-            "Loaded API key from CQL_API_KEY environment variable (legacy)");
+    } else {
+        SecureString legacy_key = secure_getenv("CQL_API_KEY");
+        if (!legacy_key.empty()) {
+            config.m_api_keys["anthropic"] = std::move(legacy_key);
+            Logger::getInstance().log(LogLevel::INFO, 
+                "Loaded API key from CQL_API_KEY environment variable (legacy)");
+        }
     }
     
     if (const char* provider = std::getenv("CQL_DEFAULT_PROVIDER")) {
