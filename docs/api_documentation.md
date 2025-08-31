@@ -2,47 +2,89 @@
 
 This document provides a comprehensive reference for developers looking to integrate with or extend the Claude Query Language (CQL) compiler.
 
-## Claude API Integration
+## AILib: Modern C++ AI Provider Library
 
-CQL now provides direct integration with Anthropic's Claude API, enabling developers to submit queries and receive generated code in a single workflow.
+**CQL now includes AILib**, a comprehensive C++ library providing unified interfaces to AI providers. This replaces the legacy ApiClient with a modern, extensible provider system.
 
-### ApiClient Class
+### Provider System Overview
 
-The `ApiClient` class provides communication with the Claude API, offering both synchronous and asynchronous methods as well as streaming capabilities.
+AILib uses a **provider pattern** that allows seamless switching between different AI services:
 
 ```cpp
-class ApiClient {
+#include "ailib/providers/factory.hpp"
+#include "ailib/core/config.hpp"
+
+// Modern AILib approach
+auto& factory = cql::ProviderFactory::get_instance();
+auto provider = factory.create_provider("anthropic", config);
+```
+
+### Configuration Management
+
+The new `Config` class provides secure, flexible configuration:
+
+```cpp
+// Configuration Management
+cql::Config config;
+config.set_api_key("anthropic", "your-api-key");
+config.set_model("anthropic", "claude-3-sonnet-20240229");
+config.set_temperature(0.7);
+config.set_max_tokens(1000);
+config.set_timeout(std::chrono::seconds(120));
+config.set_max_retries(3);
+
+// Provider Factory
+auto& factory = cql::ProviderFactory::get_instance();
+auto provider = factory.create_provider("anthropic", config);
+
+// Provider Interface
+class AIProvider {
 public:
-    // Constructor with configuration
-    explicit ApiClient(const Config& config);
+    virtual ~AIProvider() = default;
     
-    // Configuration setters
-    void set_api_key(const std::string& api_key);
-    void set_model(const std::string& model);
-    void set_max_tokens(int max_tokens);
-    void set_temperature(double temperature);
-    void set_timeout(int timeout_seconds);
-    void set_max_retries(int max_retries);
+    // Synchronous request
+    virtual ProviderResponse send_request(const ProviderRequest& request) = 0;
     
-    // Synchronous query submission
-    [[nodiscard]] ApiResponse submit_query(const std::string& query) const;
+    // Asynchronous request  
+    virtual std::future<ProviderResponse> send_async(const ProviderRequest& request) = 0;
     
-    // Asynchronous query submission
-    [[nodiscard]] std::future<ApiResponse> submit_query_async(
-        const std::string& query,
-        const std::function<void(ApiResponse)>& callback = nullptr) const;
+    // Provider information
+    virtual std::string get_provider_name() const = 0;
+    virtual bool is_configured() const = 0;
+    virtual ProviderCapabilities get_capabilities() const = 0;
     
-    // Streaming query submission
-    void submit_query_streaming(
-        const std::string& query,
-        const std::function<void(std::string_view chunk)>& chunk_callback,
-        const std::function<void(ApiResponse)>& completion_callback = nullptr) const;
+    // Cost estimation
+    virtual std::optional<double> estimate_cost(const ProviderRequest& request) const = 0;
+};
+```
+
+### Request Structure
+
+```cpp
+struct ProviderRequest {
+    std::string prompt;
+    std::string system_prompt;
+    std::vector<std::pair<std::string, std::string>> messages;
     
-    // Asynchronous streaming query submission
-    [[nodiscard]] std::future<void> submit_query_streaming_async(
-        const std::string& query,
-        const std::function<void(std::string_view chunk)>& chunk_callback,
-        const std::function<void(ApiResponse)>& completion_callback = nullptr) const;
+    // Generation parameters
+    int max_tokens = 1000;
+    double temperature = 0.7;
+    std::vector<std::string> stop_sequences;
+    
+    // Request metadata
+    std::string model;
+    std::optional<std::chrono::seconds> timeout;
+    
+    // Retry configuration
+    RetryPolicy retry_policy;
+};
+
+struct RetryPolicy {
+    int max_retries = 3;
+    std::chrono::milliseconds initial_delay{100};
+    double backoff_multiplier = 2.0;
+    std::chrono::milliseconds max_delay{30000};
+    bool enable_jitter = true;
 };
 ```
 
