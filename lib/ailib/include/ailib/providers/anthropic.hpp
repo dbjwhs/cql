@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "ai_provider.hpp"
-#include "config.hpp"
-#include "http/client.hpp"
+#include "../core/provider.hpp"
+#include "../core/config.hpp"
+#include "../http/client.hpp"
 #include <nlohmann/json.hpp>
 #include <memory>
 

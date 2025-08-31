@@ -2,8 +2,8 @@
 // Copyright (c) 2025 dbjwhs
 
 #include <gtest/gtest.h>
-#include "../../include/cql/http/client.hpp"
-#include "../../include/cql/project_utils.hpp"
+#include "ailib/http/client.hpp"
+#include "../../../include/cql/project_utils.hpp"
 #include <thread>
 #include <chrono>
 

@@ -31,7 +31,8 @@
 
 # Binary outputs (assuming each project might have different names)
 **/bin/
-**/lib/
+lib/
+!lib/ailib/
 
 # Generated files
 **/*.generated.*

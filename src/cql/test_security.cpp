@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 #include "../../include/cql/input_validator.hpp"
-#include "../../include/cql/secure_string.hpp"
+#include "ailib/auth/secure_store.hpp"
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/template_manager.hpp"
 

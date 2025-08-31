@@ -8,7 +8,7 @@
 #include <vector>
 #include <functional>
 #include <unordered_map>
-#include "ai_provider.hpp"
+#include "../core/provider.hpp"
 
 namespace cql {
 
