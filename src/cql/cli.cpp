@@ -1128,10 +1128,8 @@ void run_interactive() {
 // process a query file
 bool process_file(const std::string& input_file, const std::string& output_file, bool include_header) {
     try {
-        Logger::getInstance().log(LogLevel::INFO, "Processing file: ", input_file);
-        if (include_header) {
-            std::cout << "Processing file: " << input_file << std::endl;
-        }
+        // Always show which file is being processed - useful for users
+        std::cout << "Processing file: " << input_file << std::endl;
 
         const std::string result = QueryProcessor::compile_file(input_file);
 

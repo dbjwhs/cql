@@ -110,7 +110,7 @@ public:
     void set_colored_output(bool enable);
     
 private:
-    LogLevel m_min_level{LogLevel::DEBUG};
+    LogLevel m_min_level{LogLevel::NORMAL};
     bool m_colored_output{true};
     
     std::string format_message(LogLevel level, const std::string& message) const;
