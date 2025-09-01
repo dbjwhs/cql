@@ -6,12 +6,20 @@
 #include <filesystem>
 #include <fstream>
 #include <cstdlib>
+#include <unordered_map>
+#include <vector>
 
 namespace cql::test {
 
 class EnhancedConfigTest : public ::testing::Test {
 protected:
     void SetUp() override {
+        // Store original environment variables to restore later
+        save_original_env();
+        
+        // Clear all test environment variables to ensure clean state
+        clear_all_test_env_vars();
+        
         // Create temporary directory for test files
         m_temp_dir = std::filesystem::temp_directory_path() / "cql_config_test";
         std::filesystem::create_directories(m_temp_dir);
@@ -23,12 +31,48 @@ protected:
             std::filesystem::remove_all(m_temp_dir);
         }
         
-        // Clear test environment variables
-        unsetenv("CQL_API_KEY");
-        unsetenv("CQL_DEFAULT_PROVIDER");
-        unsetenv("CQL_MODEL");
-        unsetenv("CQL_TEMPERATURE");
-        unsetenv("CQL_MAX_TOKENS");
+        // Restore original environment variables or clear them
+        restore_original_env();
+    }
+    
+    void clearenv_safe(const char* name) {
+        #ifdef _WIN32
+        _putenv_s(name, "");
+        #else
+        unsetenv(name);
+        #endif
+    }
+    
+    void clear_all_test_env_vars() {
+        for (const auto& var : TEST_ENV_VARS) {
+            clearenv_safe(var.c_str());
+        }
+    }
+    
+    void save_original_env() {
+        for (const auto& var : TEST_ENV_VARS) {
+            const char* value = std::getenv(var.c_str());
+            if (value) {
+                m_original_env[var] = value;
+            } else {
+                m_original_env[var] = ""; // Mark as originally unset
+            }
+        }
+    }
+    
+    void restore_original_env() {
+        for (const auto& [var, value] : m_original_env) {
+            if (value.empty()) {
+                clearenv_safe(var.c_str());
+            } else {
+                #ifdef _WIN32
+                _putenv_s(var.c_str(), value.c_str());
+                #else
+                setenv(var.c_str(), value.c_str(), 1);
+                #endif
+            }
+        }
+        m_original_env.clear();
     }
     
     void create_test_config_file(const std::string& content) {
@@ -40,6 +84,13 @@ protected:
     
     std::filesystem::path m_temp_dir;
     std::filesystem::path m_test_config_path;
+    std::unordered_map<std::string, std::string> m_original_env;
+    
+    static inline const std::vector<std::string> TEST_ENV_VARS = {
+        "CQL_API_KEY", "CQL_DEFAULT_PROVIDER", "CQL_MODEL", 
+        "ANTHROPIC_MODEL", "CQL_TEMPERATURE", "CQL_MAX_TOKENS", 
+        "ANTHROPIC_API_KEY"
+    };
 };
 
 TEST_F(EnhancedConfigTest, JSONConfigurationParsing) {
