@@ -30,13 +30,11 @@ int ApplicationController::handle_file_processing(const std::string& input_file,
                                                   bool include_header) {
     if (use_clipboard) {
         try {
-            Logger::getInstance().log(LogLevel::INFO, "Processing file: ", input_file);
             std::cout << "Processing file: " << input_file << std::endl;
 
             // Copy to clipboard
             if (const std::string result = QueryProcessor::compile_file(input_file); util::copy_to_clipboard(result)) {
                 std::cout << "Compiled query copied to clipboard" << std::endl;
-                Logger::getInstance().log(LogLevel::INFO, "Compiled query copied to clipboard");
             } else {
                 std::cerr << "Failed to copy to clipboard" << std::endl;
                 Logger::getInstance().log(LogLevel::ERROR, "Failed to copy to clipboard");
@@ -81,7 +79,7 @@ int ApplicationController::run(int argc, char* argv[]) {
     CommandLineHandler cmd_handler(argc, argv);
     
     // Default debug level
-    auto debug_level = LogLevel::DEBUG;
+    auto debug_level = LogLevel::NORMAL;
     
     // Check for debug level in arguments
     std::string debug_level_str;
@@ -101,14 +99,18 @@ int ApplicationController::run(int argc, char* argv[]) {
     if (include_headers) {
         std::cout << "Starting CQL Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")..." << std::endl;
     }
-    logger.log(LogLevel::INFO, "Starting CQL Compiler v", CQL_VERSION_STRING, " (", CQL_BUILD_TIMESTAMP, ")...");
     
-    // Log the debug level that was set
-    const std::string level_name = debug_level == LogLevel::INFO ? "INFO" :
-                             debug_level == LogLevel::NORMAL ? "NORMAL" : 
-                             debug_level == LogLevel::DEBUG ? "DEBUG" : 
-                             debug_level == LogLevel::ERROR ? "ERROR" : "CRITICAL";
-    logger.log(LogLevel::INFO, "Log level set to: ", level_name);
+    // Only log startup info if headers are requested or debug level is explicitly set
+    if (include_headers || !debug_level_str.empty()) {
+        logger.log(LogLevel::INFO, "Starting CQL Compiler v", CQL_VERSION_STRING, " (", CQL_BUILD_TIMESTAMP, ")...");
+        
+        // Log the debug level that was set
+        const std::string level_name = debug_level == LogLevel::INFO ? "INFO" :
+                                 debug_level == LogLevel::NORMAL ? "NORMAL" : 
+                                 debug_level == LogLevel::DEBUG ? "DEBUG" : 
+                                 debug_level == LogLevel::ERROR ? "ERROR" : "CRITICAL";
+        logger.log(LogLevel::INFO, "Log level set to: ", level_name);
+    }
 
     // Get updated argc/argv after removing debug option
     int effective_argc = cmd_handler.get_argc();

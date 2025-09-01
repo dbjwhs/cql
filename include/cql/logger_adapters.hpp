@@ -173,7 +173,7 @@ public:
 private:
     std::ofstream m_file;
     std::mutex m_file_mutex;
-    LogLevel m_min_level{LogLevel::DEBUG};
+    LogLevel m_min_level{LogLevel::NORMAL};
     bool m_auto_flush{true};
     
     std::string format_message(LogLevel level, const std::string& message) const;
