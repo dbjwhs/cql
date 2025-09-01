@@ -148,11 +148,14 @@ TEST_F(PluggableLoggerTest, LoggerManager_DefaultInitialization) {
     // Auto-initialization should work
     EXPECT_FALSE(LoggerManager::is_initialized());
     
-    LoggerManager::log(LogLevel::INFO, "Test message");
+    LoggerManager::log(LogLevel::NORMAL, "Test message");
     EXPECT_TRUE(LoggerManager::is_initialized());
     
     // Should be able to check levels and flush
-    EXPECT_TRUE(LoggerManager::is_level_enabled(LogLevel::INFO));
+    // Default minimum level is NORMAL, so INFO should be disabled, NORMAL+ should be enabled
+    EXPECT_FALSE(LoggerManager::is_level_enabled(LogLevel::INFO));  // Below minimum
+    EXPECT_TRUE(LoggerManager::is_level_enabled(LogLevel::NORMAL));  // At minimum
+    EXPECT_TRUE(LoggerManager::is_level_enabled(LogLevel::ERROR));   // Above minimum
     EXPECT_NO_THROW(LoggerManager::flush());
 }
 
