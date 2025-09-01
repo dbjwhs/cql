@@ -26,15 +26,20 @@ cmake .. && make
 
 ### 🎯 Core CQL Compiler
 - **Modern C++20**: Advanced language features, zero-cost abstractions
-- **Template System**: Powerful code generation with variables and inheritance
-- **Enterprise Security**: Input validation, secure memory management
+- **Template System**: Powerful code generation with variables, inheritance, and validation
+- **Interactive Mode**: Real-time query development and testing
+- **Documentation Generation**: Automatic template documentation in multiple formats
+- **Enterprise Security**: Input validation, secure memory management, path protection
+- **Advanced Logging**: Pluggable logging architecture with multiple adapters
 - **Comprehensive Testing**: 85%+ test coverage with automated quality gates
 
 ### 🤖 AILib Integration
 - **Multi-Provider AI Support**: Anthropic Claude, with extensible provider architecture
 - **Modern C++ API**: Type-safe, async-first design with RAII principles
 - **HTTP Client**: CURL-based implementation with retry logic and exponential backoff
-- **Secure Configuration**: Protected API key storage and management
+- **Secure Configuration**: Protected API key storage with `SecureString` class
+- **Response Processing**: Intelligent code generation and file organization
+- **Live Testing**: Comprehensive integration tests with real API endpoints
 
 ## 📁 Project Structure
 
@@ -51,6 +56,7 @@ cql/
 │   │   └── detail/         # Implementation details
 │   ├── src/                # AILib implementation files
 │   └── tests/              # AILib-specific tests
+├── scripts/                # Utility scripts and tools
 ├── docs/                   # Comprehensive documentation
 ├── examples/               # Sample CQL files and demos
 └── build/                  # Build artifacts
@@ -70,11 +76,28 @@ cql/
 # Copy to clipboard
 ./cql input.llm --clipboard
 
-# API integration
-./cql --submit input.llm --output-dir ./output
-
 # Interactive mode
 ./cql --interactive
+
+# API integration
+./cql --submit input.llm --output-dir ./output
+./cql --submit input.llm --model claude-3-sonnet --overwrite
+
+# Template operations
+./cql --templates                    # List all templates
+./cql --template MyTemplate input.llm
+./cql --validate MyTemplate          # Validate template
+./cql --validate-all ./templates     # Validate all templates
+
+# Documentation generation
+./cql --docs MyTemplate              # Generate template docs
+./cql --docs-all                     # Generate all docs
+./cql --export ./docs md             # Export docs as markdown
+
+# Debug and configuration  
+./cql --debug-level DEBUG input.llm       # Enable debug logging
+./cql --debug-level NORMAL input.llm      # Default level (clean output)
+./cql --version
 ```
 
 ### AILib C++ API
@@ -102,12 +125,40 @@ if (response.is_success()) {
 }
 ```
 
+### Advanced Logging System
+
+```cpp
+#include <cql/logger_interface.hpp>
+#include <cql/logger_adapters.hpp>
+
+// Use built-in console logger
+auto console_logger = std::make_unique<cql::DefaultConsoleLogger>();
+console_logger->set_min_level(cql::LogLevel::INFO);
+
+// File logging
+auto file_logger = std::make_unique<cql::adapters::FileLogger>("app.log");
+
+// Multi-output logging
+auto multi_logger = std::make_unique<cql::adapters::MultiLogger>();
+multi_logger->add_logger(std::move(console_logger));
+multi_logger->add_logger(std::move(file_logger));
+
+// Async logging for performance
+auto async_logger = std::make_unique<cql::adapters::AsyncLogger>(std::move(multi_logger));
+
+// Initialize logger system
+cql::LoggerManager::initialize(std::move(async_logger));
+```
+
 ## 📖 Documentation
 
 - **[Complete Documentation](docs/README.md)** - Comprehensive guides and references
 - **[AILib Design Specification](docs/CQL_AILIB_DESIGN_SPECIFICATION.md)** - Technical architecture
-- **[API Reference](https://dbjwhs.github.io/cql/)** - Doxygen-generated documentation
-- **[Tutorial](docs/tutorial.md)** - Step-by-step getting started guide
+- **[Meta-Prompt Compiler Specification](docs/TECHNICAL_SPECIFICATION_META_PROMPT_COMPILER.md)** - Advanced compilation concepts
+- **[Tutorial](docs/tutorial.md)** - Step-by-step getting started guide  
+- **[API Documentation](docs/api_documentation.md)** - Complete API reference
+- **[AILib Integration Guide](docs/AILIB_INTEGRATION_GUIDE.md)** - Integration documentation
+- **[Interactive Mode Guide](docs/interactive_mode_guide.md)** - Interactive development workflow
 
 ## 🏗️ Development
 
@@ -144,19 +195,27 @@ make -j$(nproc)
 
 CQL prioritizes enterprise-grade security:
 
-- **Input Validation**: All inputs validated against defined limits
-- **Secure Memory**: `SecureString` class for sensitive data (API keys)
-- **Path Protection**: Secure path resolution preventing directory traversal
-- **Audit Logging**: Comprehensive security event logging
+- **Input Validation**: All inputs validated against defined limits and patterns
+- **Secure Memory Management**: `SecureString` class with memory locking for API keys
+- **Path Protection**: Secure path resolution preventing directory traversal attacks
+- **Environment Variable Security**: Secure environment variable handling with precedence
+- **Error Context Preservation**: Detailed error tracking without sensitive data leakage
+- **Audit Logging**: Comprehensive security event logging with configurable levels
+- **Thread-Safe Operations**: Lock-free data structures and secure concurrent access
 
 ## 🚦 Roadmap
 
 ### Current Status (Phase 1) ✅
-- [x] Core CQL compiler with template system
-- [x] AILib provider interface and Anthropic integration
-- [x] HTTP client with retry logic
-- [x] Secure configuration management
-- [x] Comprehensive testing infrastructure
+- [x] Core CQL compiler with advanced template system
+- [x] AILib provider interface and Anthropic Claude integration
+- [x] HTTP client with retry logic and exponential backoff
+- [x] Secure configuration management with environment variable support
+- [x] Advanced logging system with pluggable adapters
+- [x] Interactive development mode with real-time feedback
+- [x] Template validation and documentation generation
+- [x] Comprehensive testing infrastructure with live API integration
+- [x] Response processing and intelligent code organization
+- [x] CLI with extensive options and clipboard integration
 
 ### Phase 2: Multi-Provider Support
 - [ ] OpenAI GPT integration
@@ -167,6 +226,9 @@ CQL prioritizes enterprise-grade security:
 - [ ] Streaming response support
 - [ ] Function calling capabilities
 - [ ] Advanced authentication methods
+- [ ] Meta-prompt compilation using LLM as compiler backend
+- [ ] Multi-model orchestration and comparison
+- [ ] Advanced caching and optimization strategies
 
 ## 🤝 Contributing
 
