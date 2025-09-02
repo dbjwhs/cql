@@ -32,9 +32,9 @@ protected:
         // Load configuration from environment
         m_config = Config::load_from_environment();
         
-        // Check if API key is available
+        // Check if API key is available - more flexible validation
         std::string api_key = m_config.get_api_key("anthropic");
-        m_has_api_key = !api_key.empty() && api_key.length() >= 30;
+        m_has_api_key = !api_key.empty() && api_key.length() >= 10; // Reduced minimum length for testing
         
         // Debug logging to help troubleshoot API key issues
         Logger::getInstance().log(LogLevel::NORMAL, 
@@ -53,10 +53,10 @@ protected:
         
         if (!m_has_api_key) {
             Logger::getInstance().log(LogLevel::NORMAL, 
-                "Skipping live API tests - no valid ANTHROPIC_API_KEY found");
+                "Skipping live API tests - no valid ANTHROPIC_API_KEY found (need 10+ chars)");
             Logger::getInstance().log(LogLevel::NORMAL, 
                 "To run these tests: export ANTHROPIC_API_KEY=your-api-key");
-            GTEST_SKIP() << "No valid ANTHROPIC_API_KEY environment variable found";
+            GTEST_SKIP() << "No valid ANTHROPIC_API_KEY environment variable found (minimum 10 characters)";
         }
         
         // Set up test configuration
@@ -90,7 +90,8 @@ protected:
  * @brief Test basic API connectivity and authentication
  */
 TEST_F(LiveAnthropicIntegrationTest, BasicConnectivityTest) {
-    if (!m_has_api_key) GTEST_SKIP();
+    // Test will only run if API key is configured
+    if (!m_has_api_key) GTEST_SKIP() << "API key not configured for live testing";
     
     Logger::getInstance().log(LogLevel::INFO, "Testing basic API connectivity");
     
@@ -122,7 +123,8 @@ TEST_F(LiveAnthropicIntegrationTest, BasicConnectivityTest) {
  * @brief Test API key validation and error handling
  */
 TEST_F(LiveAnthropicIntegrationTest, APIKeyValidationTest) {
-    if (!m_has_api_key) GTEST_SKIP();
+    // Test will only run if API key is configured
+    if (!m_has_api_key) GTEST_SKIP() << "API key not configured for live testing";
     
     Logger::getInstance().log(LogLevel::INFO, "Testing API key validation");
     
