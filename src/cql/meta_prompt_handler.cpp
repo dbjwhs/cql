@@ -1,0 +1,229 @@
+// MIT License
+// Copyright (c) 2025 dbjwhs
+
+#include "../../include/cql/meta_prompt_handler.hpp"
+#include "../../include/cql/command_line_handler.hpp"
+#include "../../include/cql/meta_prompt/hybrid_compiler.hpp"
+#include "../../include/cql/cql.hpp"
+#include "../../include/cql/project_utils.hpp"
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+
+namespace cql {
+
+int MetaPromptHandler::handle_optimize_command(int argc, char* argv[]) {
+    if (argc < 3) {
+        std::cerr << "Error: Input file required for --optimize option\n";
+        print_optimize_usage();
+        return CQL_ERROR;
+    }
+
+    try {
+        CommandLineHandler cmd_handler(argc, argv);
+        
+        // Get input file (first positional argument after --optimize)
+        std::string input_file = argv[2];
+        
+        // Parse compilation options
+        meta_prompt::CompilationMode mode = meta_prompt::CompilationMode::CACHED_LLM;
+        meta_prompt::OptimizationGoal goal = meta_prompt::OptimizationGoal::BALANCED;
+        std::string domain;
+        bool show_metrics = false;
+        bool show_validation = false;
+        
+        // Parse --mode option
+        if (auto mode_value = cmd_handler.get_option_value("--mode")) {
+            mode = parse_compilation_mode(*mode_value);
+        }
+        
+        // Parse --goal option
+        if (auto goal_value = cmd_handler.get_option_value("--goal")) {
+            goal = parse_optimization_goal(*goal_value);
+        }
+        
+        // Parse --domain option
+        if (auto domain_value = cmd_handler.get_option_value("--domain")) {
+            domain = *domain_value;
+        }
+        
+        // Parse display options
+        show_metrics = cmd_handler.has_option("--show-metrics");
+        show_validation = cmd_handler.has_option("--show-validation");
+        
+        Logger::getInstance().log(LogLevel::INFO,
+            "Starting meta-prompt compilation for: ", input_file);
+        
+        // Read and compile the input query
+        std::string query_content = util::read_file(input_file);
+        std::string compiled_query = QueryProcessor::compile(query_content);
+        
+        Logger::getInstance().log(LogLevel::INFO,
+            "Compiled query, starting optimization with mode: ", static_cast<int>(mode),
+            ", goal: ", static_cast<int>(goal));
+        
+        // Create compiler flags
+        meta_prompt::CompilerFlags flags;
+        flags.mode = mode;
+        flags.goal = goal;
+        flags.domain = domain;
+        
+        // Create hybrid compiler
+        auto compiler = meta_prompt::HybridCompiler::create();
+        if (!compiler) {
+            std::cerr << "Error: Failed to create meta-prompt compiler\n";
+            return CQL_ERROR;
+        }
+        
+        // Perform meta-prompt compilation
+        auto result = compiler->compile(compiled_query, flags);
+        
+        // Display results
+        display_compilation_result(result, show_metrics, show_validation);
+        
+        // Handle output
+        if (result.success) {
+            std::string output_file;
+            if (argc > 3 && argv[3][0] != '-') {
+                output_file = argv[3];
+                util::write_file(output_file, result.compiled_prompt);
+                std::cout << "\nOptimized query written to: " << output_file << std::endl;
+            } else {
+                std::cout << "\n--- OPTIMIZED QUERY ---\n";
+                std::cout << result.compiled_prompt << std::endl;
+            }
+            return CQL_NO_ERROR;
+        } else {
+            std::cerr << "Meta-prompt compilation failed\n";
+            return CQL_ERROR;
+        }
+        
+    } catch (const std::exception& e) {
+        std::cerr << "Error during meta-prompt compilation: " << e.what() << std::endl;
+        Logger::getInstance().log(LogLevel::ERROR,
+            "Meta-prompt compilation exception: ", e.what());
+        return CQL_ERROR;
+    }
+}
+
+meta_prompt::CompilationMode MetaPromptHandler::parse_compilation_mode(const std::string& mode_str) {
+    if (mode_str == "LOCAL_ONLY") {
+        return meta_prompt::CompilationMode::LOCAL_ONLY;
+    } else if (mode_str == "CACHED_LLM") {
+        return meta_prompt::CompilationMode::CACHED_LLM;
+    } else if (mode_str == "FULL_LLM") {
+        return meta_prompt::CompilationMode::FULL_LLM;
+    } else if (mode_str == "ASYNC_LLM") {
+        return meta_prompt::CompilationMode::ASYNC_LLM;
+    } else {
+        std::cerr << "Warning: Unknown compilation mode '" << mode_str 
+                  << "', using CACHED_LLM as default\n";
+        return meta_prompt::CompilationMode::CACHED_LLM;
+    }
+}
+
+meta_prompt::OptimizationGoal MetaPromptHandler::parse_optimization_goal(const std::string& goal_str) {
+    if (goal_str == "REDUCE_TOKENS") {
+        return meta_prompt::OptimizationGoal::REDUCE_TOKENS;
+    } else if (goal_str == "IMPROVE_ACCURACY") {
+        return meta_prompt::OptimizationGoal::IMPROVE_ACCURACY;
+    } else if (goal_str == "BALANCED") {
+        return meta_prompt::OptimizationGoal::BALANCED;
+    } else if (goal_str == "DOMAIN_SPECIFIC") {
+        return meta_prompt::OptimizationGoal::DOMAIN_SPECIFIC;
+    } else {
+        std::cerr << "Warning: Unknown optimization goal '" << goal_str 
+                  << "', using BALANCED as default\n";
+        return meta_prompt::OptimizationGoal::BALANCED;
+    }
+}
+
+void MetaPromptHandler::display_compilation_result(const meta_prompt::CompilationResult& result,
+                                                  bool show_metrics,
+                                                  bool show_validation) {
+    std::cout << "\n=== META-PROMPT COMPILATION RESULTS ===" << std::endl;
+    
+    if (result.success) {
+        std::cout << "Status: ✅ SUCCESS" << std::endl;
+        
+        // Basic info
+        std::cout << "Original length: " << result.original_query.length() << " characters" << std::endl;
+        std::cout << "Optimized length: " << result.compiled_prompt.length() << " characters" << std::endl;
+        
+        if (!result.original_query.empty()) {
+            double reduction = ((double)(result.original_query.length() - result.compiled_prompt.length()) 
+                              / result.original_query.length()) * 100.0;
+            std::cout << "Size change: " << std::fixed << std::setprecision(1) << reduction << "%" << std::endl;
+        }
+        
+        // Show metrics if requested
+        if (show_metrics) {
+            std::cout << "\n" << format_metrics(result.metrics) << std::endl;
+        }
+        
+        // Show validation if requested  
+        if (show_validation) {
+            std::cout << "\n" << format_validation(result.validation_result) << std::endl;
+        }
+        
+    } else {
+        std::cout << "Status: ❌ FAILED" << std::endl;
+        std::cout << "Error: " << result.error_message << std::endl;
+        
+        if (show_metrics) {
+            std::cout << "\n" << format_metrics(result.metrics) << std::endl;
+        }
+    }
+}
+
+void MetaPromptHandler::print_optimize_usage() {
+    std::cout << "Usage: cql --optimize INPUT_FILE [OUTPUT_FILE] [OPTIONS]\n\n";
+    std::cout << "Options:\n";
+    std::cout << "  --mode <mode>           Compilation mode (LOCAL_ONLY, CACHED_LLM, FULL_LLM, ASYNC_LLM)\n";
+    std::cout << "  --goal <goal>           Optimization goal (REDUCE_TOKENS, IMPROVE_ACCURACY, BALANCED, DOMAIN_SPECIFIC)\n";
+    std::cout << "  --domain <domain>       Domain context for optimization\n";
+    std::cout << "  --show-metrics          Display detailed compilation metrics\n";
+    std::cout << "  --show-validation       Display semantic validation results\n\n";
+    std::cout << "Examples:\n";
+    std::cout << "  cql --optimize query.cql                    # Basic optimization\n";
+    std::cout << "  cql --optimize query.cql --goal REDUCE_TOKENS --show-metrics\n";
+    std::cout << "  cql --optimize query.cql optimized.cql --mode FULL_LLM --domain software\n";
+}
+
+std::string MetaPromptHandler::format_metrics(const meta_prompt::CompilationMetrics& metrics) {
+    std::ostringstream oss;
+    oss << "--- COMPILATION METRICS ---\n";
+    oss << "Compilation time: " << metrics.compilation_time.count() << " ms\n";
+    oss << "Cache hit: " << (metrics.cache_hit ? "Yes" : "No") << "\n";
+    oss << "Used LLM: " << (metrics.used_llm ? "Yes" : "No") << "\n";
+    
+    if (metrics.used_llm) {
+        oss << "Input tokens: " << metrics.input_tokens << "\n";
+        oss << "Output tokens: " << metrics.output_tokens << "\n";
+        oss << "LLM API time: " << metrics.llm_api_time.count() << " ms\n";
+        
+        if (metrics.token_reduction_percent > 0) {
+            oss << "Token reduction: " << std::fixed << std::setprecision(1) 
+                << metrics.token_reduction_percent << "%\n";
+        }
+        
+        if (metrics.actual_cost > 0) {
+            oss << "Actual cost: $" << std::fixed << std::setprecision(4) 
+                << metrics.actual_cost << "\n";
+        }
+    }
+    
+    return oss.str();
+}
+
+std::string MetaPromptHandler::format_validation(const meta_prompt::ValidationResult& validation) {
+    std::ostringstream oss;
+    oss << "--- SEMANTIC VALIDATION ---\n";
+    oss << "Semantically equivalent: " << (validation.is_semantically_equivalent ? "✅ Yes" : "❌ No") << "\n";
+    oss << "Confidence score: " << std::fixed << std::setprecision(2) << validation.confidence_score << "\n";
+    oss << "Validation method: " << validation.validation_method << "\n";
+    
+    return oss.str();
+}
+
+} // namespace cql

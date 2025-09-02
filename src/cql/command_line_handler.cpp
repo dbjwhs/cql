@@ -131,6 +131,13 @@ void CommandLineHandler::print_help() {
               << "  --overwrite             Overwrite existing files without prompting\n"
               << "  --create-dirs           Create missing directories for output files\n"
               << "  --no-save               Display generated code but don't save to files\n\n"
+              << "Meta-Prompt Compilation Options:\n"
+              << "  --optimize              Optimize the compiled query using meta-prompt compilation\n"
+              << "  --mode <mode>           Compilation mode (LOCAL_ONLY, CACHED_LLM, FULL_LLM, default: CACHED_LLM)\n"
+              << "  --goal <goal>           Optimization goal (REDUCE_TOKENS, IMPROVE_ACCURACY, BALANCED, DOMAIN_SPECIFIC)\n"
+              << "  --domain <domain>       Domain context for optimization (e.g., 'software', 'research', 'creative')\n"
+              << "  --show-metrics          Display compilation metrics (timing, token usage, cost estimation)\n"
+              << "  --show-validation       Display semantic validation results and confidence scores\n\n"
               << "If INPUT_FILE is provided, it will be processed as a CQL query.\n"
               << "If OUTPUT_FILE is also provided, the compiled query will be written to it.\n"
               << "If --clipboard option is used, the output will be copied to the clipboard.\n";

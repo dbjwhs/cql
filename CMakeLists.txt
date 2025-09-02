@@ -152,11 +152,12 @@ set(CQL_CORE_SOURCES
     src/cql/meta_prompt/circuit_breaker.cpp
     src/cql/meta_prompt/cost_controller.cpp
     src/cql/meta_prompt/validation_framework.cpp
+    src/cql/meta_prompt_handler.cpp
+    src/cql/command_line_handler.cpp
 )
 
 set(CQL_MAIN_SOURCES
     src/cql/main.cpp
-    src/cql/command_line_handler.cpp
     src/cql/template_operations.cpp
     src/cql/documentation_handler.cpp
     src/cql/application_controller.cpp
@@ -179,6 +180,7 @@ set(CQL_TEST_SOURCES
     src/cql/test_meta_prompt_foundation.cpp
     src/cql/test_hybrid_compiler.cpp
     src/cql/test_intelligent_cache.cpp
+    src/cql/test_meta_prompt_cli.cpp
 )
 
 # Find required packages
