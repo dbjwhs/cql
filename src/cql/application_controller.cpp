@@ -7,6 +7,7 @@
 #include "../../include/cql/template_operations.hpp"
 #include "../../include/cql/documentation_handler.hpp"
 #include "../../include/cql/api_client.hpp"
+#include "../../include/cql/meta_prompt_handler.hpp"
 #include "../../include/cql/error_context.hpp"
 #include <iostream>
 
@@ -146,6 +147,8 @@ int ApplicationController::run(int argc, char* argv[]) {
             cli::run_interactive();
         } else if (arg1 == "--submit") {
             return ApiClient::handle_submit_command(effective_argc, effective_argv);
+        } else if (arg1 == "--optimize") {
+            return MetaPromptHandler::handle_optimize_command(effective_argc, effective_argv);
         } else if (arg1 == "--templates" || arg1 == "-l") {
             TemplateOperations::list_templates();
         } else if (arg1 == "--template" || arg1 == "-T") {
