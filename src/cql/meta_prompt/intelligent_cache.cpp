@@ -495,7 +495,7 @@ std::string normalize_query(std::string_view query) {
     std::string result;
     result.reserve(query.size());
     
-    bool in_whitespace = false;
+    bool in_whitespace = true; // Start as true to skip leading whitespace
     bool in_quotes = false;
     char quote_char = '\0';
     
@@ -504,12 +504,14 @@ std::string normalize_query(std::string_view query) {
             in_quotes = true;
             quote_char = c;
             result += c;
+            in_whitespace = false;
         } else if (in_quotes && c == quote_char) {
             in_quotes = false;
             quote_char = '\0';
             result += c;
+            in_whitespace = false;
         } else if (!in_quotes && std::isspace(c)) {
-            if (!in_whitespace) {
+            if (!in_whitespace && !result.empty()) { // Only add space if we have content
                 result += ' ';
                 in_whitespace = true;
             }
