@@ -10,7 +10,7 @@ PROJECT_BRIEF          = "A compiler for generating Claude queries"
 OUTPUT_DIRECTORY       = ./docs
 
 # Input files
-INPUT                  = ./headers ./src
+INPUT = ./include ./src
 FILE_PATTERNS          = *.h *.hpp *.cpp
 RECURSIVE              = YES
 
