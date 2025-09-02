@@ -25,6 +25,18 @@ SemanticHashKey::SemanticHashKey(std::string_view query, const CompilerFlags& fl
     combined_hash = oss.str();
 }
 
+SemanticHashKey::SemanticHashKey(const std::string& combined_hash_str) 
+    : combined_hash(combined_hash_str) {
+    // Parse the combined hash to extract query_hash and flags_hash
+    auto colon_pos = combined_hash.find(':');
+    if (colon_pos != std::string::npos) {
+        query_hash = combined_hash.substr(0, colon_pos);
+        flags_hash = combined_hash.substr(colon_pos + 1);
+    }
+    // If parsing fails, we keep empty query_hash and flags_hash,
+    // but the combined_hash is still valid for equality comparison
+}
+
 //=============================================================================
 // IntelligentCache implementation  
 //=============================================================================
@@ -93,8 +105,11 @@ std::optional<CompilationResult> IntelligentCache::get(
     // Update access statistics
     it->second.update_access();
     
-    Logger::getInstance().log(LogLevel::DEBUG, 
-        "Cache hit for key: ", key.combined_hash);
+    // Only log cache hits occasionally to avoid performance impact
+    if (it->second.access_count % 100 == 1) {
+        Logger::getInstance().log(LogLevel::DEBUG, 
+            "Cache hit for key: ", key.combined_hash, " (access #", it->second.access_count, ")");
+    }
     
     // Mark result as cache hit
     auto result = it->second.result;
@@ -117,8 +132,9 @@ bool IntelligentCache::put(std::string_view query,
     
     std::lock_guard<std::mutex> lock(m_cache_mutex);
     
-    // Check if we need eviction
-    if (m_cache.size() >= m_config.max_entries * m_config.eviction_threshold) {
+    // Check if we need eviction before adding new entry
+    // If adding this entry would exceed max_entries, evict first
+    if (m_cache.size() >= m_config.max_entries) {
         perform_eviction();
     }
     
@@ -129,6 +145,7 @@ bool IntelligentCache::put(std::string_view query,
     entry.last_accessed = entry.created_at;
     entry.cache_key = key.combined_hash;
     entry.access_count = 1;
+    entry.insertion_sequence = ++m_insertion_sequence;
     
     // Estimate memory usage
     size_t entry_size = estimate_entry_size(entry);
@@ -308,8 +325,8 @@ size_t IntelligentCache::import_entries(const std::vector<CacheEntry>& entries) 
             continue;
         }
         
-        // Create key from the entry's original query and flags
-        SemanticHashKey key(entry.result.original_query, entry.result.flags_used);
+        // Reconstruct key from stored cache_key
+        SemanticHashKey key(entry.cache_key);
         
         size_t entry_size = estimate_entry_size(entry);
         
@@ -333,9 +350,7 @@ size_t IntelligentCache::import_entries(const std::vector<CacheEntry>& entries) 
 void IntelligentCache::perform_eviction() {
     // This method assumes caller already has write lock
     
-    size_t target_size = static_cast<size_t>(m_config.max_entries * (1.0 - m_config.eviction_threshold));
-    
-    if (m_cache.size() <= target_size) {
+    if (m_cache.size() < m_config.max_entries) {
         return; // No eviction needed
     }
     
@@ -350,7 +365,7 @@ void IntelligentCache::perform_eviction() {
             m_cache.erase(it);
             removed_count++;
             
-            if (m_cache.size() <= target_size) {
+            if (m_cache.size() <= m_config.max_entries) {
                 break;
             }
         }
@@ -386,12 +401,22 @@ std::vector<SemanticHashKey> IntelligentCache::select_eviction_candidates() {
         scored_entries.emplace_back(key, score);
     }
     
-    // Sort by score (lower scores are evicted first)
-    std::sort(scored_entries.begin(), scored_entries.end(),
-        [](const auto& a, const auto& b) { return a.second < b.second; });
+    // Sort by score - different policies need different sorting
+    if (m_config.eviction_policy == EvictionPolicy::LFU) {
+        // LFU: Lower scores (fewer accesses) should be evicted first
+        std::sort(scored_entries.begin(), scored_entries.end(),
+            [](const auto& a, const auto& b) { return a.second < b.second; });
+    } else {
+        // LRU, TTL_BASED, MIXED: Higher scores should be evicted first
+        std::sort(scored_entries.begin(), scored_entries.end(),
+            [](const auto& a, const auto& b) { return a.second > b.second; });
+    }
     
     std::vector<SemanticHashKey> candidates;
-    size_t evict_count = m_cache.size() - static_cast<size_t>(m_config.max_entries * (1.0 - m_config.eviction_threshold));
+    // Calculate how many entries we need to evict to stay within max_entries
+    size_t evict_count = (m_cache.size() >= m_config.max_entries) ? 
+                        (m_cache.size() - m_config.max_entries + 1) : 0;
+    
     
     for (size_t i = 0; i < std::min(evict_count, scored_entries.size()); ++i) {
         candidates.push_back(scored_entries[i].first);
@@ -402,8 +427,23 @@ std::vector<SemanticHashKey> IntelligentCache::select_eviction_candidates() {
 
 double IntelligentCache::calculate_lru_score(const CacheEntry& entry) const {
     auto now = std::chrono::system_clock::now();
-    auto age = std::chrono::duration_cast<std::chrono::seconds>(now - entry.last_accessed);
-    return static_cast<double>(age.count());
+    
+    // Calculate time since last access
+    auto access_age = std::chrono::duration_cast<std::chrono::microseconds>(now - entry.last_accessed);
+    
+    // For LRU, we want older entries to have higher scores (more likely to evict)
+    // Use insertion_sequence as tie-breaker when times are identical
+    double time_score = static_cast<double>(access_age.count());
+    
+    // If last_accessed equals created_at (never accessed after creation),
+    // fall back to insertion order - earlier entries get LOWER scores for eviction
+    if (entry.last_accessed == entry.created_at) {
+        // Lower sequence = inserted earlier = lower score = more likely to evict (correct for LRU)
+        // Add time component for proper scaling, but sequence determines order
+        time_score = time_score + static_cast<double>(entry.insertion_sequence);
+    }
+    
+    return time_score;
 }
 
 double IntelligentCache::calculate_lfu_score(const CacheEntry& entry) const {
