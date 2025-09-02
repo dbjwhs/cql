@@ -235,16 +235,28 @@ CompilationResult HybridCompilerImpl::compile(std::string_view query,
                 // Cache successful result
                 if (result.success && m_cache) {
                     bool cached = m_cache->put(query, flags, result);
-                    Logger::getInstance().log(LogLevel::DEBUG, 
-                        cached ? "Cached LLM result for future use" : "Failed to cache LLM result");
+                    if (cached) {
+                        Logger::getInstance().log(LogLevel::DEBUG, "Cached LLM result for future use");
+                    } else {
+                        auto stats = m_cache->get_statistics();
+                        Logger::getInstance().log(LogLevel::NORMAL, 
+                            "Failed to cache LLM result - cache entries: ", stats.entry_count,
+                            ", memory usage: ", m_cache->get_memory_usage(), " bytes");
+                    }
                 }
             } else {
                 // Fallback to local compilation and cache it
                 result = compile_local(query, flags);
                 if (result.success && m_cache) {
                     bool cached = m_cache->put(query, flags, result);
-                    Logger::getInstance().log(LogLevel::DEBUG, 
-                        cached ? "Cached local fallback result" : "Failed to cache local fallback result");
+                    if (cached) {
+                        Logger::getInstance().log(LogLevel::DEBUG, "Cached local fallback result");
+                    } else {
+                        auto stats = m_cache->get_statistics();
+                        Logger::getInstance().log(LogLevel::NORMAL, 
+                            "Failed to cache local fallback result - cache entries: ", stats.entry_count,
+                            ", memory usage: ", m_cache->get_memory_usage(), " bytes");
+                    }
                 }
             }
             break;
