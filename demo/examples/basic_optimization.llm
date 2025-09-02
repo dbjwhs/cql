@@ -1,0 +1,68 @@
+@copyright "MIT License" "2025 dbjwhs"
+@language "Python"
+@description "Create a comprehensive data processing pipeline for customer analytics with real-time updates, batch processing capabilities, historical data integration, machine learning model training and inference, automated reporting, dashboard generation, and performance monitoring"
+@context "Building a scalable enterprise data platform using Apache Kafka, Apache Spark, PostgreSQL, Redis, and Docker containers with Kubernetes orchestration for a financial services company processing millions of transactions daily"
+@architecture "Event-driven microservices architecture with distributed processing, caching layers, message queues, load balancers, auto-scaling groups, monitoring dashboards, alerting systems, backup strategies, and disaster recovery procedures"
+@constraint "Must handle 100,000+ transactions per second with sub-100ms latency, maintain 99.99% uptime, ensure GDPR compliance, implement end-to-end encryption, provide audit trails, support multi-region deployment, and integrate with existing legacy systems"
+@security "Implement OAuth2 authentication, role-based access control, API rate limiting, SQL injection prevention, XSS protection, data encryption at rest and in transit, secure key management, regular security audits, and compliance monitoring"
+@complexity "O(n log n) for data processing operations, O(1) for cache lookups, distributed consensus algorithms for consistency, partitioning strategies for scalability, and optimized query execution plans"
+@variable "batch_size" "10000"
+@variable "kafka_topics" "transactions,user_events,system_metrics"
+@variable "redis_ttl" "3600"
+@variable "ml_model_version" "v2.1.3"
+@example "Real-time Processing Pipeline" "
+# Configure Kafka consumer
+consumer = KafkaConsumer(
+    ${kafka_topics}.split(','),
+    bootstrap_servers=['kafka-cluster:9092'],
+    batch_size=${batch_size},
+    enable_auto_commit=True,
+    auto_offset_reset='latest'
+)
+
+# Initialize Redis cache
+redis_client = redis.Redis(
+    host='redis-cluster', 
+    port=6379, 
+    decode_responses=True,
+    default_ttl=${redis_ttl}
+)
+
+# Load ML model
+model = MLModel.load_version('${ml_model_version}')
+
+# Process streaming data
+for message in consumer:
+    data = json.loads(message.value)
+    processed_data = process_transaction(data)
+    prediction = model.predict(processed_data)
+    store_results(processed_data, prediction)
+"
+@example "Batch Processing Job" "
+# Spark configuration
+spark = SparkSession.builder \\
+    .appName('CustomerAnalytics') \\
+    .config('spark.sql.adaptive.enabled', 'true') \\
+    .config('spark.sql.adaptive.coalescePartitions.enabled', 'true') \\
+    .getOrCreate()
+
+# Read historical data
+df = spark.read.parquet('s3://data-lake/transactions/')
+daily_metrics = df.groupBy('customer_id', 'date') \\
+    .agg(
+        sum('amount').alias('total_spent'),
+        count('transaction_id').alias('transaction_count'),
+        avg('amount').alias('avg_transaction')
+    )
+
+# Write results
+daily_metrics.write.mode('overwrite').parquet('s3://analytics/daily_metrics/')
+"
+@test "Verify pipeline processes 100K transactions/second"
+@test "Check latency stays under 100ms for 99th percentile"  
+@test "Validate GDPR compliance with data anonymization"
+@test "Test disaster recovery and failover scenarios"
+@test "Ensure end-to-end encryption for all data flows"
+@test "Verify machine learning model accuracy above 95%"
+@test "Test auto-scaling under varying load conditions"
+@test "Validate audit trail completeness and integrity"

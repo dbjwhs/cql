@@ -1,0 +1,32 @@
+@copyright "MIT License" "2025 dbjwhs"
+@language "JavaScript"
+@description "Implement comprehensive user authentication system"
+@context "Modern web application with JWT tokens, OAuth2 integration, session management, and security best practices"
+@architecture "RESTful API with middleware-based authentication, token refresh mechanisms, and role-based access control"
+@constraint "Secure token handling, efficient session management, cross-site request forgery protection"
+@security "Password hashing, secure token storage, rate limiting, input validation"
+@complexity "O(1) for authentication checks, O(log n) for user lookups"
+@variable "jwt_secret" "your-secret-key"
+@variable "token_expiry" "3600"
+@example "JWT Authentication" "
+const jwt = require('jsonwebtoken');
+
+function generateToken(user) {
+    return jwt.sign(
+        { userId: user.id, role: user.role },
+        '${jwt_secret}',
+        { expiresIn: '${token_expiry}s' }
+    );
+}
+
+function verifyToken(token) {
+    try {
+        return jwt.verify(token, '${jwt_secret}');
+    } catch (error) {
+        throw new Error('Invalid token');
+    }
+}
+"
+@test "Test token generation and validation"
+@test "Verify token expiration handling"
+@test "Check role-based access control"
