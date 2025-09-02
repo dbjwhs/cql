@@ -30,6 +30,51 @@ fi
 echo -e "${GREEN}✅ CQL executable found${NC}"
 echo ""
 
+# Function to validate input parameters
+validate_input_parameters() {
+    local input_file="$1"
+    local mode="$2"
+    local goal="$3" 
+    local domain="$4"
+    
+    # Validate input file
+    if [[ -z "$input_file" ]]; then
+        echo -e "${RED}❌ Error: Input file parameter is required${NC}"
+        return 1
+    fi
+    
+    if [[ ! -f "$input_file" ]]; then
+        echo -e "${RED}❌ Error: Input file does not exist: $input_file${NC}"
+        return 1
+    fi
+    
+    # Validate mode parameter
+    case "$mode" in
+        "LOCAL_ONLY"|"CACHED_LLM"|"FULL_LLM"|"ASYNC_LLM") ;;
+        *) 
+            echo -e "${RED}❌ Error: Invalid mode '$mode'. Must be LOCAL_ONLY, CACHED_LLM, FULL_LLM, or ASYNC_LLM${NC}"
+            return 1
+            ;;
+    esac
+    
+    # Validate goal parameter
+    case "$goal" in
+        "REDUCE_TOKENS"|"IMPROVE_ACCURACY"|"BALANCED"|"DOMAIN_SPECIFIC") ;;
+        *)
+            echo -e "${RED}❌ Error: Invalid goal '$goal'. Must be REDUCE_TOKENS, IMPROVE_ACCURACY, BALANCED, or DOMAIN_SPECIFIC${NC}"
+            return 1
+            ;;
+    esac
+    
+    # Validate domain parameter (alphanumeric, underscore, hyphen only)
+    if [[ ! "$domain" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo -e "${RED}❌ Error: Invalid domain '$domain'. Only alphanumeric characters, underscore, and hyphen allowed${NC}"
+        return 1
+    fi
+    
+    return 0
+}
+
 # Function to run demo with metrics
 run_optimization_demo() {
     local input_file="$1"
@@ -46,9 +91,8 @@ run_optimization_demo() {
     echo -e "${YELLOW}Domain: $domain${NC}"
     echo ""
     
-    # Check if input file exists
-    if [[ ! -f "$input_file" ]]; then
-        echo -e "${RED}❌ Input file not found: $input_file${NC}"
+    # Validate all input parameters
+    if ! validate_input_parameters "$input_file" "$mode" "$goal" "$domain"; then
         return 1
     fi
     
@@ -60,12 +104,26 @@ run_optimization_demo() {
     echo -e "${GREEN}🔄 Running optimization...${NC}"
     echo ""
     
-    local cmd="$CQL_EXECUTABLE --optimize \"$input_file\" --mode \"$mode\" --goal \"$goal\" --domain \"$domain\" --show-metrics --show-validation"
-    echo -e "${YELLOW}Command: $cmd${NC}"
+    # Build command array for secure execution (no eval needed)
+    local cmd_array=(
+        "$CQL_EXECUTABLE"
+        "--optimize"
+        "$input_file"
+        "--mode"
+        "$mode"
+        "--goal"
+        "$goal"
+        "--domain" 
+        "$domain"
+        "--show-metrics"
+        "--show-validation"
+    )
+    
+    echo -e "${YELLOW}Command: ${cmd_array[*]}${NC}"
     echo ""
     
-    # Execute the command
-    if eval "$cmd"; then
+    # Execute the command securely using array expansion
+    if "${cmd_array[@]}"; then
         echo -e "${GREEN}✅ Optimization completed successfully${NC}"
     else
         echo -e "${RED}❌ Optimization failed${NC}"

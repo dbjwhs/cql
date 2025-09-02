@@ -34,10 +34,64 @@ class MetaPromptBenchmark:
             "chars": len(content)
         }
     
+    def _sanitize_filename(self, filename: str) -> str:
+        """Sanitize filename to prevent path traversal attacks"""
+        import re
+        # Remove any path separators and dangerous characters
+        safe_name = re.sub(r'[^\w\-_.]', '_', filename)
+        # Remove leading dots to prevent hidden files
+        safe_name = safe_name.lstrip('.')
+        # Ensure it's not empty and not too long
+        if not safe_name:
+            safe_name = "unnamed"
+        return safe_name[:50]  # Limit length
+    
+    def _validate_parameters(self, input_file: Path, mode: str, goal: str, domain: str) -> None:
+        """Validate input parameters for security and correctness"""
+        # Validate input file
+        if not input_file.exists():
+            raise ValueError(f"Input file does not exist: {input_file}")
+        
+        if not input_file.is_file():
+            raise ValueError(f"Input path is not a file: {input_file}")
+        
+        # Validate mode parameter
+        valid_modes = ["LOCAL_ONLY", "CACHED_LLM", "FULL_LLM", "ASYNC_LLM"]
+        if mode not in valid_modes:
+            raise ValueError(f"Invalid mode '{mode}'. Must be one of: {', '.join(valid_modes)}")
+        
+        # Validate goal parameter
+        valid_goals = ["REDUCE_TOKENS", "IMPROVE_ACCURACY", "BALANCED", "DOMAIN_SPECIFIC"]
+        if goal not in valid_goals:
+            raise ValueError(f"Invalid goal '{goal}'. Must be one of: {', '.join(valid_goals)}")
+        
+        # Validate domain parameter
+        import re
+        if not re.match(r'^[a-zA-Z0-9_-]+$', domain):
+            raise ValueError(f"Invalid domain '{domain}'. Only alphanumeric characters, underscore, and hyphen allowed")
+        
+        if len(domain) > 64:
+            raise ValueError(f"Domain name too long: {len(domain)} characters (max 64)")
+
     def run_optimization(self, input_file: Path, mode: str = "LOCAL_ONLY", 
                         goal: str = "BALANCED", domain: str = "software") -> Dict:
         """Run optimization and return metrics"""
-        output_file = self.demo_dir / "temp" / f"optimized_{input_file.stem}.txt"
+        # Validate all input parameters
+        try:
+            self._validate_parameters(input_file, mode, goal, domain)
+        except ValueError as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "execution_time": 0.0,
+                "mode": mode,
+                "goal": goal,
+                "domain": domain
+            }
+        
+        # Sanitize filename to prevent path traversal
+        safe_filename = self._sanitize_filename(input_file.stem)
+        output_file = self.demo_dir / "temp" / f"optimized_{safe_filename}.txt"
         output_file.parent.mkdir(exist_ok=True)
         
         cmd = [
