@@ -33,6 +33,7 @@ struct CacheEntry {
     std::chrono::system_clock::time_point last_accessed;
     size_t access_count = 1;
     std::string cache_key;
+    size_t insertion_sequence = 0;  // Track insertion order for LRU
     
     /**
      * @brief Check if entry has expired based on TTL
@@ -60,6 +61,9 @@ struct SemanticHashKey {
     std::string combined_hash;
     
     SemanticHashKey(std::string_view query, const CompilerFlags& flags);
+    
+    // Constructor for reconstructing key from combined_hash (for import)
+    explicit SemanticHashKey(const std::string& combined_hash_str);
     
     [[nodiscard]] bool operator==(const SemanticHashKey& other) const {
         return combined_hash == other.combined_hash;
@@ -271,6 +275,9 @@ private:
     // Statistics (protected by stats_mutex)
     mutable CacheStatistics m_stats;
     mutable size_t m_estimated_memory_usage = 0;
+    
+    // Insertion sequence tracking (protected by cache_mutex)
+    size_t m_insertion_sequence = 0;
     
     // Background cleanup
     std::chrono::system_clock::time_point m_last_cleanup;
