@@ -148,6 +148,10 @@ set(CQL_CORE_SOURCES
     src/cql/logger_bridge.cpp
     src/cql/meta_prompt/hybrid_compiler.cpp
     src/cql/meta_prompt/intelligent_cache.cpp
+    src/cql/meta_prompt/prompt_compiler.cpp
+    src/cql/meta_prompt/circuit_breaker.cpp
+    src/cql/meta_prompt/cost_controller.cpp
+    src/cql/meta_prompt/validation_framework.cpp
 )
 
 set(CQL_MAIN_SOURCES

@@ -3,6 +3,10 @@
 
 #include "cql/meta_prompt/hybrid_compiler.hpp"
 #include "cql/meta_prompt/intelligent_cache.hpp"
+#include "cql/meta_prompt/prompt_compiler.hpp"
+#include "cql/meta_prompt/circuit_breaker.hpp"
+#include "cql/meta_prompt/cost_controller.hpp"
+#include "cql/meta_prompt/validation_framework.hpp"
 #include "cql/project_utils.hpp"
 #include <chrono>
 #include <sstream>
@@ -197,14 +201,35 @@ HybridCompilerImpl::HybridCompilerImpl(
 
 HybridCompilerImpl::HybridCompilerImpl()
     : m_local_compiler(std::make_shared<DefaultLocalCompiler>())
-    , m_prompt_compiler(nullptr)  // Will be implemented in future PRs
-    , m_cache(create_intelligent_cache())
-    , m_validator(nullptr)
-    , m_circuit_breaker(nullptr)
-    , m_cost_controller(nullptr) {
+    , m_cache(create_intelligent_cache()) {
     
-    Logger::getInstance().log(LogLevel::INFO, 
-        "HybridCompiler initialized with IntelligentCache support");
+    // Initialize LLM components
+    try {
+        PromptCompilerConfig prompt_config;
+        m_prompt_compiler = std::make_shared<PromptCompiler>(prompt_config);
+        
+        CircuitBreakerConfig circuit_config;
+        m_circuit_breaker = std::make_shared<CircuitBreaker>(circuit_config);
+        
+        CostControllerConfig cost_config;
+        m_cost_controller = std::make_shared<CostController>(cost_config);
+        
+        ValidationConfig validation_config;
+        m_validator = create_validation_framework(validation_config);
+        
+        Logger::getInstance().log(LogLevel::INFO, 
+            "HybridCompiler initialized with full LLM integration support");
+            
+    } catch (const std::exception& e) {
+        Logger::getInstance().log(LogLevel::ERROR,
+            "Failed to initialize LLM components: ", e.what(),
+            " - falling back to local-only mode");
+        
+        m_prompt_compiler = nullptr;
+        m_circuit_breaker = nullptr;
+        m_cost_controller = nullptr;
+        m_validator = nullptr;
+    }
 }
 
 HybridCompilerImpl::~HybridCompilerImpl() = default;
@@ -333,24 +358,32 @@ bool HybridCompilerImpl::is_llm_available() const {
         return false;
     }
     
+    // Check if PromptCompiler has valid configuration
+    if (!m_prompt_compiler->is_available()) {
+        return false;
+    }
+    
     // Check circuit breaker state
-    if (m_circuit_breaker) {
-        // Circuit breaker implementation in future PR
+    if (m_circuit_breaker && !m_circuit_breaker->can_execute()) {
+        Logger::getInstance().log(LogLevel::DEBUG, 
+            "LLM unavailable - circuit breaker is open");
+        return false;
     }
     
     // Check cost budget
     if (m_cost_controller) {
-        // Cost controller implementation in future PR
+        if (m_cost_controller->is_daily_budget_exceeded() || 
+            m_cost_controller->is_monthly_budget_exceeded()) {
+            Logger::getInstance().log(LogLevel::DEBUG,
+                "LLM unavailable - budget exceeded");
+            return false;
+        }
     }
     
-    return false; // For now, LLM is not available
+    return true;
 }
 
 CacheStatistics HybridCompilerImpl::get_cache_statistics() const {
-    if (m_cache) {
-        return m_cache->get_statistics();
-    }
-    
     std::lock_guard<std::mutex> lock(m_stats_mutex);
     return m_cache_stats;
 }
@@ -410,14 +443,74 @@ std::optional<CompilationResult> HybridCompilerImpl::check_cache(
 }
 
 CompilationResult HybridCompilerImpl::compile_llm(std::string_view query,
-                                                 const CompilerFlags& /* flags */) {
-    // LLM compilation will be implemented in future PR
-    return CompilationResult::error_result("LLM compilation not yet implemented",
-                                          std::string(query));
+                                                 const CompilerFlags& flags) {
+    if (!m_prompt_compiler) {
+        return CompilationResult::error_result("PromptCompiler not available",
+                                              std::string(query));
+    }
+    
+    try {
+        // Estimate cost and check budget authorization
+        if (m_cost_controller) {
+            auto estimated_cost = m_prompt_compiler->estimate_cost(query, flags);
+            if (estimated_cost && !m_cost_controller->authorize_request(*estimated_cost)) {
+                Logger::getInstance().log(LogLevel::ERROR,
+                    "LLM request denied - would exceed budget limits");
+                return CompilationResult::error_result(
+                    "Request denied - budget limits would be exceeded",
+                    std::string(query));
+            }
+        }
+        
+        // Execute with circuit breaker protection
+        CompilationResult result;
+        bool success = false;
+        
+        if (m_circuit_breaker) {
+            success = m_circuit_breaker->execute([&]() {
+                result = m_prompt_compiler->compile(query, flags);
+                return result.success;
+            }, "llm_compilation");
+            
+            if (!success) {
+                return CompilationResult::error_result(
+                    "LLM compilation failed - circuit breaker rejected request",
+                    std::string(query));
+            }
+        } else {
+            result = m_prompt_compiler->compile(query, flags);
+        }
+        
+        // Record actual cost if successful
+        if (result.success && m_cost_controller && result.metrics.actual_cost > 0.0) {
+            m_cost_controller->record_cost(result.metrics.actual_cost, "compilation");
+            
+            // Record validation cost if applicable
+            if (result.validation_result.validation_method == "llm_semantic_validation") {
+                double validation_cost = result.metrics.actual_cost * 0.3; // Estimate
+                m_cost_controller->record_cost(validation_cost, "validation");
+            }
+        }
+        
+        return result;
+        
+    } catch (const std::exception& e) {
+        Logger::getInstance().log(LogLevel::ERROR,
+            "LLM compilation exception: ", e.what());
+        
+        // Record failure in circuit breaker
+        if (m_circuit_breaker) {
+            m_circuit_breaker->record_failure(e.what());
+        }
+        
+        return CompilationResult::error_result(
+            std::string("LLM compilation exception: ") + e.what(),
+            std::string(query));
+    }
 }
 
-ValidationResult HybridCompilerImpl::validate_result(std::string_view /* original */,
-                                                    std::string_view /* compiled */) {
+ValidationResult HybridCompilerImpl::validate_result(std::string_view original,
+                                                    std::string_view compiled) {
     if (!m_validator) {
         ValidationResult result;
         result.is_semantically_equivalent = true;
@@ -426,8 +519,15 @@ ValidationResult HybridCompilerImpl::validate_result(std::string_view /* origina
         return result;
     }
     
-    // Validator implementation in future PR
-    return ValidationResult{};
+    if (!m_validation_enabled.load()) {
+        ValidationResult result;
+        result.is_semantically_equivalent = true;
+        result.confidence_score = 1.0;
+        result.validation_method = "validation_disabled";
+        return result;
+    }
+    
+    return m_validator->validate_equivalence(original, compiled);
 }
 
 void HybridCompilerImpl::update_metrics(CompilationResult& result,
