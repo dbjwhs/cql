@@ -239,7 +239,7 @@ CompilationResult HybridCompilerImpl::compile(std::string_view query,
                         Logger::getInstance().log(LogLevel::DEBUG, "Cached LLM result for future use");
                     } else {
                         auto stats = m_cache->get_statistics();
-                        Logger::getInstance().log(LogLevel::NORMAL, 
+                        Logger::getInstance().log(LogLevel::ERROR, 
                             "Failed to cache LLM result - cache entries: ", stats.entry_count,
                             ", memory usage: ", m_cache->get_memory_usage(), " bytes");
                     }
@@ -253,7 +253,7 @@ CompilationResult HybridCompilerImpl::compile(std::string_view query,
                         Logger::getInstance().log(LogLevel::DEBUG, "Cached local fallback result");
                     } else {
                         auto stats = m_cache->get_statistics();
-                        Logger::getInstance().log(LogLevel::NORMAL, 
+                        Logger::getInstance().log(LogLevel::ERROR, 
                             "Failed to cache local fallback result - cache entries: ", stats.entry_count,
                             ", memory usage: ", m_cache->get_memory_usage(), " bytes");
                     }
