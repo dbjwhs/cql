@@ -384,10 +384,6 @@ bool HybridCompilerImpl::is_llm_available() const {
 }
 
 CacheStatistics HybridCompilerImpl::get_cache_statistics() const {
-    if (m_cache) {
-        return m_cache->get_statistics();
-    }
-    
     std::lock_guard<std::mutex> lock(m_stats_mutex);
     return m_cache_stats;
 }
