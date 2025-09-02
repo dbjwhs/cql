@@ -170,6 +170,7 @@ set(CQL_TEST_SOURCES
     src/cql/test_pluggable_logger.cpp
     src/cql/test_logger_bridge.cpp
     src/cql/test_live_anthropic_integration.cpp
+    src/cql/test_meta_prompt_foundation.cpp
 )
 
 # Find required packages
