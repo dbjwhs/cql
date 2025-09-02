@@ -6,6 +6,7 @@
 #include "../../include/cql/meta_prompt/hybrid_compiler.hpp"
 #include "../../include/cql/cql.hpp"
 #include "../../include/cql/project_utils.hpp"
+#include "../../include/cql/input_validator.hpp"
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -24,6 +25,10 @@ int MetaPromptHandler::handle_optimize_command(int argc, char* argv[]) {
         
         // Get input file (first positional argument after --optimize)
         std::string input_file = argv[2];
+        
+        // Validate input file path for security and resolve securely
+        // resolve_path_securely() already includes all validation from validate_file_path()
+        std::string secure_input_path = InputValidator::resolve_path_securely(input_file);
         
         // Parse compilation options
         meta_prompt::CompilationMode mode = meta_prompt::CompilationMode::CACHED_LLM;
@@ -45,6 +50,18 @@ int MetaPromptHandler::handle_optimize_command(int argc, char* argv[]) {
         // Parse --domain option
         if (auto domain_value = cmd_handler.get_option_value("--domain")) {
             domain = *domain_value;
+            
+            // Validate domain parameter for security
+            if (domain.size() > InputValidator::MAX_CATEGORY_NAME_LENGTH) {
+                std::cerr << "Error: Domain name too long (max: " << InputValidator::MAX_CATEGORY_NAME_LENGTH << ")\n";
+                return CQL_ERROR;
+            }
+            
+            // Check for safe characters only
+            if (!InputValidator::contains_only_safe_chars(domain, "a-zA-Z0-9_-")) {
+                std::cerr << "Error: Domain contains invalid characters. Only alphanumeric, underscore, and hyphen allowed.\n";
+                return CQL_ERROR;
+            }
         }
         
         // Parse display options
@@ -52,11 +69,33 @@ int MetaPromptHandler::handle_optimize_command(int argc, char* argv[]) {
         show_validation = cmd_handler.has_option("--show-validation");
         
         Logger::getInstance().log(LogLevel::INFO,
-            "Starting meta-prompt compilation for: ", input_file);
+            "Starting meta-prompt compilation for: ", 
+            InputValidator::sanitize_for_logging(secure_input_path));
         
-        // Read and compile the input query
-        std::string query_content = util::read_file(input_file);
-        std::string compiled_query = QueryProcessor::compile(query_content);
+        // Read and compile the input query using validated path
+        std::string query_content;
+        try {
+            query_content = util::read_file(secure_input_path);
+            
+            // Validate query content size
+            InputValidator::validate_query_length(query_content);
+            
+        } catch (const std::exception& e) {
+            std::cerr << "Error reading input file: " << e.what() << std::endl;
+            Logger::getInstance().log(LogLevel::ERROR,
+                "File read error: ", e.what());
+            return CQL_ERROR;
+        }
+        
+        std::string compiled_query;
+        try {
+            compiled_query = QueryProcessor::compile(query_content);
+        } catch (const std::exception& e) {
+            std::cerr << "Error compiling query: " << e.what() << std::endl;
+            Logger::getInstance().log(LogLevel::ERROR,
+                "Query compilation error: ", e.what());
+            return CQL_ERROR;
+        }
         
         Logger::getInstance().log(LogLevel::INFO,
             "Compiled query, starting optimization with mode: ", static_cast<int>(mode),
@@ -68,29 +107,79 @@ int MetaPromptHandler::handle_optimize_command(int argc, char* argv[]) {
         flags.goal = goal;
         flags.domain = domain;
         
-        // Create hybrid compiler
-        auto compiler = meta_prompt::HybridCompiler::create();
-        if (!compiler) {
-            std::cerr << "Error: Failed to create meta-prompt compiler\n";
+        // Create hybrid compiler with error handling
+        std::unique_ptr<meta_prompt::HybridCompiler> compiler;
+        try {
+            compiler = meta_prompt::HybridCompiler::create();
+            if (!compiler) {
+                std::cerr << "Error: Failed to create meta-prompt compiler\n";
+                Logger::getInstance().log(LogLevel::ERROR,
+                    "HybridCompiler creation failed");
+                return CQL_ERROR;
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Error creating compiler: " << e.what() << std::endl;
+            Logger::getInstance().log(LogLevel::ERROR,
+                "HybridCompiler creation exception: ", e.what());
             return CQL_ERROR;
         }
         
-        // Perform meta-prompt compilation
-        auto result = compiler->compile(compiled_query, flags);
+        // Perform meta-prompt compilation with error handling
+        meta_prompt::CompilationResult result;
+        try {
+            result = compiler->compile(compiled_query, flags);
+        } catch (const std::exception& e) {
+            std::cerr << "Error during compilation: " << e.what() << std::endl;
+            Logger::getInstance().log(LogLevel::ERROR,
+                "Meta-prompt compilation exception: ", e.what());
+            return CQL_ERROR;
+        }
         
         // Display results
         display_compilation_result(result, show_metrics, show_validation);
         
-        // Handle output
+        // Handle output with security validation
         if (result.success) {
             std::string output_file;
             if (argc > 3 && argv[3][0] != '-') {
                 output_file = argv[3];
-                util::write_file(output_file, result.compiled_prompt);
-                std::cout << "\nOptimized query written to: " << output_file << std::endl;
+                
+                // Validate output file path
+                try {
+                    // resolve_path_securely() already includes all validation from validate_file_path()
+                    std::string secure_output_path = InputValidator::resolve_path_securely(output_file);
+                    
+                    // Validate response size before writing
+                    InputValidator::validate_response_size(result.compiled_prompt);
+                    
+                    util::write_file(secure_output_path, result.compiled_prompt);
+                    std::cout << "\nOptimized query written to: " 
+                              << InputValidator::sanitize_for_logging(secure_output_path) << std::endl;
+                              
+                } catch (const SecurityValidationError& e) {
+                    std::cerr << "Security validation error for output file: " << e.what() << std::endl;
+                    Logger::getInstance().log(LogLevel::ERROR,
+                        "Output file security validation failed: ", e.what());
+                    return CQL_ERROR;
+                } catch (const std::exception& e) {
+                    std::cerr << "Error writing output file: " << e.what() << std::endl;
+                    Logger::getInstance().log(LogLevel::ERROR,
+                        "Output file write error: ", e.what());
+                    return CQL_ERROR;
+                }
             } else {
-                std::cout << "\n--- OPTIMIZED QUERY ---\n";
-                std::cout << result.compiled_prompt << std::endl;
+                try {
+                    // Validate response size before displaying
+                    InputValidator::validate_response_size(result.compiled_prompt);
+                    
+                    std::cout << "\n--- OPTIMIZED QUERY ---\n";
+                    std::cout << result.compiled_prompt << std::endl;
+                } catch (const SecurityValidationError& e) {
+                    std::cerr << "Response too large to display: " << e.what() << std::endl;
+                    Logger::getInstance().log(LogLevel::ERROR,
+                        "Response size validation failed: ", e.what());
+                    return CQL_ERROR;
+                }
             }
             return CQL_NO_ERROR;
         } else {
@@ -98,6 +187,11 @@ int MetaPromptHandler::handle_optimize_command(int argc, char* argv[]) {
             return CQL_ERROR;
         }
         
+    } catch (const SecurityValidationError& e) {
+        std::cerr << "Security validation error: " << e.what() << std::endl;
+        Logger::getInstance().log(LogLevel::ERROR,
+            "Security validation failed: ", e.what());
+        return CQL_ERROR;
     } catch (const std::exception& e) {
         std::cerr << "Error during meta-prompt compilation: " << e.what() << std::endl;
         Logger::getInstance().log(LogLevel::ERROR,
