@@ -2,6 +2,7 @@
 // Copyright (c) 2025 dbjwhs
 
 #include "cql/meta_prompt/hybrid_compiler.hpp"
+#include "cql/meta_prompt/intelligent_cache.hpp"
 #include "cql/project_utils.hpp"
 #include <chrono>
 #include <sstream>
@@ -197,13 +198,13 @@ HybridCompilerImpl::HybridCompilerImpl(
 HybridCompilerImpl::HybridCompilerImpl()
     : m_local_compiler(std::make_shared<DefaultLocalCompiler>())
     , m_prompt_compiler(nullptr)  // Will be implemented in future PRs
-    , m_cache(nullptr)
+    , m_cache(create_intelligent_cache())
     , m_validator(nullptr)
     , m_circuit_breaker(nullptr)
     , m_cost_controller(nullptr) {
     
     Logger::getInstance().log(LogLevel::INFO, 
-        "HybridCompiler initialized in LOCAL_ONLY mode");
+        "HybridCompiler initialized with IntelligentCache support");
 }
 
 HybridCompilerImpl::~HybridCompilerImpl() = default;
@@ -227,15 +228,24 @@ CompilationResult HybridCompilerImpl::compile(std::string_view query,
             // Check cache first
             if (auto cached = check_cache(query, flags)) {
                 result = *cached;
+                Logger::getInstance().log(LogLevel::DEBUG, 
+                    "Cache hit for CACHED_LLM mode");
             } else if (is_llm_available()) {
                 result = compile_llm(query, flags);
                 // Cache successful result
                 if (result.success && m_cache) {
-                    // Cache implementation in future PR
+                    bool cached = m_cache->put(query, flags, result);
+                    Logger::getInstance().log(LogLevel::DEBUG, 
+                        cached ? "Cached LLM result for future use" : "Failed to cache LLM result");
                 }
             } else {
-                // Fallback to local
+                // Fallback to local compilation and cache it
                 result = compile_local(query, flags);
+                if (result.success && m_cache) {
+                    bool cached = m_cache->put(query, flags, result);
+                    Logger::getInstance().log(LogLevel::DEBUG, 
+                        cached ? "Cached local fallback result" : "Failed to cache local fallback result");
+                }
             }
             break;
             
@@ -325,6 +335,10 @@ bool HybridCompilerImpl::is_llm_available() const {
 }
 
 CacheStatistics HybridCompilerImpl::get_cache_statistics() const {
+    if (m_cache) {
+        return m_cache->get_statistics();
+    }
+    
     std::lock_guard<std::mutex> lock(m_stats_mutex);
     return m_cache_stats;
 }
@@ -346,7 +360,8 @@ void HybridCompilerImpl::warm_cache(const std::vector<std::string>& common_queri
 
 void HybridCompilerImpl::clear_cache() {
     if (m_cache) {
-        // Cache implementation in future PR
+        m_cache->clear();
+        Logger::getInstance().log(LogLevel::INFO, "Cache cleared");
     }
     
     std::lock_guard<std::mutex> lock(m_stats_mutex);
@@ -374,13 +389,12 @@ CompilationResult HybridCompilerImpl::compile_local(std::string_view query,
 }
 
 std::optional<CompilationResult> HybridCompilerImpl::check_cache(
-    std::string_view /* query */, const CompilerFlags& /* flags */) {
+    std::string_view query, const CompilerFlags& flags) {
     if (!m_cache) {
         return std::nullopt;
     }
     
-    // Cache implementation in future PR
-    return std::nullopt;
+    return m_cache->get(query, flags);
 }
 
 CompilationResult HybridCompilerImpl::compile_llm(std::string_view query,

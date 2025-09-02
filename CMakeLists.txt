@@ -147,6 +147,7 @@ set(CQL_CORE_SOURCES
     src/cql/historic_logger_bridge.cpp
     src/cql/logger_bridge.cpp
     src/cql/meta_prompt/hybrid_compiler.cpp
+    src/cql/meta_prompt/intelligent_cache.cpp
 )
 
 set(CQL_MAIN_SOURCES
@@ -173,6 +174,7 @@ set(CQL_TEST_SOURCES
     src/cql/test_live_anthropic_integration.cpp
     src/cql/test_meta_prompt_foundation.cpp
     src/cql/test_hybrid_compiler.cpp
+    src/cql/test_intelligent_cache.cpp
 )
 
 # Find required packages
