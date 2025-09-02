@@ -26,8 +26,8 @@ int MetaPromptHandler::handle_optimize_command(int argc, char* argv[]) {
         // Get input file (first positional argument after --optimize)
         std::string input_file = argv[2];
         
-        // Validate input file path for security
-        InputValidator::validate_file_path(input_file);
+        // Validate input file path for security and resolve securely
+        // resolve_path_securely() already includes all validation from validate_file_path()
         std::string secure_input_path = InputValidator::resolve_path_securely(input_file);
         
         // Parse compilation options
@@ -58,7 +58,7 @@ int MetaPromptHandler::handle_optimize_command(int argc, char* argv[]) {
             }
             
             // Check for safe characters only
-            if (!InputValidator::contains_only_safe_chars(domain, "a-zA-Z0-9_\\-")) {
+            if (!InputValidator::contains_only_safe_chars(domain, "a-zA-Z0-9_-")) {
                 std::cerr << "Error: Domain contains invalid characters. Only alphanumeric, underscore, and hyphen allowed.\n";
                 return CQL_ERROR;
             }
@@ -146,7 +146,7 @@ int MetaPromptHandler::handle_optimize_command(int argc, char* argv[]) {
                 
                 // Validate output file path
                 try {
-                    InputValidator::validate_file_path(output_file);
+                    // resolve_path_securely() already includes all validation from validate_file_path()
                     std::string secure_output_path = InputValidator::resolve_path_securely(output_file);
                     
                     // Validate response size before writing
