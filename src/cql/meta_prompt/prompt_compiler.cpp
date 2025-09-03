@@ -88,7 +88,16 @@ CompilationResult PromptCompiler::compile(std::string_view query,
         request.model = m_config.model;
         request.temperature = m_config.temperature;
         request.max_tokens = m_config.max_tokens;
-        request.metadata["timeout"] = std::to_string(m_config.timeout.count());
+        
+        // Use custom timeout from flags if provided, otherwise use default config timeout
+        auto timeout_to_use = flags.custom_timeout.has_value() ? 
+                              *flags.custom_timeout : m_config.timeout;
+        request.metadata["timeout"] = std::to_string(timeout_to_use.count());
+        
+        if (flags.custom_timeout.has_value()) {
+            Logger::getInstance().log(LogLevel::DEBUG,
+                "Using custom timeout for LLM request: ", timeout_to_use.count(), " seconds");
+        }
 
         Logger::getInstance().log(LogLevel::DEBUG,
             "Sending meta-prompt compilation request to ", m_config.provider);

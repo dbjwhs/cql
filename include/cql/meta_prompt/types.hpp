@@ -72,6 +72,7 @@ struct CompilerFlags {
     std::string domain = "general";
     double cost_budget = 0.01; // $0.01 per compilation
     float temperature = 0.1f;  // Low for deterministic compilation
+    std::optional<std::chrono::seconds> custom_timeout; // Optional custom timeout override
 };
 
 /**

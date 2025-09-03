@@ -68,6 +68,24 @@ int MetaPromptHandler::handle_optimize_command(int argc, char* argv[]) {
         show_metrics = cmd_handler.has_option("--show-metrics");
         show_validation = cmd_handler.has_option("--show-validation");
         
+        // Parse --timeout option (in seconds)
+        std::chrono::seconds timeout_override{0};
+        if (auto timeout_value = cmd_handler.get_option_value("--timeout")) {
+            try {
+                int timeout_seconds = std::stoi(*timeout_value);
+                if (timeout_seconds < 1 || timeout_seconds > 600) { // 1 second to 10 minutes
+                    std::cerr << "Error: Timeout must be between 1 and 600 seconds\n";
+                    return CQL_ERROR;
+                }
+                timeout_override = std::chrono::seconds{timeout_seconds};
+                Logger::getInstance().log(LogLevel::INFO, 
+                    "Using custom timeout: ", timeout_seconds, " seconds");
+            } catch (const std::exception& e) {
+                std::cerr << "Error: Invalid timeout value '" << *timeout_value << "'\n";
+                return CQL_ERROR;
+            }
+        }
+        
         Logger::getInstance().log(LogLevel::INFO,
             "Starting meta-prompt compilation for: ", 
             InputValidator::sanitize_for_logging(secure_input_path));
@@ -106,6 +124,9 @@ int MetaPromptHandler::handle_optimize_command(int argc, char* argv[]) {
         flags.mode = mode;
         flags.goal = goal;
         flags.domain = domain;
+        if (timeout_override.count() > 0) {
+            flags.custom_timeout = timeout_override;
+        }
         
         // Create hybrid compiler with error handling
         std::unique_ptr<meta_prompt::HybridCompiler> compiler;
@@ -276,12 +297,13 @@ void MetaPromptHandler::print_optimize_usage() {
     std::cout << "  --mode <mode>           Compilation mode (LOCAL_ONLY, CACHED_LLM, FULL_LLM, ASYNC_LLM)\n";
     std::cout << "  --goal <goal>           Optimization goal (REDUCE_TOKENS, IMPROVE_ACCURACY, BALANCED, DOMAIN_SPECIFIC)\n";
     std::cout << "  --domain <domain>       Domain context for optimization\n";
+    std::cout << "  --timeout <seconds>     Network timeout in seconds (1-600, default: 120)\n";
     std::cout << "  --show-metrics          Display detailed compilation metrics\n";
     std::cout << "  --show-validation       Display semantic validation results\n\n";
     std::cout << "Examples:\n";
     std::cout << "  cql --optimize query.cql                    # Basic optimization\n";
     std::cout << "  cql --optimize query.cql --goal REDUCE_TOKENS --show-metrics\n";
-    std::cout << "  cql --optimize query.cql optimized.cql --mode FULL_LLM --domain software\n";
+    std::cout << "  cql --optimize query.cql optimized.cql --mode FULL_LLM --domain software --timeout 60\n";
 }
 
 std::string MetaPromptHandler::format_metrics(const meta_prompt::CompilationMetrics& metrics) {

