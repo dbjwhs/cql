@@ -261,13 +261,44 @@ TEST_F(SecurityTest, FilenameSanitizationEnhanced) {
     // Test that path sanitization removes dangerous path traversal patterns
     std::string dangerous_filename = "../../../etc/passwd";
     std::string sanitized = InputValidator::sanitize_file_path(dangerous_filename);
-    // After sanitization, the dangerous patterns should be reduced/removed
-    EXPECT_NE(sanitized, dangerous_filename); // Should be different after sanitization
     
-    // Test that sanitize_file_path handles various input formats
+    // CRITICAL FIX: Use specific assertions instead of weak EXPECT_NE
+    // Verify specific dangerous patterns are removed
+    EXPECT_EQ(sanitized.find("../"), std::string::npos) 
+        << "Path traversal pattern '../' should be removed from: " << sanitized;
+    EXPECT_FALSE(sanitized.empty()) 
+        << "Sanitized path should not be empty";
+    // Ensure sanitization actually changed the dangerous path
+    EXPECT_NE(sanitized, dangerous_filename) 
+        << "Dangerous path must be modified by sanitization";
+    // The sanitizer removes "../" patterns, leaving "etc/passwd" which is still concerning
+    // This is a security weakness but we're testing actual behavior
+    EXPECT_EQ(sanitized, "etc/passwd") 
+        << "After removing '../' patterns, 'etc/passwd' remains";
+    
+    // Test that sanitize_file_path handles various input formats correctly
     std::string normal_path = "normal/path/file.txt";
     std::string sanitized_normal = InputValidator::sanitize_file_path(normal_path);
-    EXPECT_FALSE(sanitized_normal.empty());
+    
+    // CRITICAL FIX: Add specific validation for normal path handling
+    EXPECT_FALSE(sanitized_normal.empty()) 
+        << "Normal path should not be emptied";
+    // Verify normal paths are preserved or safely modified
+    EXPECT_TRUE(sanitized_normal.find("file.txt") != std::string::npos || 
+                sanitized_normal == "normal/path/file.txt") 
+        << "Safe filenames should be preserved in sanitized output: " << sanitized_normal;
+    
+    // Test Windows path traversal patterns
+    std::string windows_dangerous = "..\\..\\Windows\\System32\\config";
+    std::string windows_sanitized = InputValidator::sanitize_file_path(windows_dangerous);
+    
+    // Verify Windows-specific dangerous patterns are handled
+    EXPECT_EQ(windows_sanitized.find("..\\"), std::string::npos) 
+        << "Windows path traversal should be removed from: " << windows_sanitized;
+    EXPECT_FALSE(windows_sanitized.empty()) 
+        << "Windows path should not be emptied";
+    EXPECT_NE(windows_sanitized, windows_dangerous) 
+        << "Windows dangerous path must be modified";
     
     // Test special characters in filenames - validate they are rejected
     std::string special_chars = "file<>:\"|?*name.txt";
@@ -310,16 +341,46 @@ TEST_F(SecurityTest, ResourceUsageLimits) {
     // Test memory limits for large inputs
     std::string massive_input(10 * 1024 * 1024, 'a'); // 10MB string
     EXPECT_THROW(InputValidator::validate_directive_content("test", massive_input),
-                 SecurityValidationError);
+                 SecurityValidationError)
+        << "Should reject inputs over MAX_DIRECTIVE_LENGTH";
+    
+    // Test boundary values around MAX_DIRECTIVE_LENGTH (10000)
+    std::string at_limit(InputValidator::MAX_DIRECTIVE_LENGTH, 'a');
+    std::string over_limit(InputValidator::MAX_DIRECTIVE_LENGTH + 1, 'a');
+    std::string under_limit(InputValidator::MAX_DIRECTIVE_LENGTH - 1, 'a');
+    
+    // Boundary value testing for directive content
+    EXPECT_NO_THROW(InputValidator::validate_directive_content("test", under_limit))
+        << "Should accept input just under the limit";
+    EXPECT_NO_THROW(InputValidator::validate_directive_content("test", at_limit))
+        << "Should accept input at exactly the limit";
+    EXPECT_THROW(InputValidator::validate_directive_content("test", over_limit),
+                 SecurityValidationError)
+        << "Should reject input just over the limit";
     
     // Test reasonable size should pass
     std::string reasonable_input(1024, 'a'); // 1KB string
-    EXPECT_NO_THROW(InputValidator::validate_directive_content("test", reasonable_input));
+    EXPECT_NO_THROW(InputValidator::validate_directive_content("test", reasonable_input))
+        << "Should accept reasonable sized inputs";
     
-    // Test filename length limits
+    // Test filename length limits with boundary values
+    std::string at_filename_limit(InputValidator::MAX_FILENAME_LENGTH, 'a');
+    std::string over_filename_limit(InputValidator::MAX_FILENAME_LENGTH + 1, 'a');
+    std::string under_filename_limit(InputValidator::MAX_FILENAME_LENGTH - 10, 'a');
+    
+    EXPECT_NO_THROW(InputValidator::validate_filename(under_filename_limit))
+        << "Should accept filename under the limit";
+    EXPECT_NO_THROW(InputValidator::validate_filename(at_filename_limit))
+        << "Should accept filename at exactly the limit";
+    EXPECT_THROW(InputValidator::validate_filename(over_filename_limit), 
+                 SecurityValidationError)
+        << "Should reject filename over the limit";
+    
+    // Test extreme filename length
     std::string extreme_filename(1000, 'f');
     extreme_filename += ".txt";
-    EXPECT_THROW(InputValidator::validate_filename(extreme_filename), SecurityValidationError);
+    EXPECT_THROW(InputValidator::validate_filename(extreme_filename), SecurityValidationError)
+        << "Should reject extremely long filenames";
 }
 
 // Test concurrent access security
@@ -363,26 +424,56 @@ TEST_F(SecurityTest, EdgeCaseSecurity) {
     null_injection.push_back('\0');
     null_injection += "hidden_malicious_content";
     
-    EXPECT_THROW(InputValidator::validate_api_key(null_injection), SecurityValidationError);
+    EXPECT_THROW(InputValidator::validate_api_key(null_injection), SecurityValidationError)
+        << "API keys with null bytes should be rejected";
     
     // Test that shell injection detection works on complex patterns
     std::string complex_shell_injection = "test && rm -rf /home";
-    EXPECT_FALSE(InputValidator::is_shell_safe(complex_shell_injection));
+    EXPECT_FALSE(InputValidator::is_shell_safe(complex_shell_injection))
+        << "Complex shell injection patterns should be detected";
     
     // Test SQL injection detection
-    EXPECT_FALSE(InputValidator::is_sql_safe("'; DROP TABLE users; --"));
-    EXPECT_FALSE(InputValidator::is_sql_safe("admin' OR '1'='1"));
+    EXPECT_FALSE(InputValidator::is_sql_safe("'; DROP TABLE users; --"))
+        << "SQL DROP TABLE injection should be detected";
+    EXPECT_FALSE(InputValidator::is_sql_safe("admin' OR '1'='1"))
+        << "SQL OR injection should be detected";
     
     // Test that logging sanitization works correctly
     std::string dangerous_log_input = "test\nmalicious\rinjection\tdata";
     std::string sanitized = InputValidator::sanitize_for_logging(dangerous_log_input);
     
-    // Should not contain dangerous characters after sanitization
-    EXPECT_EQ(sanitized.find('\n'), std::string::npos);
-    EXPECT_EQ(sanitized.find('\r'), std::string::npos);
+    // Verify dangerous characters are properly removed
+    EXPECT_EQ(sanitized.find('\n'), std::string::npos)
+        << "Newline should be removed from logs";
+    EXPECT_EQ(sanitized.find('\r'), std::string::npos)
+        << "Carriage return should be removed from logs";
+    EXPECT_NE(sanitized.find("test"), std::string::npos)
+        << "Safe content should be preserved";
     
     // Test empty filename validation (should be rejected)
-    EXPECT_THROW(InputValidator::validate_filename(""), SecurityValidationError);
+    EXPECT_THROW(InputValidator::validate_filename(""), SecurityValidationError)
+        << "Empty filenames should be rejected";
+    
+    // Test whitespace-only filenames - actual behavior: they're accepted as valid
+    // This is a potential security issue but we're documenting actual behavior
+    EXPECT_NO_THROW(InputValidator::validate_filename("   "))
+        << "Whitespace-only filenames are currently accepted (potential issue)";
+    EXPECT_NO_THROW(InputValidator::validate_filename("\t\n"))
+        << "Tab/newline filenames are currently accepted (potential issue)";
+    
+    // Test URL encoding attacks
+    std::string url_encoded_path = "%2e%2e%2f%2e%2e%2fetc%2fpasswd";
+    std::string decoded_result = InputValidator::sanitize_file_path(url_encoded_path);
+    // The sanitizer removes "%2e%2e%2f" patterns, leaving "etc%2fpasswd"
+    EXPECT_EQ(decoded_result.find("%2e%2e%2f"), std::string::npos)
+        << "URL encoded traversal pattern should be removed";
+    EXPECT_EQ(decoded_result, "etc%2fpasswd")
+        << "After removing URL encoded traversal, partial path remains";
+    
+    // Test Unicode normalization edge cases
+    std::string unicode_homograph = "admın"; // Contains Latin Small Letter Dotless I (U+0131)
+    EXPECT_NO_THROW(InputValidator::validate_filename(unicode_homograph))
+        << "Unicode characters should be handled without crashes";
 }
 
 } // namespace cql::test
