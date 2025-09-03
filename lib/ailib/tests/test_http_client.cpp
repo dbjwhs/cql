@@ -240,9 +240,7 @@ TEST_F(HttpClientTest, NoRetryOnClientError_Normal) {
     req.retry_policy.max_retries = 3;
     req.retry_policy.initial_delay = std::chrono::milliseconds(50);
     
-    auto start = std::chrono::steady_clock::now();
     auto response = m_client->send(req);
-    auto elapsed = std::chrono::steady_clock::now() - start;
     
     // Behavioral validation: 4xx errors should not retry
     EXPECT_FALSE(response.is_success());
