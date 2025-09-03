@@ -8,6 +8,9 @@ import os
 import subprocess
 import json
 import time
+import shutil
+import atexit
+import tempfile
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -17,6 +20,14 @@ class MetaPromptBenchmark:
         self.project_root = self.demo_dir.parent
         self.build_dir = build_dir or (self.project_root / "build")
         self.cql_executable = self.build_dir / "cql"
+        
+        # Set up temporary directory and cleanup tracking
+        self.temp_dir = self.demo_dir / "temp"
+        self.created_files = set()
+        self.cleanup_on_exit = True
+        
+        # Register cleanup function
+        atexit.register(self._cleanup_resources)
         
         # Verify executable exists
         if not self.cql_executable.exists():
@@ -91,8 +102,11 @@ class MetaPromptBenchmark:
         
         # Sanitize filename to prevent path traversal
         safe_filename = self._sanitize_filename(input_file.stem)
-        output_file = self.demo_dir / "temp" / f"optimized_{safe_filename}.txt"
+        output_file = self.temp_dir / f"optimized_{safe_filename}.txt"
         output_file.parent.mkdir(exist_ok=True)
+        
+        # Track created file for cleanup
+        self.created_files.add(output_file)
         
         cmd = [
             str(self.cql_executable),
@@ -267,6 +281,63 @@ class MetaPromptBenchmark:
         
         print(f"\n📊 Benchmark complete! Report saved to: {report_file}")
         return report
+    
+    def _cleanup_resources(self):
+        """Clean up temporary files and directories created during benchmarking"""
+        if not self.cleanup_on_exit:
+            return
+            
+        cleaned_files = 0
+        cleaned_dirs = 0
+        
+        try:
+            # Remove tracked temporary files
+            for file_path in self.created_files.copy():
+                if file_path.exists() and file_path.is_file():
+                    try:
+                        file_path.unlink()
+                        self.created_files.remove(file_path)
+                        cleaned_files += 1
+                    except (OSError, PermissionError) as e:
+                        print(f"Warning: Could not delete {file_path}: {e}")
+            
+            # Remove empty temp directory if it exists and is empty
+            if self.temp_dir.exists() and self.temp_dir.is_dir():
+                try:
+                    # Only remove if directory is empty or contains only our created files
+                    remaining_files = list(self.temp_dir.iterdir())
+                    if not remaining_files:
+                        self.temp_dir.rmdir()
+                        cleaned_dirs += 1
+                    else:
+                        # Check if remaining files are all our created files (that failed to delete)
+                        non_created_files = [f for f in remaining_files if f not in self.created_files]
+                        if not non_created_files:
+                            # All remaining files are ours, force cleanup
+                            shutil.rmtree(self.temp_dir)
+                            cleaned_dirs += 1
+                except OSError as e:
+                    print(f"Warning: Could not remove temp directory {self.temp_dir}: {e}")
+            
+            if cleaned_files > 0 or cleaned_dirs > 0:
+                print(f"🧹 Cleaned up {cleaned_files} temporary files and {cleaned_dirs} directories")
+                
+        except Exception as e:
+            print(f"Warning: Error during cleanup: {e}")
+    
+    def manual_cleanup(self):
+        """Manually trigger cleanup of temporary resources"""
+        self._cleanup_resources()
+    
+    def disable_auto_cleanup(self):
+        """Disable automatic cleanup on exit (useful for debugging)"""
+        self.cleanup_on_exit = False
+        print("ℹ️  Auto-cleanup disabled. Temporary files will be preserved.")
+    
+    def enable_auto_cleanup(self):
+        """Re-enable automatic cleanup on exit"""
+        self.cleanup_on_exit = True
+        print("ℹ️  Auto-cleanup enabled. Temporary files will be removed on exit.")
 
 def main():
     """Main entry point"""

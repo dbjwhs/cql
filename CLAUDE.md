@@ -181,9 +181,10 @@ auto response = provider->send_request(request);
 ### Testing Requirements
 - **Unit tests** for all public APIs (GoogleTest framework)
 - **Integration tests** for component interactions  
-- **Security tests** for input validation and path security
+- **Security tests** for input validation and path security (`./cql_test --gtest_filter="SecurityTest.*"`)
 - **Performance tests** for critical paths
 - **Memory safety** validation with comprehensive coverage
+- **Resource cleanup tests** ensure proper temporary file management
 
 ### Development Workflow
 ```bash
@@ -211,6 +212,8 @@ mkdir -p build && cd build && cmake .. && make
 
 ## Key Security Features
 
+CQL implements comprehensive enterprise-grade security measures. For detailed security information, see [docs/SECURITY.md](docs/SECURITY.md).
+
 ### SecureString Implementation
 ```cpp
 // Use SecureString for sensitive data
@@ -233,6 +236,21 @@ auto secure_path = InputValidator::resolve_path_securely(user_path);
 if (!secure_path) {
     return ValidationResult::error("Path traversal attempt detected");
 }
+```
+
+### Resource Cleanup
+```cpp
+// Automatic resource management with RAII
+#include "cql/resource_cleanup.hpp"
+ResourceCleanup cleanup;
+cleanup.register_temp_file(temp_path);
+// Automatic cleanup on destruction
+```
+
+### Network Timeout Configuration
+```bash
+# User-configurable timeouts
+cql --optimize query.llm --timeout 60  # 60 second timeout
 ```
 
 ### Unified JSON Handling
