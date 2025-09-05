@@ -116,6 +116,7 @@ make -j$(nproc)
 
 ## Current Development Focus
 - **AILib Integration**: Complete C++ AI provider library (Phase 1 COMPLETED)
+- **HTTP Client CI Reliability**: Recently COMPLETED comprehensive test architecture improvements
 - **Multi-Provider Support**: Expanding beyond Anthropic to OpenAI, Google Gemini
 - **Command-line interface enhancements** 
 - **Response parsing and file organization**
@@ -176,12 +177,46 @@ auto response = provider->send_request(request);
 - **Testing**: AILib tests run as part of main test suite
 - **Security**: All code follows enterprise security standards
 
+### HTTP Client CI Reliability (Recently Completed)
+
+**Problem Solved**: Jenkins CI tests were failing due to external service dependencies (httpbin.org returning 503 errors instead of expected status codes).
+
+**Solution Implemented** (PR #39): Comprehensive test architecture improvements:
+
+#### Test Architecture Changes
+- **Split conditional tests**: Converted 3 monolithic conditional tests into 8+ focused methods:
+  - `NoRetryOnClientError_Normal` / `NoRetryOnClientError_CIFallback`
+  - `RetryOnRateLimitError_Normal` / `RetryOnServerError_Fallback`  
+  - `ConfigWithCustomSettings_Normal` / `ConfigWithCustomSettings_Offline`
+
+#### Environment Controls for CI
+- **Environment variable support**: `CQL_SKIP_EXTERNAL_TESTS=1` 
+- **Proper test skipping**: Uses `GTEST_SKIP()` for clean CI integration
+- **Behavioral validation**: Focus on HTTP status codes and retry logic, not timing
+
+#### Test Doubles and Mocks
+- **MockHttpClientTest class**: 5 new offline tests using invalid domains
+- **Predictable failures**: `https://invalid-domain.fake` for consistent test results
+- **Network error simulation**: Tests retry behavior without external dependencies
+
+#### Test Utilities
+- **test_utils namespace**: Common utilities for retry testing
+- **RetryTestResult struct**: Standardized result validation
+- **simulate_retry_scenario()**: Helper for retry behavior testing
+
+#### Key Files Modified
+- **`/Users/dbjones/ng/dbjwhs/cql/lib/ailib/tests/test_http_client.cpp`**: Complete test restructuring
+- **Test Results**: All 28 HTTP client tests now passing consistently
+- **CI Integration**: Reliable execution with `CQL_SKIP_EXTERNAL_TESTS=1` in CI environments
+
 ## Testing & Development Workflow
 
 ### Testing Requirements
 - **Unit tests** for all public APIs (GoogleTest framework)
 - **Integration tests** for component interactions  
 - **Security tests** for input validation and path security (`./cql_test --gtest_filter="SecurityTest.*"`)
+- **HTTP Client tests** with CI reliability features (`./cql_test --gtest_filter="*HttpClient*"`)
+- **Environment-controlled testing** via `CQL_SKIP_EXTERNAL_TESTS=1` for CI systems
 - **Performance tests** for critical paths
 - **Memory safety** validation with comprehensive coverage
 - **Resource cleanup tests** ensure proper temporary file management
@@ -196,6 +231,12 @@ mkdir -p build && cd build && cmake .. && make
 
 # Run specific test suite
 ./cql_test --gtest_filter="CQLTest.*"
+
+# Run HTTP client tests with external service checks
+./cql_test --gtest_filter="*HttpClient*"
+
+# Run HTTP client tests without external dependencies (CI mode)
+CQL_SKIP_EXTERNAL_TESTS=1 ./cql_test --gtest_filter="*HttpClient*"
 
 # Before submitting changes, run the full test suite
 ./cql_test && echo "All tests passed - ready to commit"
@@ -286,6 +327,27 @@ When working on this project:
 - **Test comprehensively** - Security, functionality, and performance
 
 **Why this matters:** Taking shortcuts creates security vulnerabilities and technical debt. This project maintains enterprise-grade standards where systematic fixes are the only acceptable approach.
+
+## Recent Development Status
+
+### Completed Work (September 2025)
+- **✅ HTTP Client CI Reliability**: Comprehensive test architecture implemented
+  - **Branch**: `fix/http-client-ci-reliability` 
+  - **PR**: #39 - All review feedback addressed and implemented
+  - **Status**: Ready for merge - all tests passing, environment controls working
+  - **Last Commit**: `95fb241` - "fix: Remove unused variable in NoRetryOnClientError_Normal test"
+
+### Current Project State
+- **Main Branch**: `main` - Stable with AILib Phase 1 complete
+- **Active Branch**: `fix/http-client-ci-reliability` - HTTP client reliability improvements
+- **Build Status**: ✅ All tests passing (28 HTTP client tests + full test suite)
+- **CI Integration**: ✅ Environment variable controls implemented and tested
+- **Documentation**: ✅ Updated with latest changes and patterns
+
+### Next Steps
+- Merge PR #39 after final review
+- Continue with multi-provider support expansion
+- Performance optimization initiatives
 
 ### Context Notes
 - **Developer Experience**: Advanced - assume knowledge of modern C++ and security practices
