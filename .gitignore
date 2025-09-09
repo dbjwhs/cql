@@ -39,3 +39,10 @@ lib/
 **/compile_commands.json
 **/custom.log
 
+# Environment variables (API keys, secrets)
+.env
+.env.local
+.env.development
+.env.production
+
+
