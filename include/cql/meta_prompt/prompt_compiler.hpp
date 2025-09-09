@@ -131,7 +131,7 @@ Please analyze semantic equivalence and provide your assessment as JSON:
  */
 struct PromptCompilerConfig {
     std::string provider = "anthropic";           ///< AI provider to use
-    std::string model = "claude-3-sonnet-20240229"; ///< Model for compilation
+    std::string model = "claude-3-5-sonnet-20240620"; ///< Model for compilation
     std::string validation_model = "claude-3-haiku-20240307"; ///< Model for validation
     double temperature = 0.1;                     ///< Low temperature for consistency
     int max_tokens = 4096;                        ///< Maximum tokens per response
