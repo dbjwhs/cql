@@ -6,6 +6,7 @@
 #include <regex>
 #include <set>
 #include <optional>
+#include <cstdlib>
 #include "../../include/cql/cql.hpp"
 #include "../../include/cql/project_utils.hpp"
 #include "../../include/cql/input_validator.hpp"
@@ -84,6 +85,108 @@ std::set<std::string> extract_regex_group_values(
     }
     
     return values;
+}
+
+bool load_env_file(const std::string& filepath) {
+    try {
+        // Security: Validate and resolve file path securely
+        InputValidator::validate_file_path(filepath);
+        std::string secure_path = InputValidator::resolve_path_securely(filepath);
+        
+        Logger::getInstance().log(LogLevel::DEBUG, "Loading .env file: ", InputValidator::sanitize_for_logging(secure_path));
+        
+        // RAII: Use ifstream for automatic resource cleanup
+        std::ifstream env_file(secure_path);
+        if (!env_file.is_open()) {
+            Logger::getInstance().log(LogLevel::DEBUG, "Could not open .env file: ", InputValidator::sanitize_for_logging(secure_path));
+            return false; // File doesn't exist or can't be opened
+        }
+        
+        std::string line;
+        int line_number = 0;
+        
+        while (std::getline(env_file, line)) {
+            ++line_number;
+            
+            // Security: Validate line length
+            if (line.length() > InputValidator::MAX_DIRECTIVE_LENGTH) {
+                Logger::getInstance().log(LogLevel::ERROR, "Line too long in .env file at line ", line_number);
+                throw SecurityValidationError("Line too long in .env file");
+            }
+            
+            // Skip empty lines and comments
+            if (line.empty() || line[0] == '#') {
+                continue;
+            }
+            
+            // Find the '=' separator
+            size_t eq_pos = line.find('=');
+            if (eq_pos == std::string::npos) {
+                Logger::getInstance().log(LogLevel::DEBUG, "Skipping malformed line ", line_number, " in .env file");
+                continue; // Skip malformed lines
+            }
+            
+            std::string key = line.substr(0, eq_pos);
+            std::string value = line.substr(eq_pos + 1);
+            
+            // Trim whitespace from key
+            key.erase(0, key.find_first_not_of(" \t"));
+            key.erase(key.find_last_not_of(" \t") + 1);
+            
+            // Security: Validate environment variable key
+            if (key.empty()) {
+                Logger::getInstance().log(LogLevel::DEBUG, "Skipping empty key at line ", line_number);
+                continue;
+            }
+            
+            // Validate key format (alphanumeric and underscore only)
+            if (!InputValidator::contains_only_safe_chars(key, "A-Za-z0-9_")) {
+                Logger::getInstance().log(LogLevel::ERROR, "Invalid environment variable key format at line ", line_number);
+                throw SecurityValidationError("Invalid environment variable key format: " + InputValidator::sanitize_for_logging(key));
+            }
+            
+            // Security: Validate key and value lengths
+            if (key.length() > InputValidator::MAX_IDENTIFIER_LENGTH) {
+                throw SecurityValidationError("Environment variable key too long: " + InputValidator::sanitize_for_logging(key));
+            }
+            
+            if (value.length() > InputValidator::MAX_API_KEY_LENGTH * 2) { // Allow some flexibility for values
+                throw SecurityValidationError("Environment variable value too long for key: " + InputValidator::sanitize_for_logging(key));
+            }
+            
+            // Remove surrounding quotes from value if present
+            if (value.length() >= 2) {
+                if ((value.front() == '"' && value.back() == '"') ||
+                    (value.front() == '\'' && value.back() == '\'')) {
+                    value = value.substr(1, value.length() - 2);
+                }
+            }
+            
+            // Security: Validate shell safety for both key and value
+            if (!InputValidator::is_shell_safe(key) || !InputValidator::is_shell_safe(value)) {
+                Logger::getInstance().log(LogLevel::ERROR, "Potentially unsafe environment variable detected at line ", line_number);
+                throw SecurityValidationError("Potentially unsafe environment variable detected");
+            }
+            
+            // Set the environment variable securely
+            if (setenv(key.c_str(), value.c_str(), 1) != 0) {
+                Logger::getInstance().log(LogLevel::ERROR, "Failed to set environment variable: ", InputValidator::sanitize_for_logging(key));
+                throw std::runtime_error("Failed to set environment variable: " + InputValidator::sanitize_for_logging(key));
+            }
+            
+            // Debug logging (sanitized)
+            Logger::getInstance().log(LogLevel::DEBUG, "Set environment variable: ", InputValidator::sanitize_for_logging(key));
+        }
+        
+        Logger::getInstance().log(LogLevel::DEBUG, "Successfully loaded .env file with ", line_number, " lines processed");
+        return true;
+        
+    } catch (const SecurityValidationError&) {
+        throw; // Re-throw security errors as-is
+    } catch (const std::exception& e) {
+        Logger::getInstance().log(LogLevel::ERROR, "Error loading .env file: ", e.what());
+        return false;
+    }
 }
 
 } // namespace cql::util

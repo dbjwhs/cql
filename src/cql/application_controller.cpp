@@ -9,6 +9,7 @@
 #include "../../include/cql/api_client.hpp"
 #include "../../include/cql/meta_prompt_handler.hpp"
 #include "../../include/cql/error_context.hpp"
+#include "../../include/cql/input_validator.hpp"
 #include <iostream>
 
 namespace cql {
@@ -96,6 +97,31 @@ int ApplicationController::run(int argc, char* argv[]) {
     
     // Check if headers should be included (default is clean output)
     bool include_headers = cmd_handler.has_option("--include-header");
+    
+    // Check for --env flag to load .env file
+    std::string env_dummy;
+    if (cmd_handler.find_and_remove_option("--env", env_dummy)) {
+        try {
+            if (util::load_env_file()) {
+                // Only log if headers are enabled to keep output clean
+                if (include_headers) {
+                    std::cout << "Successfully loaded .env file" << std::endl;
+                }
+                logger.log(LogLevel::DEBUG, "Environment variables loaded from .env file");
+            } else {
+                std::cerr << "Warning: Could not load .env file" << std::endl;
+                logger.log(LogLevel::DEBUG, "Failed to load .env file - file may not exist");
+            }
+        } catch (const SecurityValidationError& e) {
+            std::cerr << "Security Error: " << e.what() << std::endl;
+            logger.log(LogLevel::ERROR, "Security validation failed for .env file: ", e.what());
+            return CQL_ERROR;
+        } catch (const std::exception& e) {
+            std::cerr << "Error loading .env file: " << e.what() << std::endl;
+            logger.log(LogLevel::ERROR, "Exception while loading .env file: ", e.what());
+            return CQL_ERROR;
+        }
+    }
     
     if (include_headers) {
         std::cout << "Starting CQL Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")..." << std::endl;

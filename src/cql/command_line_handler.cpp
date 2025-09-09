@@ -113,6 +113,7 @@ void CommandLineHandler::print_help() {
               << "  --version, -v           Show version information\n"
               << "  --interactive, -i       Run in interactive mode\n"
               << "  --clipboard, -c         Copy output to clipboard instead of writing to a file\n"
+              << "  --env                   Load environment variables from .env file\n"
               << "  --include-header        Include compiler headers and status messages in output\n"
               << "  --debug-level LEVEL     Set log level (INFO|NORMAL|DEBUG|ERROR|CRITICAL, default: DEBUG)\n"
               << "  --templates, -l         List all available templates\n"
