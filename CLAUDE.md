@@ -44,6 +44,28 @@ make -j$(nproc)
 - Copy output to clipboard: `build/cql input.llm --clipboard` or `build/cql --clipboard input.llm`
 - API integration: `build/cql --submit input.llm --output-dir ./output`
 
+### API Key Setup
+For live API integration and meta-prompt compilation:
+
+1. **Create `.env` file in project root:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Add your Anthropic API key:**
+   ```bash
+   # .env file
+   CQL_API_KEY=your-anthropic-api-key-here
+   ANTHROPIC_API_KEY=your-anthropic-api-key-here
+   ```
+
+3. **Test API connectivity:**
+   ```bash
+   ./build/cql_test --gtest_filter="LiveAnthropicIntegrationTest.BasicConnectivityTest"
+   ```
+
+**Note**: The `.env` file is git-ignored for security. Never commit API keys to version control.
+
 ## Coding Standards & Requirements
 
 ### Language & Style Requirements
