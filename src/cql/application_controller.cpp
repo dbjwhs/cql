@@ -97,6 +97,19 @@ int ApplicationController::run(int argc, char* argv[]) {
     // Check if headers should be included (default is clean output)
     bool include_headers = cmd_handler.has_option("--include-header");
     
+    // Check for --env flag to load .env file
+    std::string env_dummy;
+    if (cmd_handler.find_and_remove_option("--env", env_dummy)) {
+        if (util::load_env_file()) {
+            // Only log if headers are enabled to keep output clean
+            if (include_headers) {
+                std::cout << "Successfully loaded .env file" << std::endl;
+            }
+        } else {
+            std::cerr << "Warning: Could not load .env file" << std::endl;
+        }
+    }
+    
     if (include_headers) {
         std::cout << "Starting CQL Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")..." << std::endl;
     }

@@ -6,6 +6,7 @@
 #include <regex>
 #include <set>
 #include <optional>
+#include <cstdlib>
 #include "../../include/cql/cql.hpp"
 #include "../../include/cql/project_utils.hpp"
 #include "../../include/cql/input_validator.hpp"
@@ -84,6 +85,53 @@ std::set<std::string> extract_regex_group_values(
     }
     
     return values;
+}
+
+bool load_env_file(const std::string& filepath) {
+    try {
+        std::ifstream env_file(filepath);
+        if (!env_file.is_open()) {
+            return false; // File doesn't exist or can't be opened
+        }
+        
+        std::string line;
+        while (std::getline(env_file, line)) {
+            // Skip empty lines and comments
+            if (line.empty() || line[0] == '#') {
+                continue;
+            }
+            
+            // Find the '=' separator
+            size_t eq_pos = line.find('=');
+            if (eq_pos == std::string::npos) {
+                continue; // Skip malformed lines
+            }
+            
+            std::string key = line.substr(0, eq_pos);
+            std::string value = line.substr(eq_pos + 1);
+            
+            // Trim whitespace from key
+            key.erase(0, key.find_first_not_of(" \t"));
+            key.erase(key.find_last_not_of(" \t") + 1);
+            
+            // Remove surrounding quotes from value if present
+            if (!value.empty()) {
+                if ((value.front() == '"' && value.back() == '"') ||
+                    (value.front() == '\'' && value.back() == '\'')) {
+                    value = value.substr(1, value.length() - 2);
+                }
+            }
+            
+            // Set the environment variable
+            if (!key.empty()) {
+                setenv(key.c_str(), value.c_str(), 1);
+            }
+        }
+        
+        return true;
+    } catch (const std::exception&) {
+        return false;
+    }
 }
 
 } // namespace cql::util
