@@ -80,6 +80,7 @@ namespace util {
     
     // load and parse a .env file, setting environment variables
     // returns true if file was successfully loaded and parsed
+    // throws SecurityValidationError for security issues
     bool load_env_file(const std::string& filepath = ".env");
 }
 
