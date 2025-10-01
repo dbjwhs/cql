@@ -46,20 +46,20 @@ std::optional<std::string> CommandLineHandler::get_option_value(const std::strin
 bool CommandLineHandler::find_and_remove_option(const std::string& option, std::string& value) {
     auto new_argv = std::make_unique<char*[]>(m_argc);
     int new_argc = 0;
-    
+
     bool found = false;
     bool skip_next = false;
-    
+
     // Copy program name
     new_argv[new_argc++] = m_argv[0];
-    
+
     // Process remaining arguments
     for (int ndx = 1; ndx < m_argc; ++ndx) {
         if (skip_next) {
             skip_next = false;
             continue;
         }
-        
+
         if (std::string(m_argv[ndx]) == option && ndx + 1 < m_argc) {
             value = m_argv[ndx + 1];
             found = true;
@@ -68,18 +68,51 @@ bool CommandLineHandler::find_and_remove_option(const std::string& option, std::
             new_argv[new_argc++] = m_argv[ndx];
         }
     }
-    
+
     if (found) {
         m_argv = std::move(new_argv);
         m_argc = new_argc;
-        
+
         // Rebuild args vector
         m_args.clear();
         for (int i = 0; i < m_argc; ++i) {
             m_args.emplace_back(m_argv[i]);
         }
     }
-    
+
+    return found;
+}
+
+bool CommandLineHandler::find_and_remove_flag(const std::string& flag) {
+    auto new_argv = std::make_unique<char*[]>(m_argc);
+    int new_argc = 0;
+
+    bool found = false;
+
+    // Copy program name
+    new_argv[new_argc++] = m_argv[0];
+
+    // Process remaining arguments
+    for (int ndx = 1; ndx < m_argc; ++ndx) {
+        if (std::string(m_argv[ndx]) == flag) {
+            found = true;
+            // Skip this flag
+        } else {
+            new_argv[new_argc++] = m_argv[ndx];
+        }
+    }
+
+    if (found) {
+        m_argv = std::move(new_argv);
+        m_argc = new_argc;
+
+        // Rebuild args vector
+        m_args.clear();
+        for (int i = 0; i < m_argc; ++i) {
+            m_args.emplace_back(m_argv[i]);
+        }
+    }
+
     return found;
 }
 
@@ -115,7 +148,9 @@ void CommandLineHandler::print_help() {
               << "  --clipboard, -c         Copy output to clipboard instead of writing to a file\n"
               << "  --env                   Load environment variables from .env file\n"
               << "  --include-header        Include compiler headers and status messages in output\n"
-              << "  --debug-level LEVEL     Set log level (INFO|NORMAL|DEBUG|ERROR|CRITICAL, default: DEBUG)\n"
+              << "  --debug-level LEVEL     Set log level (INFO|NORMAL|DEBUG|ERROR|CRITICAL, default: NORMAL)\n"
+              << "  --log-console           Enable logging to console (default: file only)\n"
+              << "  --log-file PATH         Set log file path (default: cql.log)\n"
               << "  --templates, -l         List all available templates\n"
               << "  --template NAME, -T     Use a specific template\n"
               << "  --template NAME --force Use template even with validation errors\n"

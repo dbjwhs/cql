@@ -10,6 +10,8 @@
 #include "../../include/cql/meta_prompt_handler.hpp"
 #include "../../include/cql/error_context.hpp"
 #include "../../include/cql/input_validator.hpp"
+#include "../../include/cql/logger_manager.hpp"
+#include "../../include/cql/logger_adapters.hpp"
 #include <iostream>
 
 namespace cql {
@@ -79,28 +81,57 @@ int ApplicationController::run(int argc, char* argv[]) {
     
     // Create command line handler
     CommandLineHandler cmd_handler(argc, argv);
-    
+
     // Default debug level
     auto debug_level = LogLevel::NORMAL;
-    
+
     // Check for debug level in arguments
     std::string debug_level_str;
     if (cmd_handler.find_and_remove_option("--debug-level", debug_level_str)) {
         debug_level = string_to_log_level(debug_level_str);
     }
-    
-    // Initialize logger
+
+    // Check for logging configuration flags
+    bool log_to_console = cmd_handler.find_and_remove_flag("--log-console");
+
+    std::string log_file_path = "cql.log";  // Default log file
+    cmd_handler.find_and_remove_option("--log-file", log_file_path);
+
+    // Initialize logger based on configuration
+    // By default, log to file only. Use --log-console to also log to console.
+    if (log_to_console) {
+        // Use multi-logger for both file and console
+        auto multi_logger = std::make_unique<cql::adapters::MultiLogger>();
+
+        // Add file logger
+        auto file_logger = std::make_unique<cql::adapters::FileLogger>(log_file_path);
+        file_logger->set_min_level(debug_level);
+        multi_logger->add_logger(std::move(file_logger));
+
+        // Add console logger
+        auto console_logger = std::make_unique<cql::DefaultConsoleLogger>();
+        console_logger->set_min_level(debug_level);
+        multi_logger->add_logger(std::move(console_logger));
+
+        cql::LoggerManager::initialize(std::move(multi_logger));
+    } else {
+        // Default: log to file only
+        auto file_logger = std::make_unique<cql::adapters::FileLogger>(log_file_path);
+        file_logger->set_min_level(debug_level);
+        cql::LoggerManager::initialize(std::move(file_logger));
+    }
+
+    // Get logger reference after initialization
     auto& logger = Logger::getInstance();
-    
-    // Set the logging level
+
+    // Set the logging level (for backward compatibility with LoggerBridge)
     logger.setToLevelEnabled(debug_level);
     
     // Check if headers should be included (default is clean output)
-    bool include_headers = cmd_handler.has_option("--include-header");
-    
+    bool include_headers = cmd_handler.find_and_remove_flag("--include-header");
+
     // Check for --env flag to load .env file
-    std::string env_dummy;
-    if (cmd_handler.find_and_remove_option("--env", env_dummy)) {
+    if (cmd_handler.find_and_remove_flag("--env")) {
         try {
             if (util::load_env_file()) {
                 // Only log if headers are enabled to keep output clean
