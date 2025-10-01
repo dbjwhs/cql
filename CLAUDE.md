@@ -2,6 +2,39 @@
 
 This document provides comprehensive context for AI assistants working on the CQL project. It contains all essential information needed to understand the project structure, standards, and current state.
 
+## Current Work Status
+
+**Active Branch**: `feat/phase1-file-logging-by-default`
+**Current PR**: [#44 - Phase 1: Change default logging to file-only with optional console output](https://github.com/dbjwhs/cql/pull/44)
+
+### Phase 1 PR Status: Ready for Re-Review ✅
+
+**Completed Items:**
+- ✅ Initial implementation of file-only logging by default
+- ✅ Added `--log-console` flag for optional console output
+- ✅ Added `--log-file PATH` for custom log file paths
+- ✅ Implemented `find_and_remove_flag()` for boolean flag handling
+- ✅ **Review Feedback Addressed** (All 7 items completed):
+  - Added path validation using `InputValidator::resolve_path_securely()`
+  - Refactored code to reduce duplication in logger setup
+  - Added comprehensive unit tests (22 tests, all passing)
+  - Added integration tests for MultiLogger configuration
+  - Updated CLAUDE.md with logging configuration documentation
+
+**What's Next:**
+- Awaiting second review and approval
+- Phase 2-6 follow-up PRs planned (user output separation, log rotation, etc.)
+
+### Development Roadmap
+
+**Logging System Enhancement (Multi-Phase)**
+- ✅ Phase 1: File-only logging by default with `--log-console` option (PR #44 - In Review)
+- 📋 Phase 2: Separate user output from debug logging
+- 📋 Phase 3: Enhanced file logger configuration (rotation, timestamps)
+- 📋 Phase 4: Clean up mixed output patterns
+- 📋 Phase 5: Multi-logger with independent level control
+- 📋 Phase 6: Documentation and examples
+
 ## Project Overview
 
 **CQL (Claude Query Language)** is a modern C++20 compiler and development platform focused on building robust, high-performance query language processing with enterprise-grade security and tooling. The project emphasizes:
@@ -65,6 +98,72 @@ For live API integration and meta-prompt compilation:
    ```
 
 **Note**: The `.env` file is git-ignored for security. Never commit API keys to version control.
+
+### Logging Configuration
+
+CQL provides flexible logging configuration with secure file-based logging by default:
+
+#### Default Behavior (File Logging Only)
+- **Default**: Logs are written to `cql.log` in the current directory
+- **No console clutter**: Console output remains clean for user-facing content
+- **Security**: Log file paths are validated using `InputValidator::resolve_path_securely()` to prevent directory traversal attacks
+
+```bash
+# Default behavior - logs to cql.log only
+./build/cql input.llm output.txt
+```
+
+#### Command-Line Options
+
+**`--log-file PATH`** - Specify custom log file path
+```bash
+# Custom log file location
+./build/cql input.llm --log-file /var/log/cql/app.log
+
+# Relative path (validated for security)
+./build/cql input.llm --log-file ./logs/debug.log
+```
+
+**`--log-console`** - Enable console logging in addition to file logging
+```bash
+# Log to both file and console
+./build/cql input.llm --log-console
+
+# Combine with custom log file
+./build/cql input.llm --log-console --log-file debug.log
+```
+
+**`--debug-level LEVEL`** - Set minimum log level (INFO|NORMAL|DEBUG|ERROR|CRITICAL)
+```bash
+# Debug level logging to file
+./build/cql input.llm --debug-level DEBUG
+
+# Debug level logging to both file and console
+./build/cql input.llm --log-console --debug-level DEBUG
+```
+
+#### Logging Examples
+
+```bash
+# Production use - quiet console, detailed file logging
+./build/cql production.llm --debug-level INFO
+
+# Development - see logs in real-time
+./build/cql development.llm --log-console --debug-level DEBUG
+
+# Debugging specific issue - custom log location
+./build/cql problem.llm --log-console --debug-level DEBUG --log-file /tmp/debug.log
+
+# CI/CD pipeline - errors only to specific file
+./build/cql pipeline.llm --debug-level ERROR --log-file build.log
+```
+
+#### Security Considerations
+
+- **Path Validation**: All log file paths are validated to prevent directory traversal attacks
+- **Secure Resolution**: Uses `InputValidator::resolve_path_securely()` for path sanitization
+- **No Sensitive Data**: Avoid logging API keys, passwords, or other credentials
+- **Log Rotation**: Consider implementing log rotation for long-running processes
 
 ## Coding Standards & Requirements
 

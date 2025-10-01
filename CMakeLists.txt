@@ -176,6 +176,7 @@ set(CQL_TEST_SOURCES
     lib/ailib/tests/test_anthropic_provider.cpp
     src/cql/test_pluggable_logger.cpp
     src/cql/test_logger_bridge.cpp
+    src/cql/test_command_line_logging.cpp
     src/cql/test_live_anthropic_integration.cpp
     src/cql/test_meta_prompt_foundation.cpp
     src/cql/test_hybrid_compiler.cpp

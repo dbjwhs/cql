@@ -49,6 +49,13 @@ public:
     bool find_and_remove_option(const std::string& option, std::string& value);
 
     /**
+     * @brief Find and remove a boolean flag from the arguments
+     * @param flag The flag to find and remove (no value expected)
+     * @return true if the flag was found and removed
+     */
+    bool find_and_remove_flag(const std::string& flag);
+
+    /**
      * @brief Get positional arguments (non-option arguments)
      * @return Vector of positional arguments
      */
