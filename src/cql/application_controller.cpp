@@ -22,10 +22,36 @@ LogLevel ApplicationController::string_to_log_level(const std::string& level_str
     if (level_str == "DEBUG") return LogLevel::DEBUG;
     if (level_str == "ERROR") return LogLevel::ERROR;
     if (level_str == "CRITICAL") return LogLevel::CRITICAL;
-    
+
     // Default to DEBUG if invalid level provided
     std::cerr << "Warning: Invalid log level '" << level_str << "', using DEBUG instead." << std::endl;
     return LogLevel::DEBUG;
+}
+
+void ApplicationController::initialize_logger(bool log_to_console,
+                                             const std::string& log_file_path,
+                                             LogLevel debug_level) {
+    if (log_to_console) {
+        // Use multi-logger for both file and console
+        auto multi_logger = std::make_unique<cql::adapters::MultiLogger>();
+
+        // Add file logger
+        auto file_logger = std::make_unique<cql::adapters::FileLogger>(log_file_path);
+        file_logger->set_min_level(debug_level);
+        multi_logger->add_logger(std::move(file_logger));
+
+        // Add console logger
+        auto console_logger = std::make_unique<cql::DefaultConsoleLogger>();
+        console_logger->set_min_level(debug_level);
+        multi_logger->add_logger(std::move(console_logger));
+
+        cql::LoggerManager::initialize(std::move(multi_logger));
+    } else {
+        // Default: log to file only
+        auto file_logger = std::make_unique<cql::adapters::FileLogger>(log_file_path);
+        file_logger->set_min_level(debug_level);
+        cql::LoggerManager::initialize(std::move(file_logger));
+    }
 }
 
 int ApplicationController::handle_file_processing(const std::string& input_file,
@@ -97,29 +123,17 @@ int ApplicationController::run(int argc, char* argv[]) {
     std::string log_file_path = "cql.log";  // Default log file
     cmd_handler.find_and_remove_option("--log-file", log_file_path);
 
+    // Validate and secure the log file path
+    try {
+        log_file_path = InputValidator::resolve_path_securely(log_file_path);
+    } catch (const SecurityValidationError& e) {
+        std::cerr << "Security Error: Invalid log file path: " << e.what() << std::endl;
+        return CQL_ERROR;
+    }
+
     // Initialize logger based on configuration
     // By default, log to file only. Use --log-console to also log to console.
-    if (log_to_console) {
-        // Use multi-logger for both file and console
-        auto multi_logger = std::make_unique<cql::adapters::MultiLogger>();
-
-        // Add file logger
-        auto file_logger = std::make_unique<cql::adapters::FileLogger>(log_file_path);
-        file_logger->set_min_level(debug_level);
-        multi_logger->add_logger(std::move(file_logger));
-
-        // Add console logger
-        auto console_logger = std::make_unique<cql::DefaultConsoleLogger>();
-        console_logger->set_min_level(debug_level);
-        multi_logger->add_logger(std::move(console_logger));
-
-        cql::LoggerManager::initialize(std::move(multi_logger));
-    } else {
-        // Default: log to file only
-        auto file_logger = std::make_unique<cql::adapters::FileLogger>(log_file_path);
-        file_logger->set_min_level(debug_level);
-        cql::LoggerManager::initialize(std::move(file_logger));
-    }
+    initialize_logger(log_to_console, log_file_path, debug_level);
 
     // Get logger reference after initialization
     auto& logger = Logger::getInstance();

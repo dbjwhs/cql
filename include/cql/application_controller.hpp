@@ -45,6 +45,16 @@ private:
                                       const std::string& output_file,
                                       bool use_clipboard = false,
                                       bool include_header = false);
+
+    /**
+     * @brief Initialize the logger system with appropriate configuration
+     * @param log_to_console Enable console logging
+     * @param log_file_path Path to log file
+     * @param debug_level Minimum log level to use
+     */
+    static void initialize_logger(bool log_to_console,
+                                  const std::string& log_file_path,
+                                  LogLevel debug_level);
 };
 
 } // namespace cql

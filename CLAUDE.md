@@ -66,6 +66,72 @@ For live API integration and meta-prompt compilation:
 
 **Note**: The `.env` file is git-ignored for security. Never commit API keys to version control.
 
+### Logging Configuration
+
+CQL provides flexible logging configuration with secure file-based logging by default:
+
+#### Default Behavior (File Logging Only)
+- **Default**: Logs are written to `cql.log` in the current directory
+- **No console clutter**: Console output remains clean for user-facing content
+- **Security**: Log file paths are validated using `InputValidator::resolve_path_securely()` to prevent directory traversal attacks
+
+```bash
+# Default behavior - logs to cql.log only
+./build/cql input.llm output.txt
+```
+
+#### Command-Line Options
+
+**`--log-file PATH`** - Specify custom log file path
+```bash
+# Custom log file location
+./build/cql input.llm --log-file /var/log/cql/app.log
+
+# Relative path (validated for security)
+./build/cql input.llm --log-file ./logs/debug.log
+```
+
+**`--log-console`** - Enable console logging in addition to file logging
+```bash
+# Log to both file and console
+./build/cql input.llm --log-console
+
+# Combine with custom log file
+./build/cql input.llm --log-console --log-file debug.log
+```
+
+**`--debug-level LEVEL`** - Set minimum log level (INFO|NORMAL|DEBUG|ERROR|CRITICAL)
+```bash
+# Debug level logging to file
+./build/cql input.llm --debug-level DEBUG
+
+# Debug level logging to both file and console
+./build/cql input.llm --log-console --debug-level DEBUG
+```
+
+#### Logging Examples
+
+```bash
+# Production use - quiet console, detailed file logging
+./build/cql production.llm --debug-level INFO
+
+# Development - see logs in real-time
+./build/cql development.llm --log-console --debug-level DEBUG
+
+# Debugging specific issue - custom log location
+./build/cql problem.llm --log-console --debug-level DEBUG --log-file /tmp/debug.log
+
+# CI/CD pipeline - errors only to specific file
+./build/cql pipeline.llm --debug-level ERROR --log-file build.log
+```
+
+#### Security Considerations
+
+- **Path Validation**: All log file paths are validated to prevent directory traversal attacks
+- **Secure Resolution**: Uses `InputValidator::resolve_path_securely()` for path sanitization
+- **No Sensitive Data**: Avoid logging API keys, passwords, or other credentials
+- **Log Rotation**: Consider implementing log rotation for long-running processes
+
 ## Coding Standards & Requirements
 
 ### Language & Style Requirements
