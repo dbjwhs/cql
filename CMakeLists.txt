@@ -146,6 +146,8 @@ set(CQL_CORE_SOURCES
     src/cql/logger_adapters.cpp
     src/cql/historic_logger_bridge.cpp
     src/cql/logger_bridge.cpp
+    src/cql/user_output.cpp
+    src/cql/user_output_manager.cpp
     src/cql/meta_prompt/hybrid_compiler.cpp
     src/cql/meta_prompt/intelligent_cache.cpp
     src/cql/meta_prompt/prompt_compiler.cpp
@@ -177,6 +179,7 @@ set(CQL_TEST_SOURCES
     src/cql/test_pluggable_logger.cpp
     src/cql/test_logger_bridge.cpp
     src/cql/test_command_line_logging.cpp
+    src/cql/test_user_output.cpp
     src/cql/test_live_anthropic_integration.cpp
     src/cql/test_meta_prompt_foundation.cpp
     src/cql/test_hybrid_compiler.cpp

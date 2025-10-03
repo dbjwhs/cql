@@ -12,6 +12,7 @@
 #include "../../include/cql/input_validator.hpp"
 #include "../../include/cql/logger_manager.hpp"
 #include "../../include/cql/logger_adapters.hpp"
+#include "../../include/cql/user_output_manager.hpp"
 #include <iostream>
 
 namespace cql {
@@ -24,7 +25,7 @@ LogLevel ApplicationController::string_to_log_level(const std::string& level_str
     if (level_str == "CRITICAL") return LogLevel::CRITICAL;
 
     // Default to DEBUG if invalid level provided
-    std::cerr << "Warning: Invalid log level '" << level_str << "', using DEBUG instead." << std::endl;
+    UserOutputManager::warning("Invalid log level '", level_str, "', using DEBUG instead.");
     return LogLevel::DEBUG;
 }
 
@@ -60,13 +61,13 @@ int ApplicationController::handle_file_processing(const std::string& input_file,
                                                   bool include_header) {
     if (use_clipboard) {
         try {
-            std::cout << "Processing file: " << input_file << std::endl;
+            UserOutputManager::info("Processing file: ", input_file);
 
             // Copy to clipboard
             if (const std::string result = QueryProcessor::compile_file(input_file); util::copy_to_clipboard(result)) {
-                std::cout << "Compiled query copied to clipboard" << std::endl;
+                UserOutputManager::success("Compiled query copied to clipboard");
             } else {
-                std::cerr << "Failed to copy to clipboard" << std::endl;
+                UserOutputManager::error("Failed to copy to clipboard");
                 Logger::getInstance().log(LogLevel::ERROR, "Failed to copy to clipboard");
                 return CQL_ERROR;
             }
@@ -80,12 +81,12 @@ int ApplicationController::handle_file_processing(const std::string& input_file,
                 .detail("use_clipboard", use_clipboard ? "true" : "false")
                 .at(__FILE__ ":" + std::to_string(__LINE__))
                 .build();
-            
+
             // Log with full context for debugging
             error_context_utils::log_contextual_exception(contextual_error);
-            
+
             // Display user-friendly message
-            std::cerr << "Error: " << contextual_error.get_user_summary() << std::endl;
+            UserOutputManager::error(contextual_error.get_user_summary());
             return CQL_ERROR;
         }
     }
@@ -96,11 +97,14 @@ int ApplicationController::handle_file_processing(const std::string& input_file,
 }
 
 int ApplicationController::run(int argc, char* argv[]) {
+    // Initialize user output early for --version flag
+    UserOutputManager::initialize();
+
     // Check for --version flag early, before any logging
     if (argc > 1) {
         std::string first_arg = argv[1];
         if (first_arg == "--version" || first_arg == "-v") {
-            std::cout << "Claude Query Language (CQL) Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")" << std::endl;
+            UserOutputManager::info("Claude Query Language (CQL) Compiler v", CQL_VERSION_STRING, " (", CQL_BUILD_TIMESTAMP, ")");
             return CQL_NO_ERROR;
         }
     }
@@ -127,7 +131,7 @@ int ApplicationController::run(int argc, char* argv[]) {
     try {
         log_file_path = InputValidator::resolve_path_securely(log_file_path);
     } catch (const SecurityValidationError& e) {
-        std::cerr << "Security Error: Invalid log file path: " << e.what() << std::endl;
+        UserOutputManager::error("Security Error: Invalid log file path: ", e.what());
         return CQL_ERROR;
     }
 
@@ -148,38 +152,38 @@ int ApplicationController::run(int argc, char* argv[]) {
     if (cmd_handler.find_and_remove_flag("--env")) {
         try {
             if (util::load_env_file()) {
-                // Only log if headers are enabled to keep output clean
+                // Only show if headers are enabled to keep output clean
                 if (include_headers) {
-                    std::cout << "Successfully loaded .env file" << std::endl;
+                    UserOutputManager::success("Successfully loaded .env file");
                 }
                 logger.log(LogLevel::DEBUG, "Environment variables loaded from .env file");
             } else {
-                std::cerr << "Warning: Could not load .env file" << std::endl;
+                UserOutputManager::warning("Could not load .env file");
                 logger.log(LogLevel::DEBUG, "Failed to load .env file - file may not exist");
             }
         } catch (const SecurityValidationError& e) {
-            std::cerr << "Security Error: " << e.what() << std::endl;
+            UserOutputManager::error("Security Error: ", e.what());
             logger.log(LogLevel::ERROR, "Security validation failed for .env file: ", e.what());
             return CQL_ERROR;
         } catch (const std::exception& e) {
-            std::cerr << "Error loading .env file: " << e.what() << std::endl;
+            UserOutputManager::error("Error loading .env file: ", e.what());
             logger.log(LogLevel::ERROR, "Exception while loading .env file: ", e.what());
             return CQL_ERROR;
         }
     }
     
     if (include_headers) {
-        std::cout << "Starting CQL Compiler v" << CQL_VERSION_STRING << " (" << CQL_BUILD_TIMESTAMP << ")..." << std::endl;
+        UserOutputManager::info("Starting CQL Compiler v", CQL_VERSION_STRING, " (", CQL_BUILD_TIMESTAMP, ")...");
     }
-    
+
     // Only log startup info if headers are requested or debug level is explicitly set
     if (include_headers || !debug_level_str.empty()) {
         logger.log(LogLevel::INFO, "Starting CQL Compiler v", CQL_VERSION_STRING, " (", CQL_BUILD_TIMESTAMP, ")...");
-        
+
         // Log the debug level that was set
         const std::string level_name = debug_level == LogLevel::INFO ? "INFO" :
-                                 debug_level == LogLevel::NORMAL ? "NORMAL" : 
-                                 debug_level == LogLevel::DEBUG ? "DEBUG" : 
+                                 debug_level == LogLevel::NORMAL ? "NORMAL" :
+                                 debug_level == LogLevel::DEBUG ? "DEBUG" :
                                  debug_level == LogLevel::ERROR ? "ERROR" : "CRITICAL";
         logger.log(LogLevel::INFO, "Log level set to: ", level_name);
     }
@@ -187,11 +191,11 @@ int ApplicationController::run(int argc, char* argv[]) {
     // Get updated argc/argv after removing debug option
     int effective_argc = cmd_handler.get_argc();
     char** effective_argv = cmd_handler.get_argv();
-    
+
     // If the only argument was --debug-level, show help
     if (!debug_level_str.empty() && effective_argc == 1) {
-        std::cout << "Log level set to: " << debug_level_str << std::endl;
-        std::cout << "No other arguments provided." << std::endl;
+        UserOutputManager::info("Log level set to: ", debug_level_str);
+        UserOutputManager::info("No other arguments provided.");
         CommandLineHandler::print_help();
         return CQL_NO_ERROR;
     }
@@ -199,16 +203,16 @@ int ApplicationController::run(int argc, char* argv[]) {
     try {
         // Handle a case with no arguments
         if (effective_argc <= 1) {
-            std::cout << "No arguments provided." << std::endl;
+            UserOutputManager::info("No arguments provided.");
             CommandLineHandler::print_help();
-            std::cout << "\nTo run the application with a file, use: cql input.llm output.txt" << std::endl;
+            UserOutputManager::info("\nTo run the application with a file, use: cql input.llm output.txt");
             return CQL_NO_ERROR;
         }
 
         // Parse the first argument from our modified argument array
         const std::string arg1 = effective_argv[1];
         if (include_headers) {
-            std::cout << "Received argument: " << arg1 << std::endl;
+            UserOutputManager::info("Received argument: ", arg1);
         }
 
         // Dispatch to the appropriate handler based on the first argument
@@ -228,8 +232,8 @@ int ApplicationController::run(int argc, char* argv[]) {
             return TemplateOperations::handle_validate_command(effective_argc, effective_argv);
         } else if (arg1 == "--validate-all") {
             if (effective_argc < 3) {
-                std::cerr << "Error: Path required for --validate-all" << std::endl;
-                std::cerr << "Usage: cql --validate-all PATH" << std::endl;
+                UserOutputManager::error("Path required for --validate-all");
+                UserOutputManager::info("Usage: cql --validate-all PATH");
                 return CQL_ERROR;
             }
             return TemplateOperations::handle_validate_all_command(effective_argv[2]);
@@ -241,14 +245,14 @@ int ApplicationController::run(int argc, char* argv[]) {
             return DocumentationHandler::handle_export_command(effective_argc, effective_argv);
         } else if (arg1 == "--clipboard" || arg1 == "-c") {
             if (effective_argc < 3) {
-                std::cerr << "Error: Input file required when using --clipboard option" << std::endl;
+                UserOutputManager::error("Input file required when using --clipboard option");
                 return CQL_ERROR;
             }
             return handle_file_processing(effective_argv[2], "", true);
         } else if (arg1.substr(0, 2) == "--") {
             // Unknown option starting with "--"
-            std::cerr << "Error: Unknown option: " << arg1 << std::endl;
-            std::cerr << "Available options:" << std::endl;
+            UserOutputManager::error("Unknown option: ", arg1);
+            UserOutputManager::info("Available options:");
             CommandLineHandler::print_help();
             return CQL_ERROR;
         } else {
@@ -276,12 +280,12 @@ int ApplicationController::run(int argc, char* argv[]) {
             .detail("argc", std::to_string(effective_argc))
             .at(__FILE__ ":" + std::to_string(__LINE__))
             .build();
-        
+
         // Log with full context for debugging
         error_context_utils::log_contextual_exception(contextual_error);
-        
+
         // Display user-friendly message for fatal errors
-        std::cerr << "Fatal error: " << contextual_error.get_user_summary() << std::endl;
+        UserOutputManager::error("Fatal error: ", contextual_error.get_user_summary());
         return CQL_ERROR;
     }
 
