@@ -45,4 +45,10 @@ lib/
 .env.development
 .env.production
 
-
+# Debug and temporary files
+FULL_LLM
+REDUCE_TOKENS
+debug_output.log
+local.txt
+remote.txt
+*.log
