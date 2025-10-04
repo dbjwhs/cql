@@ -1,0 +1,13 @@
+2025-09-09 20:43:08.443 UTC [DEBUG] [Thread:0x208ab60c0] Loading .env file: /Users/dbjones/ng/dbjwhs/cql/.env
+2025-09-09 20:43:08.445 UTC [DEBUG] [Thread:0x208ab60c0] Set environment variable: CQL_API_KEY
+2025-09-09 20:43:08.445 UTC [DEBUG] [Thread:0x208ab60c0] Set environment variable: ANTHROPIC_API_KEY
+2025-09-09 20:43:08.445 UTC [DEBUG] [Thread:0x208ab60c0] Successfully loaded .env file with 2 lines processed
+Successfully loaded .env file
+2025-09-09 20:43:08.445 UTC [DEBUG] [Thread:0x208ab60c0] Environment variables loaded from .env file
+Starting CQL Compiler v0.1.0 (Sep  9 2025 13:16:12)...
+2025-09-09 20:43:08.445 UTC [INFO] [Thread:0x208ab60c0] Starting CQL Compiler v0.1.0 (Sep  9 2025 13:16:12)...
+2025-09-09 20:43:08.445 UTC [INFO] [Thread:0x208ab60c0] Log level set to: NORMAL
+Received argument: examples/compiler_frontend.llm
+Processing file: examples/compiler_frontend.llm
+Compiled query written to FULL_LLM
+2025-09-09 20:43:08.447 UTC [INFO] [Thread:0x208ab60c0] Compiled query written to FULL_LLM

@@ -1,0 +1,32 @@
+Please include the following copyright header at the top of all generated files:
+```
+// MIT License
+// Copyright (c) 2025 CQL Project Contributors
+```
+
+Please generate C++ code that:
+implement a simple logger class with multiple log levels
+
+Context:
+- Modern C++20 implementation
+- Thread-safe implementation
+
+Dependencies:
+- std::mutex, std::ofstream
+
+Performance Requirements:
+- Low overhead for disabled log levels
+
+Security Requirements:
+- Safe file handling
+
+Please include tests for the following cases:
+- Test all log levels
+- Test thread safety with concurrent logging
+- Test filtering by log level
+
+Quality Assurance Requirements:
+- All code must be well-documented with comments
+- Follow modern C++ best practices
+- Ensure proper error handling
+- Optimize for readability and maintainability

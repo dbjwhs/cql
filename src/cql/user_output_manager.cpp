@@ -63,18 +63,45 @@ void UserOutputManager::shutdown() {
 }
 
 void UserOutputManager::write(MessageType type, const std::string& message) {
-    get_output().write(type, message);
+    if (!is_initialized()) {
+        ensure_fallback_output();
+        s_fallback_output->write(type, message);
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(s_output_mutex);
+    if (s_output) {
+        s_output->write(type, message);
+    } else {
+        // Fallback in case output was cleared
+        ensure_fallback_output();
+        s_fallback_output->write(type, message);
+    }
 }
 
 void UserOutputManager::flush() {
-    get_output().flush();
+    if (!is_initialized()) {
+        ensure_fallback_output();
+        s_fallback_output->flush();
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(s_output_mutex);
+    if (s_output) {
+        s_output->flush();
+    }
 }
 
 bool UserOutputManager::is_enabled(MessageType type) {
     if (!is_initialized()) {
         return true; // Fallback output has all types enabled
     }
-    return get_output().is_enabled(type);
+
+    std::lock_guard<std::mutex> lock(s_output_mutex);
+    if (s_output) {
+        return s_output->is_enabled(type);
+    }
+    return true; // Default to enabled if output is null
 }
 
 void UserOutputManager::ensure_fallback_output() {

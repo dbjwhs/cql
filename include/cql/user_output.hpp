@@ -7,6 +7,7 @@
 #include <memory>
 #include <functional>
 #include <iostream>
+#include <array>
 
 namespace cql {
 
@@ -104,7 +105,7 @@ public:
 
 private:
     bool m_colored_output{true};
-    bool m_type_enabled[5]{true, true, true, true, true}; // One per MessageType
+    std::array<bool, 5> m_type_enabled{true, true, true, true, true}; // One per MessageType
 
     std::string get_color_code(MessageType type) const;
     std::string get_prefix(MessageType type) const;
@@ -139,7 +140,7 @@ public:
 private:
     std::string m_file_path;
     FILE* m_file{nullptr};
-    bool m_type_enabled[5]{true, true, true, true, true};
+    std::array<bool, 5> m_type_enabled{true, true, true, true, true};
 };
 
 /**

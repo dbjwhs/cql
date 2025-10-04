@@ -2,8 +2,18 @@
 // Copyright (c) 2025 dbjwhs
 
 #include "../../include/cql/user_output.hpp"
+#include "../../include/cql/input_validator.hpp"
 #include <cstdio>
 #include <cstring>
+
+// Platform-specific headers for isatty/fileno
+#ifdef _WIN32
+    #include <io.h>
+    #define isatty _isatty
+    #define fileno _fileno
+#else
+    #include <unistd.h>
+#endif
 
 namespace cql {
 
@@ -81,8 +91,17 @@ std::ostream& ConsoleUserOutput::get_stream(MessageType type) const {
 
 FileUserOutput::FileUserOutput(const std::string& file_path, bool append)
     : m_file_path(file_path) {
+    // Validate and secure the file path to prevent directory traversal attacks
+    try {
+        m_file_path = InputValidator::resolve_path_securely(file_path);
+    } catch (const std::exception&) {
+        // If validation fails, don't open the file
+        m_file = nullptr;
+        return;
+    }
+
     const char* mode = append ? "a" : "w";
-    m_file = fopen(file_path.c_str(), mode);
+    m_file = fopen(m_file_path.c_str(), mode);
 }
 
 FileUserOutput::~FileUserOutput() {
