@@ -216,6 +216,8 @@ bool handle_template_basic_commands(const std::string& line,
                     UserOutputManager::info("  - ", issue.to_string());
                 }
 
+                // Note: Interactive prompts intentionally use std::cout (not UserOutputManager)
+                // to maintain synchronization with std::cin and ensure prompt appears before input
                 std::cout << "Do you want to save the template anyway? (y/n): ";
                 std::string response;
                 std::getline(std::cin, response);
@@ -411,6 +413,8 @@ bool handle_variable_commands(const std::string& line,
 
         while (true) {
             std::string var_line;
+            // Note: Interactive prompts intentionally use std::cout (not UserOutputManager)
+            // to maintain synchronization with std::cin and ensure prompt appears before input
             std::cout << "var> ";
             std::getline(std::cin, var_line);
 
@@ -455,6 +459,8 @@ bool handle_template_use(const std::string& line, std::string& current_query
                     UserOutputManager::info("  - ", issue.to_string());
                 }
 
+                // Note: Interactive prompts intentionally use std::cout (not UserOutputManager)
+                // to maintain synchronization with std::cin and ensure prompt appears before input
                 std::cout << "Do you want to use this template anyway? (y/n): ";
                 std::string response;
                 std::getline(std::cin, response);
@@ -513,6 +519,8 @@ bool handle_template_use(const std::string& line, std::string& current_query
                 Logger::getInstance().log(LogLevel::INFO, "Template is missing values for these variables:");
 
                 for (const auto& var : missing_vars) {
+                    // Note: Interactive prompts intentionally use std::cout (not UserOutputManager)
+                    // to maintain synchronization with std::cin and ensure prompt appears before input
                     std::cout << "  Enter value for '" << var << "': ";
                     std::string value;
                     std::getline(std::cin, value);
@@ -593,6 +601,8 @@ bool handle_template_inheritance(const std::string& line, std::string& current_q
                     UserOutputManager::info("  - ", issue.to_string());
                 }
 
+                // Note: Interactive prompts intentionally use std::cout (not UserOutputManager)
+                // to maintain synchronization with std::cin and ensure prompt appears before input
                 std::cout << "Do you want to save the template anyway? (y/n): ";
                 std::string response;
                 std::getline(std::cin, response);
@@ -632,7 +642,7 @@ bool handle_template_inheritance(const std::string& line, std::string& current_q
                     } else if (i == chain.size() - 1) {
                         UserOutputManager::info("  Current: ", chain[i]);
                     } else {
-                        UserOutputManager::info("  Parent ", std::to_string(i), ": ", chain[i]);
+                        UserOutputManager::info("  Parent ", i, ": ", chain[i]);
                     }
                 }
             }
@@ -657,9 +667,9 @@ bool handle_template_validation(const std::string& line, const TemplateManager& 
             UserOutputManager::info("------------------------------------------");
 
             if (result.has_issues()) {
-                UserOutputManager::info("Found ", std::to_string(result.count_errors()), " errors, ",
-                          std::to_string(result.count_warnings()), " warnings, ",
-                          std::to_string(result.count_infos()), " info messages.");
+                UserOutputManager::info("Found ", result.count_errors(), " errors, ",
+                          result.count_warnings(), " warnings, ",
+                          result.count_infos(), " info messages.");
 
                 // print errors
                 if (result.count_errors() > 0) {
@@ -697,7 +707,7 @@ bool handle_template_validation(const std::string& line, const TemplateManager& 
             if (const auto templates = template_manager.list_templates(); templates.empty()) {
                 Logger::getInstance().log(LogLevel::INFO, "No templates found to validate");
             } else {
-                UserOutputManager::info("Validating ", std::to_string(templates.size()), " templates...");
+                UserOutputManager::info("Validating ", templates.size(), " templates...");
                 UserOutputManager::info("----------------------------");
 
                 size_t error_count = 0;
@@ -719,11 +729,11 @@ bool handle_template_validation(const std::string& line, const TemplateManager& 
                     // print progress
                     if (result.has_issues(TemplateValidationLevel::ERROR)) {
                         templates_with_errors.push_back(tmpl);
-                        UserOutputManager::info("❌ ", tmpl, ": ", std::to_string(result.count_errors()), " errors, ",
-                                  std::to_string(result.count_warnings()), " warnings");
+                        UserOutputManager::info("❌ ", tmpl, ": ", result.count_errors(), " errors, ",
+                                  result.count_warnings(), " warnings");
                     } else if (result.has_issues(TemplateValidationLevel::WARNING)) {
                         templates_with_warnings.push_back(tmpl);
-                        UserOutputManager::info("⚠️ ", tmpl, ": ", std::to_string(result.count_warnings()), " warnings");
+                        UserOutputManager::info("⚠️ ", tmpl, ": ", result.count_warnings(), " warnings");
                     } else {
                         UserOutputManager::info("✅ ", tmpl, ": No issues");
                     }
@@ -732,11 +742,11 @@ bool handle_template_validation(const std::string& line, const TemplateManager& 
                 // print summary
                 UserOutputManager::info("\nValidation Summary:");
                 UserOutputManager::info("----------------------------");
-                UserOutputManager::info("Templates validated: ", std::to_string(templates.size()));
-                UserOutputManager::info("Total issues: ", std::to_string(error_count + warning_count + info_count), " (",
-                          std::to_string(error_count), " errors, ",
-                          std::to_string(warning_count), " warnings, ",
-                          std::to_string(info_count), " info messages)");
+                UserOutputManager::info("Templates validated: ", templates.size());
+                UserOutputManager::info("Total issues: ", error_count + warning_count + info_count, " (",
+                          error_count, " errors, ",
+                          warning_count, " warnings, ",
+                          info_count, " info messages)");
 
                 // list templates with errors
                 if (!templates_with_errors.empty()) {
@@ -1097,6 +1107,8 @@ void run_interactive() {
      */
     while (true) {
         // Prompt and read user input
+        // Note: Interactive prompts intentionally use std::cout (not UserOutputManager)
+        // to maintain synchronization with std::cin and ensure prompt appears before input
         std::cout << "> ";
         std::getline(std::cin, line);
 
@@ -1217,7 +1229,7 @@ std::vector<GeneratedFile> process_api_response(const ApiResponse& response, Api
     std::vector<GeneratedFile> files = processor.process_response(response.m_raw_response);
 
     Logger::getInstance().log(LogLevel::INFO, "Generated ", files.size(), " files:");
-    UserOutputManager::info("Generated ", std::to_string(files.size()), " files:");
+    UserOutputManager::info("Generated ", files.size(), " files:");
 
     for (const auto& file : files) {
         Logger::getInstance().log(LogLevel::INFO, "- ", file.m_filename);
