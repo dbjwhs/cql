@@ -5,6 +5,7 @@
 
 #include <string>
 #include "project_utils.hpp"
+#include "logger_adapters.hpp"
 
 namespace cql {
 
@@ -51,10 +52,23 @@ private:
      * @param log_to_console Enable console logging
      * @param log_file_path Path to log file
      * @param debug_level Minimum log level to use
+     * @param rotation_max_size Maximum file size for rotation (0 = disabled)
+     * @param rotation_max_files Maximum number of rotated files to keep
+     * @param timestamp_format Timestamp format for log messages
      */
     static void initialize_logger(bool log_to_console,
                                   const std::string& log_file_path,
-                                  LogLevel debug_level);
+                                  LogLevel debug_level,
+                                  size_t rotation_max_size = 0,
+                                  size_t rotation_max_files = 5,
+                                  const std::string& timestamp_format = "simple");
+
+    /**
+     * @brief Convert string to TimestampFormat
+     * @param format_str String representation of timestamp format
+     * @return TimestampFormat enum value
+     */
+    [[nodiscard]] static cql::adapters::TimestampFormat string_to_timestamp_format(const std::string& format_str);
 };
 
 } // namespace cql

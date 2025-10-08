@@ -128,15 +128,31 @@ private:
 #endif // BOOST_LOG_VERSION
 
 /**
- * @brief File-based logger implementation
- * 
- * A simple file logger that writes messages to a specified file.
- * Useful when you want file logging without external dependencies.
- * 
+ * @brief Timestamp format options for log messages
+ */
+enum class TimestampFormat {
+    ISO8601,      // 2025-10-07T14:30:45.123Z
+    ISO8601_LOCAL,// 2025-10-07T14:30:45.123-0700
+    SIMPLE,       // 2025-10-07 14:30:45.123
+    EPOCH_MS,     // Milliseconds since epoch
+    NONE          // No timestamp
+};
+
+/**
+ * @brief File-based logger implementation with rotation and configuration
+ *
+ * Enhanced file logger with support for:
+ * - Log file rotation based on size
+ * - Configurable timestamp formats
+ * - Automatic retention of rotated files
+ * - Thread-safe operations
+ *
  * Usage:
  * @code
  * auto file_logger = std::make_unique<cql::adapters::FileLogger>("app.log");
  * file_logger->set_min_level(cql::LogLevel::INFO);
+ * file_logger->enable_rotation(10 * 1024 * 1024, 5); // 10MB, keep 5 files
+ * file_logger->set_timestamp_format(TimestampFormat::ISO8601);
  * cql::LoggerManager::initialize(std::move(file_logger));
  * @endcode
  */
@@ -148,36 +164,77 @@ public:
      * @param append If true, append to existing file; if false, truncate
      */
     explicit FileLogger(const std::string& file_path, bool append = true);
-    
+
     /**
      * @brief Destructor that ensures file is closed
      */
     ~FileLogger() override;
-    
+
     void log(LogLevel level, const std::string& message) override;
     bool is_level_enabled(LogLevel level) const override;
     void flush() override;
-    
+
     /**
      * @brief Set the minimum log level
      * @param min_level Messages below this level will be filtered out
      */
     void set_min_level(LogLevel min_level);
-    
+
     /**
      * @brief Enable or disable automatic flushing after each message
      * @param enable true to enable auto-flush, false to buffer messages
      */
     void set_auto_flush(bool enable);
 
+    /**
+     * @brief Enable log file rotation
+     * @param max_size_bytes Maximum file size before rotation (in bytes)
+     * @param max_files Maximum number of rotated files to keep (0 = unlimited)
+     */
+    void enable_rotation(size_t max_size_bytes, size_t max_files = 5);
+
+    /**
+     * @brief Disable log file rotation
+     */
+    void disable_rotation();
+
+    /**
+     * @brief Set the timestamp format for log messages
+     * @param format Timestamp format to use
+     */
+    void set_timestamp_format(TimestampFormat format);
+
+    /**
+     * @brief Get current file size
+     * @return Current log file size in bytes
+     */
+    size_t get_current_file_size() const;
+
+    /**
+     * @brief Check if rotation is enabled
+     * @return true if rotation is enabled, false otherwise
+     */
+    bool is_rotation_enabled() const { return m_rotation_enabled; }
+
 private:
     std::ofstream m_file;
-    std::mutex m_file_mutex;
+    mutable std::mutex m_file_mutex;
     LogLevel m_min_level{LogLevel::NORMAL};
     bool m_auto_flush{true};
-    
+
+    // Rotation configuration
+    bool m_rotation_enabled{false};
+    size_t m_max_file_size{0};
+    size_t m_max_files{5};
+    mutable size_t m_current_file_size{0};
+    std::string m_file_path;
+
+    // Timestamp configuration
+    TimestampFormat m_timestamp_format{TimestampFormat::SIMPLE};
+
     std::string format_message(LogLevel level, const std::string& message) const;
-    static std::string get_timestamp();
+    std::string get_timestamp() const;
+    void perform_rotation();
 };
 
 /**

@@ -30,8 +30,8 @@ This document provides comprehensive context for AI assistants working on the CQ
 **Logging System Enhancement (Multi-Phase)**
 - ✅ Phase 1: File-only logging by default with `--log-console` option (PR #44 - MERGED)
 - ✅ Phase 2: Separate user output from debug logging (PR #45 - MERGED)
-- 📋 Phase 3: Enhanced file logger configuration (rotation, timestamps)
-- 🔄 **Phase 4: Clean up mixed output patterns** (PR #46 - In Review)
+- 🔄 **Phase 3: Enhanced file logger configuration (rotation, timestamps)** (PR #48 - In Review)
+- ✅ Phase 4: Clean up mixed output patterns (PR #46 - MERGED)
 - 📋 Phase 5: Multi-logger with independent level control
 - 📋 Phase 6: Documentation and examples
 
@@ -142,6 +142,42 @@ CQL provides flexible logging configuration with secure file-based logging by de
 ./build/cql input.llm --log-console --debug-level DEBUG
 ```
 
+**`--log-max-size BYTES`** - Enable log file rotation at specified size
+```bash
+# Rotate log file when it reaches 10MB (10 * 1024 * 1024 bytes)
+./build/cql input.llm --log-max-size 10485760
+
+# Rotate at 1MB
+./build/cql input.llm --log-max-size 1048576
+```
+
+**`--log-max-files COUNT`** - Maximum number of rotated log files to keep (default: 5)
+```bash
+# Keep up to 10 rotated log files
+./build/cql input.llm --log-max-size 10485760 --log-max-files 10
+
+# Keep unlimited rotated files (use with caution)
+./build/cql input.llm --log-max-size 10485760 --log-max-files 0
+```
+
+**`--log-timestamp FORMAT`** - Set timestamp format for log messages
+```bash
+# ISO 8601 UTC format: 2025-10-07T14:30:45.123Z
+./build/cql input.llm --log-timestamp iso8601
+
+# ISO 8601 local time with timezone: 2025-10-07T14:30:45.123-0700
+./build/cql input.llm --log-timestamp iso8601-local
+
+# Simple format: 2025-10-07 14:30:45.123 (default)
+./build/cql input.llm --log-timestamp simple
+
+# Epoch milliseconds: 1696695045123
+./build/cql input.llm --log-timestamp epoch
+
+# No timestamp
+./build/cql input.llm --log-timestamp none
+```
+
 #### Logging Examples
 
 ```bash
@@ -156,6 +192,12 @@ CQL provides flexible logging configuration with secure file-based logging by de
 
 # CI/CD pipeline - errors only to specific file
 ./build/cql pipeline.llm --debug-level ERROR --log-file build.log
+
+# Production with log rotation - rotate at 50MB, keep 10 files
+./build/cql production.llm --log-max-size 52428800 --log-max-files 10 --log-timestamp iso8601
+
+# Long-running service - rotation with ISO timestamps
+./build/cql service.llm --log-max-size 10485760 --log-max-files 20 --log-timestamp iso8601-local
 ```
 
 #### Security Considerations

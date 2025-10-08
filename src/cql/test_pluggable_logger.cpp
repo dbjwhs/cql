@@ -423,4 +423,51 @@ TEST_F(PluggableLoggerTest, MacroIntegration) {
     EXPECT_EQ(entries[0].message, "Error conditional");
 }
 
+TEST_F(PluggableLoggerTest, FileLoggerRotation) {
+    auto log_file = m_temp_dir / "rotate_test.log";
+
+    // Create file logger with rotation enabled (100 bytes max, keep 3 files)
+    auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+    file_logger->enable_rotation(100, 3);
+    file_logger->set_min_level(LogLevel::DEBUG);
+
+    EXPECT_TRUE(file_logger->is_rotation_enabled());
+
+    // Write enough data to trigger rotation
+    for (int i = 0; i < 20; ++i) {
+        file_logger->log(LogLevel::INFO, "This is a test message number " + std::to_string(i));
+    }
+    file_logger->flush();
+
+    // Check that rotation occurred - should have main file and rotated files
+    EXPECT_TRUE(std::filesystem::exists(log_file));
+
+    // Current file should be smaller than max size after rotation
+    auto current_size = std::filesystem::file_size(log_file);
+    EXPECT_LT(current_size, 100);
+
+    // Verify rotated files exist
+    auto rotated_1 = log_file.string() + ".1";
+    EXPECT_TRUE(std::filesystem::exists(rotated_1));
+}
+
+TEST_F(PluggableLoggerTest, FileLoggerRotationDisabled) {
+    auto log_file = m_temp_dir / "no_rotate_test.log";
+
+    {
+        auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+        EXPECT_FALSE(file_logger->is_rotation_enabled());
+
+        // Write data
+        for (int i = 0; i < 10; ++i) {
+            file_logger->log(LogLevel::INFO, "Message");
+        }
+        // File logger goes out of scope and closes file
+    }
+
+    // Should not have rotated files
+    EXPECT_TRUE(std::filesystem::exists(log_file));
+    EXPECT_FALSE(std::filesystem::exists(log_file.string() + ".1"));
+}
+
 } // namespace cql::test

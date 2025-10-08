@@ -29,16 +29,47 @@ LogLevel ApplicationController::string_to_log_level(const std::string& level_str
     return LogLevel::DEBUG;
 }
 
+cql::adapters::TimestampFormat ApplicationController::string_to_timestamp_format(const std::string& format_str) {
+    if (format_str == "iso8601" || format_str == "ISO8601") {
+        return cql::adapters::TimestampFormat::ISO8601;
+    }
+    if (format_str == "iso8601-local" || format_str == "ISO8601_LOCAL") {
+        return cql::adapters::TimestampFormat::ISO8601_LOCAL;
+    }
+    if (format_str == "simple" || format_str == "SIMPLE") {
+        return cql::adapters::TimestampFormat::SIMPLE;
+    }
+    if (format_str == "epoch" || format_str == "EPOCH_MS") {
+        return cql::adapters::TimestampFormat::EPOCH_MS;
+    }
+    if (format_str == "none" || format_str == "NONE") {
+        return cql::adapters::TimestampFormat::NONE;
+    }
+
+    // Default to SIMPLE if invalid format provided
+    UserOutputManager::warning("Invalid timestamp format '", format_str, "', using SIMPLE instead.");
+    return cql::adapters::TimestampFormat::SIMPLE;
+}
+
 void ApplicationController::initialize_logger(bool log_to_console,
                                              const std::string& log_file_path,
-                                             LogLevel debug_level) {
+                                             LogLevel debug_level,
+                                             size_t rotation_max_size,
+                                             size_t rotation_max_files,
+                                             const std::string& timestamp_format) {
+    auto ts_format = string_to_timestamp_format(timestamp_format);
+
     if (log_to_console) {
         // Use multi-logger for both file and console
         auto multi_logger = std::make_unique<cql::adapters::MultiLogger>();
 
-        // Add file logger
+        // Add file logger with rotation and timestamp configuration
         auto file_logger = std::make_unique<cql::adapters::FileLogger>(log_file_path);
         file_logger->set_min_level(debug_level);
+        file_logger->set_timestamp_format(ts_format);
+        if (rotation_max_size > 0) {
+            file_logger->enable_rotation(rotation_max_size, rotation_max_files);
+        }
         multi_logger->add_logger(std::move(file_logger));
 
         // Add console logger
@@ -51,6 +82,10 @@ void ApplicationController::initialize_logger(bool log_to_console,
         // Default: log to file only
         auto file_logger = std::make_unique<cql::adapters::FileLogger>(log_file_path);
         file_logger->set_min_level(debug_level);
+        file_logger->set_timestamp_format(ts_format);
+        if (rotation_max_size > 0) {
+            file_logger->enable_rotation(rotation_max_size, rotation_max_files);
+        }
         cql::LoggerManager::initialize(std::move(file_logger));
     }
 }
@@ -127,6 +162,33 @@ int ApplicationController::run(int argc, char* argv[]) {
     std::string log_file_path = "cql.log";  // Default log file
     cmd_handler.find_and_remove_option("--log-file", log_file_path);
 
+    // Parse rotation configuration
+    std::string rotation_size_str;
+    size_t rotation_max_size = 0;  // 0 = disabled by default
+    if (cmd_handler.find_and_remove_option("--log-max-size", rotation_size_str)) {
+        try {
+            rotation_max_size = std::stoull(rotation_size_str);
+        } catch (...) {
+            UserOutputManager::warning("Invalid log max size '", rotation_size_str, "', rotation disabled.");
+            rotation_max_size = 0;
+        }
+    }
+
+    std::string rotation_count_str;
+    size_t rotation_max_files = 5;  // Default: keep 5 rotated files
+    if (cmd_handler.find_and_remove_option("--log-max-files", rotation_count_str)) {
+        try {
+            rotation_max_files = std::stoull(rotation_count_str);
+        } catch (...) {
+            UserOutputManager::warning("Invalid log max files '", rotation_count_str, "', using default (5).");
+            rotation_max_files = 5;
+        }
+    }
+
+    // Parse timestamp format
+    std::string timestamp_format = "simple";  // Default
+    cmd_handler.find_and_remove_option("--log-timestamp", timestamp_format);
+
     // Validate and secure the log file path
     try {
         log_file_path = InputValidator::resolve_path_securely(log_file_path);
@@ -137,7 +199,8 @@ int ApplicationController::run(int argc, char* argv[]) {
 
     // Initialize logger based on configuration
     // By default, log to file only. Use --log-console to also log to console.
-    initialize_logger(log_to_console, log_file_path, debug_level);
+    initialize_logger(log_to_console, log_file_path, debug_level,
+                     rotation_max_size, rotation_max_files, timestamp_format);
 
     // Get logger reference after initialization
     auto& logger = Logger::getInstance();
