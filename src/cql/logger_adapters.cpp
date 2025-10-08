@@ -141,12 +141,25 @@ boost::log::trivial::severity_level BoostLogAdapter::convert_level(LogLevel leve
 #endif // BOOST_LOG_VERSION
 
 // FileLogger implementation
-FileLogger::FileLogger(const std::string& file_path, bool append) {
+FileLogger::FileLogger(const std::string& file_path, bool append)
+    : m_file_path(file_path) {
     auto open_mode = append ? (std::ios::out | std::ios::app) : std::ios::out;
     m_file.open(file_path, open_mode);
-    
+
     if (!m_file.is_open()) {
         throw std::runtime_error("Failed to open log file: " + file_path);
+    }
+
+    // Get initial file size if appending
+    if (append) {
+        m_file.seekp(0, std::ios::end);
+        auto pos = m_file.tellp();
+        if (pos < 0) {
+            // tellp() failed, start with 0
+            m_current_file_size = 0;
+        } else {
+            m_current_file_size = static_cast<size_t>(pos);
+        }
     }
 }
 
@@ -161,11 +174,25 @@ void FileLogger::log(LogLevel level, const std::string& message) {
     if (!is_level_enabled(level)) {
         return;
     }
-    
+
     std::lock_guard<std::mutex> lock(m_file_mutex);
+
     std::string formatted_message = format_message(level, message);
+    size_t message_size = formatted_message.length() + 1; // +1 for newline
+
+    // Check if rotation is needed before writing
+    if (m_rotation_enabled && m_current_file_size + message_size >= m_max_file_size) {
+        perform_rotation();
+        // m_current_file_size is now 0 after rotation
+    }
+
     m_file << formatted_message << std::endl;
-    
+
+    // Update size tracker
+    if (m_rotation_enabled) {
+        m_current_file_size += message_size;
+    }
+
     if (m_auto_flush) {
         m_file.flush();
     }
@@ -188,31 +215,169 @@ void FileLogger::set_auto_flush(bool enable) {
     m_auto_flush = enable;
 }
 
+void FileLogger::enable_rotation(size_t max_size_bytes, size_t max_files) {
+    std::lock_guard<std::mutex> lock(m_file_mutex);
+    m_rotation_enabled = true;
+    m_max_file_size = max_size_bytes;
+    m_max_files = max_files;
+}
+
+void FileLogger::disable_rotation() {
+    std::lock_guard<std::mutex> lock(m_file_mutex);
+    m_rotation_enabled = false;
+}
+
+void FileLogger::set_timestamp_format(TimestampFormat format) {
+    std::lock_guard<std::mutex> lock(m_file_mutex);
+    m_timestamp_format = format;
+}
+
+size_t FileLogger::get_current_file_size() const {
+    std::lock_guard<std::mutex> lock(m_file_mutex);
+    return m_current_file_size;
+}
+
+void FileLogger::perform_rotation() {
+    // Close current file
+    if (m_file.is_open()) {
+        m_file.close();
+    }
+
+    // Rotate existing files: file.log.4 -> delete, file.log.3 -> file.log.4, etc.
+    // Only do this if we have a file limit (max_files > 0)
+    if (m_max_files > 0) {
+        for (int i = static_cast<int>(m_max_files) - 1; i >= 1; --i) {
+            std::string old_name = m_file_path + "." + std::to_string(i);
+            std::string new_name = m_file_path + "." + std::to_string(i + 1);
+
+            // Remove oldest file if it exists
+            if (i == static_cast<int>(m_max_files) - 1) {
+                std::remove(new_name.c_str());
+            }
+
+            // Rename file.log.N to file.log.N+1 (only if old file exists)
+            if (std::filesystem::exists(old_name)) {
+                if (std::rename(old_name.c_str(), new_name.c_str()) != 0) {
+                    // Log error but continue rotation - this is not fatal
+                    std::cerr << "Warning: Failed to rename " << old_name << " to " << new_name << std::endl;
+                }
+            }
+        }
+    } else {
+        // Unlimited rotation: rename existing files to higher numbers
+        // Find the highest numbered file
+        int highest = 0;
+        for (int i = 1; i <= 1000; ++i) {  // Limit search to prevent infinite loop
+            if (std::filesystem::exists(m_file_path + "." + std::to_string(i))) {
+                highest = i;
+            } else {
+                break;
+            }
+        }
+
+        // Rename files from highest to lowest
+        for (int i = highest; i >= 1; --i) {
+            std::string old_name = m_file_path + "." + std::to_string(i);
+            std::string new_name = m_file_path + "." + std::to_string(i + 1);
+            if (std::filesystem::exists(old_name)) {
+                std::rename(old_name.c_str(), new_name.c_str());
+            }
+        }
+    }
+
+    // Rename current file to file.log.1
+    std::string first_rotated = m_file_path + ".1";
+    if (std::rename(m_file_path.c_str(), first_rotated.c_str()) != 0) {
+        // This is more serious - try to reopen the original file
+        std::cerr << "Warning: Failed to rename " << m_file_path << " to " << first_rotated << std::endl;
+        m_file.open(m_file_path, std::ios::out | std::ios::app);
+        if (!m_file.is_open()) {
+            throw std::runtime_error("Failed to reopen log file after failed rotation: " + m_file_path);
+        }
+        return; // Abort rotation but keep logging to original file
+    }
+
+    // Open new file
+    m_file.open(m_file_path, std::ios::out);
+    if (!m_file.is_open()) {
+        throw std::runtime_error("Failed to open rotated log file: " + m_file_path);
+    }
+
+    m_current_file_size = 0;
+}
+
 std::string FileLogger::format_message(LogLevel level, const std::string& message) const {
     std::ostringstream formatted;
-    formatted << get_timestamp()
-              << " [" << log_level_to_string(level) << "]"
+
+    // Add timestamp if enabled
+    if (m_timestamp_format != TimestampFormat::NONE) {
+        formatted << get_timestamp() << " ";
+    }
+
+    formatted << "[" << log_level_to_string(level) << "]"
               << " [Thread:" << std::this_thread::get_id() << "] "
               << message;
     return formatted.str();
 }
 
-std::string FileLogger::get_timestamp() {
+std::string FileLogger::get_timestamp() const {
     const auto now = std::chrono::system_clock::now();
     const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
     auto time = std::chrono::system_clock::to_time_t(now);
-    
+
     struct tm tm_buf{};
+
+    switch (m_timestamp_format) {
+        case TimestampFormat::ISO8601: {
+            // UTC: 2025-10-07T14:30:45.123Z
 #ifdef _WIN32
-    gmtime_s(&tm_buf, &time);
+            gmtime_s(&tm_buf, &time);
 #else
-    gmtime_r(&time, &tm_buf);
+            gmtime_r(&time, &tm_buf);
 #endif
-    
-    std::ostringstream ss;
-    ss << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S");
-    ss << '.' << std::setfill('0') << std::setw(3) << ms.count() << " UTC";
-    return ss.str();
+            std::ostringstream ss;
+            ss << std::put_time(&tm_buf, "%Y-%m-%dT%H:%M:%S");
+            ss << '.' << std::setfill('0') << std::setw(3) << ms.count() << 'Z';
+            return ss.str();
+        }
+
+        case TimestampFormat::ISO8601_LOCAL: {
+            // Local time with timezone: 2025-10-07T14:30:45.123-0700
+#ifdef _WIN32
+            localtime_s(&tm_buf, &time);
+#else
+            localtime_r(&time, &tm_buf);
+#endif
+            std::ostringstream ss;
+            ss << std::put_time(&tm_buf, "%Y-%m-%dT%H:%M:%S");
+            ss << '.' << std::setfill('0') << std::setw(3) << ms.count();
+            ss << std::put_time(&tm_buf, "%z");
+            return ss.str();
+        }
+
+        case TimestampFormat::SIMPLE: {
+            // Simple format: 2025-10-07 14:30:45.123
+#ifdef _WIN32
+            gmtime_s(&tm_buf, &time);
+#else
+            gmtime_r(&time, &tm_buf);
+#endif
+            std::ostringstream ss;
+            ss << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S");
+            ss << '.' << std::setfill('0') << std::setw(3) << ms.count();
+            return ss.str();
+        }
+
+        case TimestampFormat::EPOCH_MS: {
+            // Milliseconds since epoch
+            auto epoch_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+            return std::to_string(epoch_ms);
+        }
+
+        case TimestampFormat::NONE:
+        default:
+            return "";
+    }
 }
 
 // MultiLogger implementation

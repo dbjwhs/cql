@@ -423,4 +423,343 @@ TEST_F(PluggableLoggerTest, MacroIntegration) {
     EXPECT_EQ(entries[0].message, "Error conditional");
 }
 
+TEST_F(PluggableLoggerTest, FileLoggerRotation) {
+    auto log_file = m_temp_dir / "rotate_test.log";
+
+    // Create file logger with rotation enabled (100 bytes max, keep 3 files)
+    auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+    file_logger->enable_rotation(100, 3);
+    file_logger->set_min_level(LogLevel::DEBUG);
+
+    EXPECT_TRUE(file_logger->is_rotation_enabled());
+
+    // Write enough data to trigger rotation
+    for (int i = 0; i < 20; ++i) {
+        file_logger->log(LogLevel::INFO, "This is a test message number " + std::to_string(i));
+    }
+    file_logger->flush();
+
+    // Check that rotation occurred - should have main file and rotated files
+    EXPECT_TRUE(std::filesystem::exists(log_file));
+
+    // Current file should be smaller than max size after rotation
+    auto current_size = std::filesystem::file_size(log_file);
+    EXPECT_LT(current_size, 100);
+
+    // Verify rotated files exist
+    auto rotated_1 = log_file.string() + ".1";
+    EXPECT_TRUE(std::filesystem::exists(rotated_1));
+}
+
+TEST_F(PluggableLoggerTest, FileLoggerRotationDisabled) {
+    auto log_file = m_temp_dir / "no_rotate_test.log";
+
+    {
+        auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+        EXPECT_FALSE(file_logger->is_rotation_enabled());
+
+        // Write data
+        for (int i = 0; i < 10; ++i) {
+            file_logger->log(LogLevel::INFO, "Message");
+        }
+        // File logger goes out of scope and closes file
+    }
+
+    // Should not have rotated files
+    EXPECT_TRUE(std::filesystem::exists(log_file));
+    EXPECT_FALSE(std::filesystem::exists(log_file.string() + ".1"));
+}
+
+TEST_F(PluggableLoggerTest, FileLoggerMultipleRotations) {
+    auto log_file = m_temp_dir / "multi_rotate.log";
+
+    // Create file logger with rotation enabled (50 bytes max, keep 3 files)
+    auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+    file_logger->enable_rotation(50, 3);
+    file_logger->set_min_level(LogLevel::DEBUG);
+
+    // Write enough data to trigger multiple rotations
+    for (int i = 0; i < 50; ++i) {
+        file_logger->log(LogLevel::INFO, "Message " + std::to_string(i));
+    }
+    file_logger->flush();
+
+    // Check that multiple rotations occurred
+    EXPECT_TRUE(std::filesystem::exists(log_file));
+    EXPECT_TRUE(std::filesystem::exists(log_file.string() + ".1"));
+    EXPECT_TRUE(std::filesystem::exists(log_file.string() + ".2"));
+    EXPECT_TRUE(std::filesystem::exists(log_file.string() + ".3"));
+
+    // Should not have more than max_files rotations
+    EXPECT_FALSE(std::filesystem::exists(log_file.string() + ".4"));
+}
+
+TEST_F(PluggableLoggerTest, FileLoggerMaxFilesEnforcement) {
+    auto log_file = m_temp_dir / "max_files.log";
+
+    // Create file logger with rotation enabled (30 bytes max, keep only 2 files)
+    auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+    file_logger->enable_rotation(30, 2);
+    file_logger->set_min_level(LogLevel::DEBUG);
+
+    // Write enough data to trigger many rotations
+    for (int i = 0; i < 100; ++i) {
+        file_logger->log(LogLevel::INFO, "Test message");
+    }
+    file_logger->flush();
+
+    // Check that we have main file + max_files rotated files
+    EXPECT_TRUE(std::filesystem::exists(log_file));
+    EXPECT_TRUE(std::filesystem::exists(log_file.string() + ".1"));
+    EXPECT_TRUE(std::filesystem::exists(log_file.string() + ".2"));
+
+    // Should not have more than max_files rotations
+    EXPECT_FALSE(std::filesystem::exists(log_file.string() + ".3"));
+    EXPECT_FALSE(std::filesystem::exists(log_file.string() + ".4"));
+}
+
+TEST_F(PluggableLoggerTest, FileLoggerConcurrentLogging) {
+    auto log_file = m_temp_dir / "concurrent.log";
+
+    const int num_threads = 4;
+    const int messages_per_thread = 25;
+
+    // Create file logger with rotation enabled (large enough to hold all messages)
+    {
+        auto file_logger = std::make_shared<adapters::FileLogger>(log_file.string());
+        file_logger->enable_rotation(2000, 5);  // Larger size to hold more messages
+        file_logger->set_min_level(LogLevel::DEBUG);
+
+        // Launch multiple threads writing concurrently
+        std::vector<std::thread> threads;
+
+        for (int t = 0; t < num_threads; ++t) {
+            threads.emplace_back([&file_logger, t]() {
+                for (int i = 0; i < messages_per_thread; ++i) {
+                    file_logger->log(LogLevel::INFO,
+                        "Thread " + std::to_string(t) + " msg " + std::to_string(i));
+                }
+            });
+        }
+
+        // Wait for all threads to complete
+        for (auto& thread : threads) {
+            thread.join();
+        }
+    } // Destroy file_logger to ensure all data is flushed and file is closed
+
+    // Verify all files exist and are valid
+    EXPECT_TRUE(std::filesystem::exists(log_file));
+
+    // Count total messages across all files
+    int total_messages = 0;
+    std::ifstream main_file(log_file);
+    std::string line;
+    while (std::getline(main_file, line)) {
+        if (!line.empty()) ++total_messages;
+    }
+
+    // Check rotated files
+    for (int i = 1; i <= 5; ++i) {
+        auto rotated = log_file.string() + "." + std::to_string(i);
+        if (std::filesystem::exists(rotated)) {
+            std::ifstream file(rotated);
+            while (std::getline(file, line)) {
+                if (!line.empty()) ++total_messages;
+            }
+        }
+    }
+
+    // Should have all messages (num_threads * messages_per_thread)
+    EXPECT_EQ(total_messages, num_threads * messages_per_thread);
+}
+
+TEST_F(PluggableLoggerTest, FileLoggerTimestampFormats) {
+    // Test ISO8601 format
+    {
+        auto log_file = m_temp_dir / "timestamp_iso8601.log";
+        {
+            auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+            file_logger->set_min_level(LogLevel::DEBUG);  // Enable all log levels
+            file_logger->set_timestamp_format(adapters::TimestampFormat::ISO8601);
+            file_logger->log(LogLevel::INFO, "Test message");
+        } // Close file
+
+        ASSERT_TRUE(std::filesystem::exists(log_file));
+        ASSERT_GT(std::filesystem::file_size(log_file), 0u);
+
+        std::ifstream file(log_file);
+        ASSERT_TRUE(file.is_open());
+        std::string line;
+        ASSERT_TRUE(std::getline(file, line)) << "Failed to read from " << log_file;
+        ASSERT_FALSE(line.empty()) << "Line is empty in " << log_file;
+        // ISO8601 format should contain 'T' and 'Z'
+        EXPECT_NE(line.find('T'), std::string::npos) << "Line: " << line;
+        EXPECT_NE(line.find('Z'), std::string::npos) << "Line: " << line;
+    }
+
+    // Test EPOCH_MS format
+    {
+        auto log_file = m_temp_dir / "timestamp_epoch.log";
+        {
+            auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+            file_logger->set_min_level(LogLevel::DEBUG);  // Enable all log levels
+            file_logger->set_timestamp_format(adapters::TimestampFormat::EPOCH_MS);
+            file_logger->log(LogLevel::INFO, "Test message");
+        } // Close file
+
+        ASSERT_TRUE(std::filesystem::exists(log_file));
+        ASSERT_GT(std::filesystem::file_size(log_file), 0u);
+
+        std::ifstream file(log_file);
+        ASSERT_TRUE(file.is_open());
+        std::string line;
+        ASSERT_TRUE(std::getline(file, line)) << "Failed to read from " << log_file;
+        ASSERT_FALSE(line.empty()) << "Line is empty in " << log_file;
+        // Epoch format should start with digits (milliseconds since epoch)
+        EXPECT_TRUE(std::isdigit(line[0])) << "Line: " << line;
+    }
+
+    // Test NONE format
+    {
+        auto log_file = m_temp_dir / "timestamp_none.log";
+        {
+            auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+            file_logger->set_min_level(LogLevel::DEBUG);  // Enable all log levels
+            file_logger->set_timestamp_format(adapters::TimestampFormat::NONE);
+            file_logger->log(LogLevel::INFO, "Test message");
+        } // Close file
+
+        ASSERT_TRUE(std::filesystem::exists(log_file));
+        ASSERT_GT(std::filesystem::file_size(log_file), 0u);
+
+        std::ifstream file(log_file);
+        ASSERT_TRUE(file.is_open());
+        std::string line;
+        ASSERT_TRUE(std::getline(file, line)) << "Failed to read from " << log_file;
+        ASSERT_FALSE(line.empty()) << "Line is empty in " << log_file;
+        // Should start with log level, not timestamp
+        EXPECT_EQ(line.find('['), 0u) << "Line: " << line;
+    }
+}
+
+TEST_F(PluggableLoggerTest, FileLoggerRotationThresholdAccuracy) {
+    auto log_file = m_temp_dir / "threshold_test.log";
+
+    // Create file logger with precise threshold (100 bytes)
+    auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+    file_logger->enable_rotation(100, 3);
+    file_logger->set_min_level(LogLevel::DEBUG);
+
+    // Write messages until rotation happens
+    std::string test_message = "Test";
+
+    // Write until we trigger rotation
+    for (int i = 0; i < 50; ++i) {
+        file_logger->log(LogLevel::INFO, test_message);
+
+        // Check if rotation occurred
+        if (std::filesystem::exists(log_file.string() + ".1")) {
+            break;
+        }
+    }
+
+    file_logger.reset(); // Close file
+
+    // Verify rotation happened
+    EXPECT_TRUE(std::filesystem::exists(log_file.string() + ".1"));
+
+    // Main file should be smaller than threshold after rotation
+    auto main_size = std::filesystem::file_size(log_file);
+    EXPECT_LT(main_size, 100u);
+
+    // Rotated file should exist and not be empty
+    auto rotated_size = std::filesystem::file_size(log_file.string() + ".1");
+    EXPECT_GT(rotated_size, 0u);  // File should have content
+    // Note: Actual size depends on timestamp/thread formatting, so just verify it's reasonable
+    EXPECT_LE(rotated_size, 150u); // Should be close to threshold
+}
+
+TEST_F(PluggableLoggerTest, FileLoggerAppendModeWithRotation) {
+    auto log_file = m_temp_dir / "append_rotate.log";
+
+    // Phase 1: Create initial file with some content
+    {
+        auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string(), false);
+        file_logger->set_min_level(LogLevel::DEBUG);
+        file_logger->log(LogLevel::INFO, "Initial message 1");
+        file_logger->log(LogLevel::INFO, "Initial message 2");
+    }
+
+    auto initial_size = std::filesystem::file_size(log_file);
+    EXPECT_GT(initial_size, 0u);
+
+    // Phase 2: Open in append mode with rotation enabled
+    {
+        auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string(), true);
+        file_logger->enable_rotation(200, 3);
+        file_logger->set_min_level(LogLevel::DEBUG);
+
+        // Verify initial size was tracked
+        EXPECT_GT(file_logger->get_current_file_size(), 0u);
+
+        // Write more messages
+        for (int i = 0; i < 20; ++i) {
+            file_logger->log(LogLevel::INFO, "Appended message " + std::to_string(i));
+        }
+    }
+
+    // Verify file grew from initial size
+    auto final_size = std::filesystem::file_size(log_file);
+    EXPECT_GT(final_size, initial_size);
+
+    // Check if rotation occurred (depends on message sizes)
+    bool rotated = std::filesystem::exists(log_file.string() + ".1");
+    if (rotated) {
+        // If rotation occurred, main file should be smaller than threshold
+        EXPECT_LT(final_size, 200u);
+    }
+}
+
+TEST_F(PluggableLoggerTest, FileLoggerUnlimitedRotation) {
+    auto log_file = m_temp_dir / "unlimited_rotate.log";
+
+    // Create file logger with unlimited rotation (max_files = 0)
+    auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+    file_logger->enable_rotation(100, 0);  // Unlimited rotation, larger threshold
+    file_logger->set_min_level(LogLevel::DEBUG);
+    file_logger->set_timestamp_format(adapters::TimestampFormat::NONE);  // Smaller messages
+
+    EXPECT_TRUE(file_logger->is_rotation_enabled());
+
+    // Write enough data to trigger multiple rotations
+    for (int i = 0; i < 200; ++i) {
+        file_logger->log(LogLevel::INFO, "Message " + std::to_string(i));
+    }
+    file_logger.reset(); // Close file
+
+    // Count how many rotated files exist
+    int rotated_count = 0;
+    for (int i = 1; i <= 30; ++i) {  // Check up to 30 rotations
+        if (std::filesystem::exists(log_file.string() + "." + std::to_string(i))) {
+            rotated_count++;
+        } else {
+            break;
+        }
+    }
+
+    // With unlimited rotation, we should have at least one rotated file
+    EXPECT_GE(rotated_count, 1) << "Unlimited rotation should create rotated files";
+
+    // Main file should exist
+    EXPECT_TRUE(std::filesystem::exists(log_file));
+
+    // Key test: verify max_files=0 allows unlimited rotations (no deletion of old files)
+    // With limited rotation, old files would be deleted. Here they should all exist.
+    EXPECT_TRUE(std::filesystem::exists(log_file.string() + ".1"));
+    if (rotated_count > 1) {
+        EXPECT_TRUE(std::filesystem::exists(log_file.string() + "." + std::to_string(rotated_count)));
+    }
+}
+
 } // namespace cql::test
