@@ -104,6 +104,24 @@ bool UserOutputManager::is_enabled(MessageType type) {
     return true; // Default to enabled if output is null
 }
 
+std::string UserOutputManager::prompt(const std::string& prompt_message) {
+    // Interactive prompts use std::cout directly for proper std::cin synchronization
+    std::cout << prompt_message;
+    std::cout.flush();
+
+    std::string input;
+    std::getline(std::cin, input);
+
+    // Trim leading and trailing whitespace
+    size_t start = input.find_first_not_of(" \t\r\n");
+    if (start == std::string::npos) {
+        return "";
+    }
+
+    size_t end = input.find_last_not_of(" \t\r\n");
+    return input.substr(start, end - start + 1);
+}
+
 void UserOutputManager::ensure_fallback_output() {
     static std::mutex fallback_mutex;
     std::lock_guard<std::mutex> lock(fallback_mutex);

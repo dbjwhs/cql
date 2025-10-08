@@ -134,6 +134,46 @@ public:
      */
     static bool is_enabled(MessageType type);
 
+    /**
+     * @brief Display an interactive prompt and wait for user input
+     *
+     * This helper function centralizes interactive prompt handling,
+     * ensuring proper synchronization between std::cout and std::cin.
+     * Interactive prompts intentionally use std::cout (not UserOutputManager)
+     * to maintain synchronization with std::cin and ensure the prompt appears
+     * before the input cursor.
+     *
+     * @param prompt The prompt message to display
+     * @return The user's input as a string (trimmed of leading/trailing whitespace)
+     */
+    static std::string prompt(const std::string& prompt_message);
+
+    /**
+     * @brief Output a formatted list of items
+     *
+     * Displays a list of items with consistent formatting. Each item is displayed
+     * on a separate line with the specified prefix.
+     *
+     * @tparam Container Type of the container (vector, set, etc.)
+     * @param type Message type for the list output
+     * @param items Container of items to display
+     * @param prefix Prefix for each item (default: "  - ")
+     * @param header Optional header to display before the list
+     */
+    template<typename Container>
+    static void list(MessageType type, const Container& items,
+                     const std::string& prefix = "  - ",
+                     const std::string& header = "") {
+        if (!header.empty()) {
+            write(type, header);
+        }
+        for (const auto& item : items) {
+            std::ostringstream oss;
+            oss << prefix << item;
+            write(type, oss.str());
+        }
+    }
+
 private:
     static std::unique_ptr<UserOutputInterface> s_output;
     static std::mutex s_output_mutex;
