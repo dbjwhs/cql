@@ -5,6 +5,7 @@
 #include "../../include/cql/cql.hpp"
 #include "../../include/cql/template_validator_schema.hpp"
 #include "../../include/cql/error_context.hpp"
+#include "../../include/cql/user_output_manager.hpp"
 #include <iostream>
 #include <ranges>
 
@@ -16,14 +17,14 @@ void TemplateOperations::list_templates() {
     const TemplateManager manager;
 
     if (const auto templates = manager.list_templates(); templates.empty()) {
-        std::cout << "No templates found in " << manager.get_templates_directory() << std::endl;
+        UserOutputManager::info("No templates found in ", manager.get_templates_directory());
     } else {
-        std::cout << "Available templates:" << std::endl;
+        UserOutputManager::info("Available templates:");
         for (const auto& tmpl : templates) {
             // get template metadata for more info
             try {
                 auto metadata = manager.get_template_metadata(tmpl);
-                std::cout << "  " << tmpl << " - " << metadata.description << std::endl;
+                UserOutputManager::info("  ", tmpl, " - ", metadata.description);
             } catch (const std::exception& e) {
                 // Preserve error context but don't fail the entire operation
                 auto contextual_error = ErrorContextBuilder::from(e)
@@ -31,12 +32,12 @@ void TemplateOperations::list_templates() {
                     .template_name(tmpl)
                     .at(__FILE__ ":" + std::to_string(__LINE__))
                     .build();
-                
+
                 // Log the error for debugging but continue with template listing
                 error_context_utils::log_contextual_exception(contextual_error);
-                
+
                 // Show template name without metadata
-                std::cout << "  " << tmpl << " (metadata unavailable)" << std::endl;
+                UserOutputManager::info("  ", tmpl, " (metadata unavailable)");
             }
         }
     }
@@ -78,7 +79,7 @@ std::vector<std::string> TemplateOperations::handle_missing_variables(
     const TemplateValidationResult& validation_result,
     const std::map<std::string, std::string>& template_vars,
     const std::map<std::string, std::string>& variables) {
-    
+
     std::vector<std::string> missing_vars;
 
     // Extract variables from validation issues
@@ -92,11 +93,11 @@ std::vector<std::string> TemplateOperations::handle_missing_variables(
 
     // Warn about missing variables
     if (!missing_vars.empty()) {
-        std::cerr << "Warning: The following variables are referenced but not provided:" << std::endl;
+        UserOutputManager::warning("The following variables are referenced but not provided:");
         for (const auto& var : missing_vars) {
-            std::cerr << "  - " << var << std::endl;
+            UserOutputManager::warning("  - ", var);
         }
-        std::cerr << "These will appear as '${" << missing_vars[0] << "}' in the output." << std::endl;
+        UserOutputManager::warning("These will appear as '${", missing_vars[0], "}' in the output.");
     }
 
     return missing_vars;
@@ -104,8 +105,8 @@ std::vector<std::string> TemplateOperations::handle_missing_variables(
 
 int TemplateOperations::handle_template_command(int argc, char* argv[]) {
     if (argc < 3) {
-        std::cerr << "Error: Template name required" << std::endl;
-        std::cerr << "Usage: cql --template TEMPLATE_NAME [VAR1=VALUE1 VAR2=VALUE2 ...]" << std::endl;
+        UserOutputManager::error("Template name required");
+        UserOutputManager::info("Usage: cql --template TEMPLATE_NAME [VAR1=VALUE1 VAR2=VALUE2 ...]");
         return CQL_ERROR;
     }
 
@@ -122,21 +123,21 @@ int TemplateOperations::handle_template_command(int argc, char* argv[]) {
 
         // Handle validation issues
         if (validation_result.has_issues(TemplateValidationLevel::ERROR)) {
-            std::cerr << "Warning: Template has validation errors:" << std::endl;
+            UserOutputManager::warning("Template has validation errors:");
             for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::ERROR)) {
-                std::cerr << "  - " << issue.to_string() << std::endl;
+                UserOutputManager::warning("  - ", issue.to_string());
             }
 
             if (!force) {
-                std::cerr << "Validation failed. Use --force to ignore errors." << std::endl;
+                UserOutputManager::error("Validation failed. Use --force to ignore errors.");
                 return CQL_ERROR;
             } else {
-                std::cerr << "Proceeding despite validation errors (--force specified)." << std::endl;
+                UserOutputManager::warning("Proceeding despite validation errors (--force specified).");
             }
         } else if (validation_result.has_issues(TemplateValidationLevel::WARNING)) {
-            std::cerr << "Template has validation warnings:" << std::endl;
+            UserOutputManager::warning("Template has validation warnings:");
             for (const auto& issue : validation_result.get_issues(TemplateValidationLevel::WARNING)) {
-                std::cerr << "  - " << issue.to_string() << std::endl;
+                UserOutputManager::warning("  - ", issue.to_string());
             }
         }
 
@@ -149,55 +150,55 @@ int TemplateOperations::handle_template_command(int argc, char* argv[]) {
         std::string instantiated = manager.instantiate_template(template_name, variables);
         std::string compiled = QueryProcessor::compile(instantiated);
 
-        std::cout << compiled << std::endl;
+        UserOutputManager::info(compiled);
     } catch (const std::exception& e) {
-        std::cerr << "Error using template: " << e.what() << std::endl;
+        UserOutputManager::error("Error using template: ", e.what());
         return CQL_ERROR;
     }
     return CQL_NO_ERROR;
 }
 
 void TemplateOperations::display_validation_results(const TemplateValidationResult& result, const std::string& template_name) {
-    std::cout << "Validation results for template '" << template_name << "':" << std::endl;
-    std::cout << "------------------------------------------" << std::endl;
+    UserOutputManager::info("Validation results for template '", template_name, "':");
+    UserOutputManager::info("------------------------------------------");
 
     if (result.has_issues()) {
-        std::cout << "Found " << result.count_errors() << " errors, "
-                  << result.count_warnings() << " warnings, "
-                  << result.count_infos() << " info messages." << std::endl;
+        UserOutputManager::info("Found ", result.count_errors(), " errors, ",
+                  result.count_warnings(), " warnings, ",
+                  result.count_infos(), " info messages.");
 
         // print errors
         if (result.count_errors() > 0) {
-            std::cout << "\nErrors:" << std::endl;
+            UserOutputManager::info("\nErrors:");
             for (const auto& issue : result.get_issues(TemplateValidationLevel::ERROR)) {
-                std::cout << "  - " << issue.to_string() << std::endl;
+                UserOutputManager::error("  - ", issue.to_string());
             }
         }
 
         // print warnings
         if (result.count_warnings() > 0) {
-            std::cout << "\nWarnings:" << std::endl;
+            UserOutputManager::info("\nWarnings:");
             for (const auto& issue : result.get_issues(TemplateValidationLevel::WARNING)) {
-                std::cout << "  - " << issue.to_string() << std::endl;
+                UserOutputManager::warning("  - ", issue.to_string());
             }
         }
 
         // print info messages (only if there are no errors or warnings)
         if (result.count_infos() > 0 && result.count_errors() == 0 && result.count_warnings() == 0) {
-            std::cout << "\nInfo:" << std::endl;
+            UserOutputManager::info("\nInfo:");
             for (const auto& issue : result.get_issues(TemplateValidationLevel::INFO)) {
-                std::cout << "  - " << issue.to_string() << std::endl;
+                UserOutputManager::info("  - ", issue.to_string());
             }
         }
     } else {
-        std::cout << "Template validated successfully with no issues." << std::endl;
+        UserOutputManager::success("Template validated successfully with no issues.");
     }
 }
 
 int TemplateOperations::handle_validate_command(int argc, char* argv[]) {
     if (argc < 3) {
-        std::cerr << "Error: Template name required" << std::endl;
-        std::cerr << "Usage: cql --validate TEMPLATE_NAME" << std::endl;
+        UserOutputManager::error("Template name required");
+        UserOutputManager::info("Usage: cql --validate TEMPLATE_NAME");
         return CQL_ERROR;
     }
 
@@ -213,7 +214,7 @@ int TemplateOperations::handle_validate_command(int argc, char* argv[]) {
         // Display validation results
         display_validation_results(result, template_name);
     } catch (const std::exception& e) {
-        std::cerr << "Error validating template: " << e.what() << std::endl;
+        UserOutputManager::error("Error validating template: ", e.what());
         return CQL_ERROR;
     }
     return CQL_NO_ERROR;
@@ -226,12 +227,12 @@ int TemplateOperations::handle_validate_all_command(const std::string& templates
         const auto templates = manager.list_templates();
 
         if (templates.empty()) {
-            std::cout << "No templates found to validate in " << templates_path << std::endl;
+            UserOutputManager::info("No templates found to validate in ", templates_path);
             return CQL_NO_ERROR;
         }
 
-        std::cout << "Validating " << templates.size() << " templates from " << templates_path << "..." << std::endl;
-        std::cout << "----------------------------" << std::endl;
+        UserOutputManager::info("Validating ", templates.size(), " templates from ", templates_path, "...");
+        UserOutputManager::info("----------------------------");
 
         int error_count = 0;
         int warning_count = 0;
@@ -240,7 +241,7 @@ int TemplateOperations::handle_validate_all_command(const std::string& templates
 
         for (const auto& template_name : templates) {
             total_templates++;
-            std::cout << "\n[" << total_templates << "/" << templates.size() << "] Validating: " << template_name << std::endl;
+            UserOutputManager::info("\n[", total_templates, "/", templates.size(), "] Validating: ", template_name);
 
             try {
                 const auto result = validator.validate_template(template_name);
@@ -252,33 +253,33 @@ int TemplateOperations::handle_validate_all_command(const std::string& templates
                 if (result.has_issues()) {
                     display_validation_results(result, template_name);
                 } else {
-                    std::cout << "✓ Template validated successfully" << std::endl;
+                    UserOutputManager::success("✓ Template validated successfully");
                 }
             } catch (const std::exception& e) {
-                std::cerr << "✗ Error validating template: " << e.what() << std::endl;
+                UserOutputManager::error("✗ Error validating template: ", e.what());
                 error_count++;
             }
         }
 
         // Summary
-        std::cout << "\n=============================" << std::endl;
-        std::cout << "Validation Summary:" << std::endl;
-        std::cout << "Templates processed: " << total_templates << std::endl;
-        std::cout << "Total errors: " << error_count << std::endl;
-        std::cout << "Total warnings: " << warning_count << std::endl;
-        std::cout << "Total info: " << info_count << std::endl;
+        UserOutputManager::info("\n=============================");
+        UserOutputManager::info("Validation Summary:");
+        UserOutputManager::info("Templates processed: ", total_templates);
+        UserOutputManager::info("Total errors: ", error_count);
+        UserOutputManager::info("Total warnings: ", warning_count);
+        UserOutputManager::info("Total info: ", info_count);
 
         if (error_count > 0) {
-            std::cout << "\n⚠️  Some templates have validation errors!" << std::endl;
+            UserOutputManager::warning("\n⚠️  Some templates have validation errors!");
             return CQL_ERROR;
         } else if (warning_count > 0) {
-            std::cout << "\n⚠️  Some templates have validation warnings." << std::endl;
+            UserOutputManager::warning("\n⚠️  Some templates have validation warnings.");
         } else {
-            std::cout << "\n✅ All templates validated successfully!" << std::endl;
+            UserOutputManager::success("\n✅ All templates validated successfully!");
         }
 
     } catch (const std::exception& e) {
-        std::cerr << "Error during validation: " << e.what() << std::endl;
+        UserOutputManager::error("Error during validation: ", e.what());
         return CQL_ERROR;
     }
     return CQL_NO_ERROR;

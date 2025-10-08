@@ -5,6 +5,7 @@
 #include "cql/meta_prompt_handler.hpp"
 #include "cql/meta_prompt/types.hpp"
 #include "cql/cql.hpp"
+#include "cql/user_output_manager.hpp"
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -15,28 +16,29 @@ namespace test {
 class MetaPromptCLITest : public ::testing::Test {
 protected:
     void SetUp() override {
-        // Redirect cout for testing output
-        original_cout = std::cout.rdbuf();
-        std::cout.rdbuf(output_stream.rdbuf());
+        // Set up callback-based user output for testing
+        auto callback = [this](MessageType /*type*/, const char* message) {
+            captured_output << message << "\n";
+        };
+        UserOutputManager::initialize_with_callback(callback);
     }
-    
+
     void TearDown() override {
-        // Restore cout
-        std::cout.rdbuf(original_cout);
+        // Clean up UserOutputManager
+        UserOutputManager::shutdown();
     }
-    
+
     std::string getOutput() {
-        return output_stream.str();
+        return captured_output.str();
     }
-    
+
     void clearOutput() {
-        output_stream.str("");
-        output_stream.clear();
+        captured_output.str("");
+        captured_output.clear();
     }
 
 private:
-    std::ostringstream output_stream;
-    std::streambuf* original_cout;
+    std::ostringstream captured_output;
 };
 
 TEST_F(MetaPromptCLITest, ParseCompilationMode) {
@@ -130,19 +132,13 @@ TEST_F(MetaPromptCLITest, HandleOptimizeCommandMissingFile) {
     // Test with insufficient arguments
     const char* argv[] = {"cql", "--optimize"};
     int argc = 2;
-    
-    // Capture stderr for error message
-    std::ostringstream error_stream;
-    std::streambuf* original_cerr = std::cerr.rdbuf();
-    std::cerr.rdbuf(error_stream.rdbuf());
-    
+
+    clearOutput();
     int result = MetaPromptHandler::handle_optimize_command(argc, const_cast<char**>(argv));
-    
-    // Restore stderr
-    std::cerr.rdbuf(original_cerr);
-    
+    std::string output = getOutput();
+
     EXPECT_EQ(result, CQL_ERROR);
-    EXPECT_TRUE(error_stream.str().find("Input file required") != std::string::npos);
+    EXPECT_TRUE(output.find("Input file required") != std::string::npos);
 }
 
 // Integration test requiring actual file system
