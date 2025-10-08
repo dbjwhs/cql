@@ -153,7 +153,13 @@ FileLogger::FileLogger(const std::string& file_path, bool append)
     // Get initial file size if appending
     if (append) {
         m_file.seekp(0, std::ios::end);
-        m_current_file_size = m_file.tellp();
+        auto pos = m_file.tellp();
+        if (pos < 0) {
+            // tellp() failed, start with 0
+            m_current_file_size = 0;
+        } else {
+            m_current_file_size = static_cast<size_t>(pos);
+        }
     }
 }
 
@@ -172,21 +178,20 @@ void FileLogger::log(LogLevel level, const std::string& message) {
     std::lock_guard<std::mutex> lock(m_file_mutex);
 
     std::string formatted_message = format_message(level, message);
+    size_t message_size = formatted_message.length() + 1; // +1 for newline
 
-    // Get accurate current file size
-    if (m_rotation_enabled) {
-        m_file.flush(); // Ensure all data is written before checking size
-        m_current_file_size = static_cast<size_t>(m_file.tellp());
-
-        size_t message_size = formatted_message.length() + 1; // +1 for newline
-
-        // Check if rotation is needed before writing
-        if (m_current_file_size + message_size >= m_max_file_size) {
-            perform_rotation();
-        }
+    // Check if rotation is needed before writing
+    if (m_rotation_enabled && m_current_file_size + message_size >= m_max_file_size) {
+        perform_rotation();
+        // m_current_file_size is now 0 after rotation
     }
 
     m_file << formatted_message << std::endl;
+
+    // Update size tracker
+    if (m_rotation_enabled) {
+        m_current_file_size += message_size;
+    }
 
     if (m_auto_flush) {
         m_file.flush();
@@ -239,6 +244,7 @@ void FileLogger::perform_rotation() {
     }
 
     // Rotate existing files: file.log.4 -> delete, file.log.3 -> file.log.4, etc.
+    // Only do this if we have a file limit (max_files > 0)
     if (m_max_files > 0) {
         for (int i = static_cast<int>(m_max_files) - 1; i >= 1; --i) {
             std::string old_name = m_file_path + "." + std::to_string(i);
@@ -255,6 +261,26 @@ void FileLogger::perform_rotation() {
                     // Log error but continue rotation - this is not fatal
                     std::cerr << "Warning: Failed to rename " << old_name << " to " << new_name << std::endl;
                 }
+            }
+        }
+    } else {
+        // Unlimited rotation: rename existing files to higher numbers
+        // Find the highest numbered file
+        int highest = 0;
+        for (int i = 1; i <= 1000; ++i) {  // Limit search to prevent infinite loop
+            if (std::filesystem::exists(m_file_path + "." + std::to_string(i))) {
+                highest = i;
+            } else {
+                break;
+            }
+        }
+
+        // Rename files from highest to lowest
+        for (int i = highest; i >= 1; --i) {
+            std::string old_name = m_file_path + "." + std::to_string(i);
+            std::string new_name = m_file_path + "." + std::to_string(i + 1);
+            if (std::filesystem::exists(old_name)) {
+                std::rename(old_name.c_str(), new_name.c_str());
             }
         }
     }

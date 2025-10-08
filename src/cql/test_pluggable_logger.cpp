@@ -643,4 +643,123 @@ TEST_F(PluggableLoggerTest, FileLoggerTimestampFormats) {
     }
 }
 
+TEST_F(PluggableLoggerTest, FileLoggerRotationThresholdAccuracy) {
+    auto log_file = m_temp_dir / "threshold_test.log";
+
+    // Create file logger with precise threshold (100 bytes)
+    auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+    file_logger->enable_rotation(100, 3);
+    file_logger->set_min_level(LogLevel::DEBUG);
+
+    // Write messages until rotation happens
+    std::string test_message = "Test";
+
+    // Write until we trigger rotation
+    for (int i = 0; i < 50; ++i) {
+        file_logger->log(LogLevel::INFO, test_message);
+
+        // Check if rotation occurred
+        if (std::filesystem::exists(log_file.string() + ".1")) {
+            break;
+        }
+    }
+
+    file_logger.reset(); // Close file
+
+    // Verify rotation happened
+    EXPECT_TRUE(std::filesystem::exists(log_file.string() + ".1"));
+
+    // Main file should be smaller than threshold after rotation
+    auto main_size = std::filesystem::file_size(log_file);
+    EXPECT_LT(main_size, 100u);
+
+    // Rotated file should exist and not be empty
+    auto rotated_size = std::filesystem::file_size(log_file.string() + ".1");
+    EXPECT_GT(rotated_size, 0u);  // File should have content
+    // Note: Actual size depends on timestamp/thread formatting, so just verify it's reasonable
+    EXPECT_LE(rotated_size, 150u); // Should be close to threshold
+}
+
+TEST_F(PluggableLoggerTest, FileLoggerAppendModeWithRotation) {
+    auto log_file = m_temp_dir / "append_rotate.log";
+
+    // Phase 1: Create initial file with some content
+    {
+        auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string(), false);
+        file_logger->set_min_level(LogLevel::DEBUG);
+        file_logger->log(LogLevel::INFO, "Initial message 1");
+        file_logger->log(LogLevel::INFO, "Initial message 2");
+    }
+
+    auto initial_size = std::filesystem::file_size(log_file);
+    EXPECT_GT(initial_size, 0u);
+
+    // Phase 2: Open in append mode with rotation enabled
+    {
+        auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string(), true);
+        file_logger->enable_rotation(200, 3);
+        file_logger->set_min_level(LogLevel::DEBUG);
+
+        // Verify initial size was tracked
+        EXPECT_GT(file_logger->get_current_file_size(), 0u);
+
+        // Write more messages
+        for (int i = 0; i < 20; ++i) {
+            file_logger->log(LogLevel::INFO, "Appended message " + std::to_string(i));
+        }
+    }
+
+    // Verify file grew from initial size
+    auto final_size = std::filesystem::file_size(log_file);
+    EXPECT_GT(final_size, initial_size);
+
+    // Check if rotation occurred (depends on message sizes)
+    bool rotated = std::filesystem::exists(log_file.string() + ".1");
+    if (rotated) {
+        // If rotation occurred, main file should be smaller than threshold
+        EXPECT_LT(final_size, 200u);
+    }
+}
+
+TEST_F(PluggableLoggerTest, FileLoggerUnlimitedRotation) {
+    auto log_file = m_temp_dir / "unlimited_rotate.log";
+
+    // Create file logger with unlimited rotation (max_files = 0)
+    auto file_logger = std::make_unique<adapters::FileLogger>(log_file.string());
+    file_logger->enable_rotation(100, 0);  // Unlimited rotation, larger threshold
+    file_logger->set_min_level(LogLevel::DEBUG);
+    file_logger->set_timestamp_format(adapters::TimestampFormat::NONE);  // Smaller messages
+
+    EXPECT_TRUE(file_logger->is_rotation_enabled());
+
+    // Write enough data to trigger multiple rotations
+    for (int i = 0; i < 200; ++i) {
+        file_logger->log(LogLevel::INFO, "Message " + std::to_string(i));
+    }
+    file_logger.reset(); // Close file
+
+    // Count how many rotated files exist
+    int rotated_count = 0;
+    for (int i = 1; i <= 30; ++i) {  // Check up to 30 rotations
+        if (std::filesystem::exists(log_file.string() + "." + std::to_string(i))) {
+            rotated_count++;
+        } else {
+            break;
+        }
+    }
+
+    // With unlimited rotation, we should have at least one rotated file
+    EXPECT_GE(rotated_count, 1) << "Unlimited rotation should create rotated files";
+
+    // Main file should exist
+    EXPECT_TRUE(std::filesystem::exists(log_file));
+
+    // Key test: verify max_files=0 allows unlimited rotations (no deletion of old files)
+    // With limited rotation, old files would be deleted. Here they should all exist.
+    EXPECT_TRUE(std::filesystem::exists(log_file.string() + ".1"));
+    if (rotated_count > 1) {
+        EXPECT_TRUE(std::filesystem::exists(log_file.string() + "." + std::to_string(rotated_count)));
+    }
+}
+
 } // namespace cql::test
