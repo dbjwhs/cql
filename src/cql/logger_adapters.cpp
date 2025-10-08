@@ -172,17 +172,21 @@ void FileLogger::log(LogLevel level, const std::string& message) {
     std::lock_guard<std::mutex> lock(m_file_mutex);
 
     std::string formatted_message = format_message(level, message);
-    size_t message_size = formatted_message.length() + 1; // +1 for newline
 
-    // Check if rotation is needed before writing
-    if (m_rotation_enabled && m_current_file_size + message_size >= m_max_file_size) {
-        perform_rotation();
+    // Get accurate current file size
+    if (m_rotation_enabled) {
+        m_file.flush(); // Ensure all data is written before checking size
+        m_current_file_size = static_cast<size_t>(m_file.tellp());
+
+        size_t message_size = formatted_message.length() + 1; // +1 for newline
+
+        // Check if rotation is needed before writing
+        if (m_current_file_size + message_size >= m_max_file_size) {
+            perform_rotation();
+        }
     }
 
     m_file << formatted_message << std::endl;
-
-    // Track file size for rotation
-    m_current_file_size += message_size;
 
     if (m_auto_flush) {
         m_file.flush();
@@ -219,6 +223,7 @@ void FileLogger::disable_rotation() {
 }
 
 void FileLogger::set_timestamp_format(TimestampFormat format) {
+    std::lock_guard<std::mutex> lock(m_file_mutex);
     m_timestamp_format = format;
 }
 
@@ -244,14 +249,27 @@ void FileLogger::perform_rotation() {
                 std::remove(new_name.c_str());
             }
 
-            // Rename file.log.N to file.log.N+1
-            std::rename(old_name.c_str(), new_name.c_str());
+            // Rename file.log.N to file.log.N+1 (only if old file exists)
+            if (std::filesystem::exists(old_name)) {
+                if (std::rename(old_name.c_str(), new_name.c_str()) != 0) {
+                    // Log error but continue rotation - this is not fatal
+                    std::cerr << "Warning: Failed to rename " << old_name << " to " << new_name << std::endl;
+                }
+            }
         }
     }
 
     // Rename current file to file.log.1
     std::string first_rotated = m_file_path + ".1";
-    std::rename(m_file_path.c_str(), first_rotated.c_str());
+    if (std::rename(m_file_path.c_str(), first_rotated.c_str()) != 0) {
+        // This is more serious - try to reopen the original file
+        std::cerr << "Warning: Failed to rename " << m_file_path << " to " << first_rotated << std::endl;
+        m_file.open(m_file_path, std::ios::out | std::ios::app);
+        if (!m_file.is_open()) {
+            throw std::runtime_error("Failed to reopen log file after failed rotation: " + m_file_path);
+        }
+        return; // Abort rotation but keep logging to original file
+    }
 
     // Open new file
     m_file.open(m_file_path, std::ios::out);

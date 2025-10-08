@@ -230,8 +230,8 @@ TEST_F(HybridCompilerTest, ClearCache) {
 
 // Test LLM availability check
 TEST_F(HybridCompilerTest, LLMAvailability) {
-    // Should return false since LLM components not implemented yet
-    EXPECT_FALSE(compiler->is_llm_available());
+    // LLM components are now implemented and available
+    EXPECT_TRUE(compiler->is_llm_available());
 }
 
 // Test performance requirements

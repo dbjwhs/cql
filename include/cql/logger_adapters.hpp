@@ -190,6 +190,13 @@ public:
      * @brief Enable log file rotation
      * @param max_size_bytes Maximum file size before rotation (in bytes)
      * @param max_files Maximum number of rotated files to keep (0 = unlimited)
+     *
+     * @warning Setting max_files to 0 (unlimited) can consume significant disk space
+     *          over time. It is recommended to set a reasonable limit based on your
+     *          application's logging volume and available storage.
+     *
+     * @note The actual rotation threshold is approximate. Files may slightly exceed
+     *       max_size_bytes before rotation occurs due to message formatting overhead.
      */
     void enable_rotation(size_t max_size_bytes, size_t max_files = 5);
 
