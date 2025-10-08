@@ -216,11 +216,7 @@ bool handle_template_basic_commands(const std::string& line,
                     UserOutputManager::info("  - ", issue.to_string());
                 }
 
-                // Note: Interactive prompts intentionally use std::cout (not UserOutputManager)
-                // to maintain synchronization with std::cin and ensure prompt appears before input
-                std::cout << "Do you want to save the template anyway? (y/n): ";
-                std::string response;
-                std::getline(std::cin, response);
+                std::string response = UserOutputManager::prompt("Do you want to save the template anyway? (y/n): ");
 
                 if (response != "y" && response != "Y") {
                     Logger::getInstance().log(LogLevel::INFO, "Template save cancelled");
@@ -412,11 +408,7 @@ bool handle_variable_commands(const std::string& line,
         Logger::getInstance().log(LogLevel::INFO, "Enter variables in NAME=VALUE format (empty line to finish):");
 
         while (true) {
-            std::string var_line;
-            // Note: Interactive prompts intentionally use std::cout (not UserOutputManager)
-            // to maintain synchronization with std::cin and ensure prompt appears before input
-            std::cout << "var> ";
-            std::getline(std::cin, var_line);
+            std::string var_line = UserOutputManager::prompt("var> ");
 
             if (var_line.empty()) {
                 break;
@@ -459,11 +451,7 @@ bool handle_template_use(const std::string& line, std::string& current_query
                     UserOutputManager::info("  - ", issue.to_string());
                 }
 
-                // Note: Interactive prompts intentionally use std::cout (not UserOutputManager)
-                // to maintain synchronization with std::cin and ensure prompt appears before input
-                std::cout << "Do you want to use this template anyway? (y/n): ";
-                std::string response;
-                std::getline(std::cin, response);
+                std::string response = UserOutputManager::prompt("Do you want to use this template anyway? (y/n): ");
 
                 if (response != "y" && response != "Y") {
                     Logger::getInstance().log(LogLevel::INFO, "Template use cancelled");
@@ -519,11 +507,7 @@ bool handle_template_use(const std::string& line, std::string& current_query
                 Logger::getInstance().log(LogLevel::INFO, "Template is missing values for these variables:");
 
                 for (const auto& var : missing_vars) {
-                    // Note: Interactive prompts intentionally use std::cout (not UserOutputManager)
-                    // to maintain synchronization with std::cin and ensure prompt appears before input
-                    std::cout << "  Enter value for '" << var << "': ";
-                    std::string value;
-                    std::getline(std::cin, value);
+                    std::string value = UserOutputManager::prompt("  Enter value for '" + var + "': ");
                     combined_variables[var] = value;
                 }
             }
@@ -601,11 +585,7 @@ bool handle_template_inheritance(const std::string& line, std::string& current_q
                     UserOutputManager::info("  - ", issue.to_string());
                 }
 
-                // Note: Interactive prompts intentionally use std::cout (not UserOutputManager)
-                // to maintain synchronization with std::cin and ensure prompt appears before input
-                std::cout << "Do you want to save the template anyway? (y/n): ";
-                std::string response;
-                std::getline(std::cin, response);
+                std::string response = UserOutputManager::prompt("Do you want to save the template anyway? (y/n): ");
 
                 if (response != "y" && response != "Y") {
                     Logger::getInstance().log(LogLevel::INFO, "Template save cancelled");
@@ -1107,10 +1087,7 @@ void run_interactive() {
      */
     while (true) {
         // Prompt and read user input
-        // Note: Interactive prompts intentionally use std::cout (not UserOutputManager)
-        // to maintain synchronization with std::cin and ensure prompt appears before input
-        std::cout << "> ";
-        std::getline(std::cin, line);
+        line = UserOutputManager::prompt("> ");
 
         // Special case: exit commands break the loop immediately
         if (line == "exit" || line == "quit") {
