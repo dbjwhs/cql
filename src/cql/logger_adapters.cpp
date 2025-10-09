@@ -238,8 +238,9 @@ size_t FileLogger::get_current_file_size() const {
 }
 
 void FileLogger::perform_rotation() {
-    // Close current file
+    // Flush and close current file
     if (m_file.is_open()) {
+        m_file.flush();
         m_file.close();
     }
 
@@ -250,13 +251,19 @@ void FileLogger::perform_rotation() {
             std::string old_name = m_file_path + "." + std::to_string(i);
             std::string new_name = m_file_path + "." + std::to_string(i + 1);
 
-            // Remove oldest file if it exists
+            // Remove oldest file if it exists (use filesystem::remove for better error handling)
             if (i == static_cast<int>(m_max_files) - 1) {
-                std::remove(new_name.c_str());
+                std::error_code ec;
+                std::filesystem::remove(new_name, ec);
+                // Ignore errors - file may not exist
             }
 
             // Rename file.log.N to file.log.N+1 (only if old file exists)
             if (std::filesystem::exists(old_name)) {
+                // Ensure target doesn't exist before rename
+                std::error_code ec;
+                std::filesystem::remove(new_name, ec);
+
                 if (std::rename(old_name.c_str(), new_name.c_str()) != 0) {
                     // Log error but continue rotation - this is not fatal
                     std::cerr << "Warning: Failed to rename " << old_name << " to " << new_name << std::endl;
@@ -287,6 +294,11 @@ void FileLogger::perform_rotation() {
 
     // Rename current file to file.log.1
     std::string first_rotated = m_file_path + ".1";
+
+    // Ensure .1 doesn't exist before attempting rename
+    std::error_code remove_ec;
+    std::filesystem::remove(first_rotated, remove_ec);
+
     if (std::rename(m_file_path.c_str(), first_rotated.c_str()) != 0) {
         // This is more serious - try to reopen the original file
         std::cerr << "Warning: Failed to rename " << m_file_path << " to " << first_rotated << std::endl;

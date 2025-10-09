@@ -23,11 +23,11 @@ protected:
     void SetUp() override {
         // Initialize compiler system with test configuration
         GlobalCompilerConfig config;
-        config.anthropic_api_key = "test-key";
+        config.anthropic_api_key = "test-key-with-minimum-30-characters-for-validation";
         config.default_daily_budget = 1.0;
         config.enable_metrics_collection = true;
         [[maybe_unused]] auto init_result = initialize_compiler_system(config);
-        
+
         // Create compiler instance
         compiler = HybridCompiler::create();
     }

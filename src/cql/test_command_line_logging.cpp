@@ -40,7 +40,9 @@ protected:
 
         // Clean up temporary files
         if (std::filesystem::exists(m_temp_dir)) {
-            std::filesystem::remove_all(m_temp_dir);
+            std::error_code ec;
+            std::filesystem::remove_all(m_temp_dir, ec);
+            // Ignore errors - directory may have been removed already
         }
 
         // Clean up argv memory

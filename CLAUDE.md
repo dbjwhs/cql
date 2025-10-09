@@ -92,12 +92,26 @@ For live API integration and meta-prompt compilation:
    ANTHROPIC_API_KEY=your-anthropic-api-key-here
    ```
 
+   **API Key Requirements:**
+   - Must be at least 30 characters long (validated by `AnthropicProvider::is_configured()`)
+   - Both `CQL_API_KEY` and `ANTHROPIC_API_KEY` can be used (for compatibility)
+   - Keys starting with `sk-ant-api03-` are standard Anthropic API keys
+   - The `.env` file is automatically loaded by the test suite and application
+
 3. **Test API connectivity:**
    ```bash
+   # Test API configuration and connectivity
    ./build/cql_test --gtest_filter="LiveAnthropicIntegrationTest.BasicConnectivityTest"
+
+   # Test that LLM components are properly configured
+   ./build/cql_test --gtest_filter="HybridCompilerTest.LLMAvailability"
    ```
 
-**Note**: The `.env` file is git-ignored for security. Never commit API keys to version control.
+**Important Notes:**
+- The `.env` file is git-ignored for security - never commit API keys to version control
+- Test API keys in unit tests must be at least 30 characters to pass validation
+- The application loads `.env` from the project root directory automatically
+- Without a valid API key, LLM-based features will be disabled (LOCAL_ONLY mode still works)
 
 ### Logging Configuration
 
