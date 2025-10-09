@@ -205,8 +205,15 @@ HybridCompilerImpl::HybridCompilerImpl()
     
     // Initialize LLM components
     try {
+        // Create AILib config with API key from global config
+        auto ailib_config = std::make_shared<cql::Config>();
+        const auto& global_config = get_global_config();
+        if (!global_config.anthropic_api_key.empty()) {
+            ailib_config->set_api_key("anthropic", global_config.anthropic_api_key);
+        }
+
         PromptCompilerConfig prompt_config;
-        m_prompt_compiler = std::make_shared<PromptCompiler>(prompt_config);
+        m_prompt_compiler = std::make_shared<PromptCompiler>(prompt_config, ailib_config);
         
         CircuitBreakerConfig circuit_config;
         m_circuit_breaker = std::make_shared<CircuitBreaker>(circuit_config);
