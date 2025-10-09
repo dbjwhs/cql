@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 #include "ailib/http/client.hpp"
 #include "../../../include/cql/project_utils.hpp"
+#include "../../../include/cql/logger_bridge.hpp"
 #include <thread>
 #include <chrono>
 
@@ -19,11 +20,12 @@ bool is_httpbin_unavailable(const Response& response) {
 // Helper to warn and skip test if httpbin.org is down
 void check_httpbin_availability(const Response& response, const std::string& test_name) {
     if (is_httpbin_unavailable(response)) {
-        std::cout << "\n⚠️  WARNING: httpbin.org is experiencing issues (got "
-                  << response.status_code << " instead of expected response)\n"
-                  << "    Test: " << test_name << "\n"
-                  << "    This is an external service issue, not a code problem.\n"
-                  << "    Skipping test to prevent false failures.\n" << std::endl;
+        Logger::getInstance().log(LogLevel::NORMAL,
+            "\n⚠️  WARNING: httpbin.org is experiencing issues (got ",
+            response.status_code, " instead of expected response)\n",
+            "    Test: ", test_name, "\n",
+            "    This is an external service issue, not a code problem.\n",
+            "    Skipping test to prevent false failures.");
         GTEST_SKIP() << "httpbin.org unavailable (status " << response.status_code << ")";
     }
 }
