@@ -4,33 +4,31 @@ This document provides comprehensive context for AI assistants working on the CQ
 
 ## Current Work Status
 
-**Active Branch**: `feat/phase4-cleanup-mixed-output`
-**Current PR**: [#46 - Phase 4: Clean up mixed output patterns](https://github.com/dbjwhs/cql/pull/46)
+**Active Branch**: `main` (all phases complete and merged)
+**Latest PR**: [#49 - Fix failing tests after Phase 3 merge](https://github.com/dbjwhs/cql/pull/49) - MERGED ✅
 
-### Phase 4 PR Status: Ready for Re-Review ✅
+### All Core Logging Phases Complete! 🎉
 
-**Completed Items:**
-- ✅ Updated cli.cpp to use UserOutputManager (~138 replacements)
-- ✅ Updated meta_prompt_handler.cpp to use UserOutputManager
-- ✅ Updated template_operations.cpp to use UserOutputManager
-- ✅ Updated documentation_handler.cpp to use UserOutputManager
-- ✅ Fixed test_meta_prompt_cli.cpp to use callback-based UserOutput
-- ✅ All 223 tests passing
-- ✅ **Review Feedback Addressed** (Commit 1115df0):
-  - Documented 6 interactive prompts that intentionally use `std::cout`
-  - Removed 9 unnecessary `std::to_string()` calls
-  - Verified newline handling consistency
+**Recently Merged:**
+- ✅ **PR #49**: Fixed all failing tests after Phase 3 merge
+  - Fixed file rotation race conditions (flush before close, remove before rename)
+  - Fixed test cleanup exceptions (error_code overload of filesystem operations)
+  - Fixed HybridCompiler API key configuration (pass global config to PromptCompiler)
+  - Enhanced HTTP client tests with intelligent httpbin.org failure detection
+  - Replaced std::cout with Logger system for Phase 2 compliance
+  - All 239 tests passing
 
 **What's Next:**
-- Awaiting second review and approval for PR #46
-- Phase 3 or Phase 5 next (TBD based on priorities)
+- Phase 5: Multi-logger with independent level control
+- Phase 6: Documentation and examples
+- Multi-provider AI support expansion
 
 ### Development Roadmap
 
 **Logging System Enhancement (Multi-Phase)**
 - ✅ Phase 1: File-only logging by default with `--log-console` option (PR #44 - MERGED)
 - ✅ Phase 2: Separate user output from debug logging (PR #45 - MERGED)
-- 🔄 **Phase 3: Enhanced file logger configuration (rotation, timestamps)** (PR #48 - In Review)
+- ✅ Phase 3: Enhanced file logger configuration (rotation, timestamps) (PR #48 - MERGED)
 - ✅ Phase 4: Clean up mixed output patterns (PR #46 - MERGED)
 - 📋 Phase 5: Multi-logger with independent level control
 - 📋 Phase 6: Documentation and examples
@@ -508,6 +506,26 @@ When working on this project:
 ## Recent Development Status
 
 ### Completed Work (2025)
+- **✅ Test Reliability Fixes (Post Phase 3)**: Comprehensive test suite hardening
+  - **PR**: #49 - MERGED - All failing tests fixed after Phase 3 merge
+  - **Fixes**: File rotation race conditions, test cleanup exceptions, API key configuration
+  - **Enhancements**: Intelligent httpbin.org failure detection with visual warnings
+  - **Compliance**: Replaced std::cout with Logger system for Phase 2 standards
+  - **Testing**: All 239 tests passing consistently
+
+- **✅ Enhanced File Logger (Phase 3)**: Advanced logging configuration features
+  - **PR**: #48 - MERGED - Log rotation, timestamp formats, configurable retention
+  - **Features**: `--log-max-size`, `--log-max-files`, `--log-timestamp` options
+  - **Formats**: ISO 8601 (UTC/local), simple, epoch, none
+  - **Rotation**: Automatic rotation with configurable file retention
+  - **Testing**: Comprehensive rotation and timestamp format tests
+
+- **✅ Mixed Output Cleanup (Phase 4)**: Unified output handling across codebase
+  - **PR**: #46 - MERGED - Updated all CLI files to use UserOutputManager
+  - **Coverage**: cli.cpp, meta_prompt_handler.cpp, template_operations.cpp, documentation_handler.cpp
+  - **Compliance**: Documented intentional std::cout usage for interactive prompts
+  - **Quality**: Removed unnecessary std::to_string() calls, verified newline consistency
+
 - **✅ User Output Separation (Phase 2)**: Complete separation of user-facing output from debug logging
   - **PR**: #45 - MERGED (commit `33c717a`) - All review feedback addressed and implemented
   - **Features**: UserOutput interface with 5 implementations, colored console output, MessageType enum
@@ -527,15 +545,15 @@ When working on this project:
   - **Implementation**: Split conditional tests, environment variable controls, MockHttpClientTest class
 
 ### Current Project State
-- **Main Branch**: `main` - Stable with Phase 1 & 2 merged
-- **Build Status**: ✅ All tests passing (42 total tests including 20 UserOutput tests)
+- **Main Branch**: `main` - Stable with all 4 logging phases complete
+- **Build Status**: ✅ All 239 tests passing consistently
 - **CI Integration**: ✅ Environment variable controls implemented and tested (`CQL_SKIP_EXTERNAL_TESTS=1`)
 - **Documentation**: ✅ Updated with latest changes and patterns
-- **Logging System**: ✅ File-based debug logging + User-facing output separation complete
+- **Logging System**: ✅ Complete - File logging, user output separation, rotation, timestamps all implemented
 
 ### Next Steps
-- **Phase 3**: Enhanced file logger configuration (rotation, timestamps)
-- **Phase 4**: Clean up mixed output patterns (update remaining files to use UserOutput)
+- **Phase 5**: Multi-logger with independent level control
+- **Phase 6**: Comprehensive logging documentation and examples
 - **Multi-Provider Support**: Expanding beyond Anthropic to OpenAI, Google Gemini
 - **Performance Optimization**: Profiling and optimization initiatives
 - **Enhanced CLI**: Additional command-line interface features
@@ -550,4 +568,4 @@ When working on this project:
 This project represents a security-hardened approach to query language development with comprehensive tooling, testing, and enterprise-grade security measures.
 
 ---
-**Last Updated**: 2025-10-03 - Phase 2 User Output Separation merged (PR #45), ready for Phase 3
+**Last Updated**: 2025-10-08 - All 4 core logging phases complete (PRs #44, #45, #46, #48, #49 merged), ready for Phase 5
