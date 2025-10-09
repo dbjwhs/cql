@@ -238,8 +238,9 @@ size_t FileLogger::get_current_file_size() const {
 }
 
 void FileLogger::perform_rotation() {
-    // Close current file
+    // Flush and close current file
     if (m_file.is_open()) {
+        m_file.flush();
         m_file.close();
     }
 
