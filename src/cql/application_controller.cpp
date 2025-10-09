@@ -56,37 +56,54 @@ void ApplicationController::initialize_logger(bool log_to_console,
                                              LogLevel debug_level,
                                              size_t rotation_max_size,
                                              size_t rotation_max_files,
-                                             const std::string& timestamp_format) {
+                                             const std::string& timestamp_format,
+                                             std::optional<LogLevel> console_level,
+                                             std::optional<LogLevel> file_level) {
     auto ts_format = string_to_timestamp_format(timestamp_format);
+
+    // Determine actual log levels to use
+    LogLevel actual_file_level = file_level.value_or(debug_level);
+    LogLevel actual_console_level = console_level.value_or(LogLevel::INFO);  // Default console to INFO
 
     if (log_to_console) {
         // Use multi-logger for both file and console
         auto multi_logger = std::make_unique<cql::adapters::MultiLogger>();
 
         // Add file logger with rotation and timestamp configuration
+        // Set FileLogger to DEBUG so it accepts all levels - filtering done by LevelFilteredLogger
         auto file_logger = std::make_unique<cql::adapters::FileLogger>(log_file_path);
-        file_logger->set_min_level(debug_level);
+        file_logger->set_min_level(LogLevel::DEBUG);  // Accept all, filter via wrapper
         file_logger->set_timestamp_format(ts_format);
         if (rotation_max_size > 0) {
             file_logger->enable_rotation(rotation_max_size, rotation_max_files);
         }
-        multi_logger->add_logger(std::move(file_logger));
 
-        // Add console logger
+        // Wrap file logger with level filter for independent control
+        auto filtered_file_logger = std::make_unique<cql::adapters::LevelFilteredLogger>(
+            std::move(file_logger), actual_file_level);
+        multi_logger->add_logger(std::move(filtered_file_logger));
+
+        // Add console logger with independent level control
         auto console_logger = std::make_unique<cql::DefaultConsoleLogger>();
-        console_logger->set_min_level(debug_level);
-        multi_logger->add_logger(std::move(console_logger));
+        auto filtered_console_logger = std::make_unique<cql::adapters::LevelFilteredLogger>(
+            std::move(console_logger), actual_console_level);
+        multi_logger->add_logger(std::move(filtered_console_logger));
 
         cql::LoggerManager::initialize(std::move(multi_logger));
     } else {
         // Default: log to file only
+        // Set FileLogger to DEBUG so it accepts all levels - filtering done by LevelFilteredLogger
         auto file_logger = std::make_unique<cql::adapters::FileLogger>(log_file_path);
-        file_logger->set_min_level(debug_level);
+        file_logger->set_min_level(LogLevel::DEBUG);  // Accept all, filter via wrapper
         file_logger->set_timestamp_format(ts_format);
         if (rotation_max_size > 0) {
             file_logger->enable_rotation(rotation_max_size, rotation_max_files);
         }
-        cql::LoggerManager::initialize(std::move(file_logger));
+
+        // Wrap with level filter for consistency
+        auto filtered_file_logger = std::make_unique<cql::adapters::LevelFilteredLogger>(
+            std::move(file_logger), actual_file_level);
+        cql::LoggerManager::initialize(std::move(filtered_file_logger));
     }
 }
 
@@ -189,6 +206,19 @@ int ApplicationController::run(int argc, char* argv[]) {
     std::string timestamp_format = "simple";  // Default
     cmd_handler.find_and_remove_option("--log-timestamp", timestamp_format);
 
+    // Parse independent log levels for console and file (Phase 5)
+    std::optional<LogLevel> console_level;
+    std::string console_level_str;
+    if (cmd_handler.find_and_remove_option("--console-level", console_level_str)) {
+        console_level = string_to_log_level(console_level_str);
+    }
+
+    std::optional<LogLevel> file_level;
+    std::string file_level_str;
+    if (cmd_handler.find_and_remove_option("--file-level", file_level_str)) {
+        file_level = string_to_log_level(file_level_str);
+    }
+
     // Validate and secure the log file path
     try {
         log_file_path = InputValidator::resolve_path_securely(log_file_path);
@@ -199,8 +229,10 @@ int ApplicationController::run(int argc, char* argv[]) {
 
     // Initialize logger based on configuration
     // By default, log to file only. Use --log-console to also log to console.
+    // Console defaults to INFO for clean output, file uses debug_level unless overridden.
     initialize_logger(log_to_console, log_file_path, debug_level,
-                     rotation_max_size, rotation_max_files, timestamp_format);
+                     rotation_max_size, rotation_max_files, timestamp_format,
+                     console_level, file_level);
 
     // Get logger reference after initialization
     auto& logger = Logger::getInstance();

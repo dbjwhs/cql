@@ -392,6 +392,37 @@ std::string FileLogger::get_timestamp() const {
     }
 }
 
+// LevelFilteredLogger implementation
+LevelFilteredLogger::LevelFilteredLogger(std::unique_ptr<LoggerInterface> logger,
+                                         LogLevel min_level)
+    : m_logger(std::move(logger)), m_min_level(min_level) {
+    if (!m_logger) {
+        throw std::invalid_argument("Logger cannot be null");
+    }
+}
+
+void LevelFilteredLogger::log(LogLevel level, const std::string& message) {
+    if (is_level_enabled(level)) {
+        m_logger->log(level, message);
+    }
+}
+
+bool LevelFilteredLogger::is_level_enabled(LogLevel level) const {
+    return static_cast<int>(level) >= static_cast<int>(m_min_level.load());
+}
+
+void LevelFilteredLogger::flush() {
+    m_logger->flush();
+}
+
+void LevelFilteredLogger::set_min_level(LogLevel min_level) {
+    m_min_level.store(min_level);
+}
+
+LogLevel LevelFilteredLogger::get_min_level() const {
+    return m_min_level.load();
+}
+
 // MultiLogger implementation
 void MultiLogger::add_logger(std::unique_ptr<LoggerInterface> logger) {
     if (!logger) {

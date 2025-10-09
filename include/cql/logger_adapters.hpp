@@ -245,11 +245,56 @@ private:
 };
 
 /**
+ * @brief Level-filtered logger wrapper for independent level control
+ *
+ * Wraps any logger implementation and filters messages based on a minimum level.
+ * This allows different loggers in a MultiLogger to have independent level controls.
+ *
+ * Usage:
+ * @code
+ * auto file_logger = std::make_unique<cql::adapters::FileLogger>("app.log");
+ * auto filtered = std::make_unique<cql::adapters::LevelFilteredLogger>(
+ *     std::move(file_logger), cql::LogLevel::DEBUG);
+ * cql::LoggerManager::initialize(std::move(filtered));
+ * @endcode
+ */
+class LevelFilteredLogger : public LoggerInterface {
+public:
+    /**
+     * @brief Constructor with logger and minimum level
+     * @param logger Logger to wrap (takes ownership)
+     * @param min_level Minimum log level to pass through
+     */
+    explicit LevelFilteredLogger(std::unique_ptr<LoggerInterface> logger,
+                                  LogLevel min_level);
+
+    void log(LogLevel level, const std::string& message) override;
+    bool is_level_enabled(LogLevel level) const override;
+    void flush() override;
+
+    /**
+     * @brief Set the minimum log level
+     * @param min_level New minimum level
+     */
+    void set_min_level(LogLevel min_level);
+
+    /**
+     * @brief Get the current minimum log level
+     * @return Current minimum level
+     */
+    LogLevel get_min_level() const;
+
+private:
+    std::unique_ptr<LoggerInterface> m_logger;
+    std::atomic<LogLevel> m_min_level;
+};
+
+/**
  * @brief Multi-output logger that forwards messages to multiple loggers
- * 
+ *
  * Allows sending log messages to multiple destinations simultaneously
  * (e.g., console + file, or multiple files).
- * 
+ *
  * Usage:
  * @code
  * auto multi_logger = std::make_unique<cql::adapters::MultiLogger>();
