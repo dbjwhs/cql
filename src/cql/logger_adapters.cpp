@@ -420,7 +420,9 @@ void LevelFilteredLogger::flush() {
 }
 
 void LevelFilteredLogger::set_min_level(LogLevel min_level) {
-    m_min_level.store(min_level);
+    // Use memory_order_relaxed for consistency with loads
+    // Level changes are rare and we don't need happens-before guarantees
+    m_min_level.store(min_level, std::memory_order_relaxed);
 }
 
 LogLevel LevelFilteredLogger::get_min_level() const {
