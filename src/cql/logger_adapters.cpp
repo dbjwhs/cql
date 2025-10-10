@@ -408,7 +408,11 @@ void LevelFilteredLogger::log(LogLevel level, const std::string& message) {
 }
 
 bool LevelFilteredLogger::is_level_enabled(LogLevel level) const {
-    return static_cast<int>(level) >= static_cast<int>(m_min_level.load());
+    // Use memory_order_relaxed for performance - level changes are infrequent
+    // and we don't need synchronization with other memory operations.
+    // The worst case of a stale read is one extra/missing log message during
+    // a level change, which is acceptable for logging use cases.
+    return static_cast<int>(level) >= static_cast<int>(m_min_level.load(std::memory_order_relaxed));
 }
 
 void LevelFilteredLogger::flush() {
@@ -420,7 +424,7 @@ void LevelFilteredLogger::set_min_level(LogLevel min_level) {
 }
 
 LogLevel LevelFilteredLogger::get_min_level() const {
-    return m_min_level.load();
+    return m_min_level.load(std::memory_order_relaxed);
 }
 
 // MultiLogger implementation

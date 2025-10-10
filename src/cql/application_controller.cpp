@@ -24,9 +24,9 @@ LogLevel ApplicationController::string_to_log_level(const std::string& level_str
     if (level_str == "ERROR") return LogLevel::ERROR;
     if (level_str == "CRITICAL") return LogLevel::CRITICAL;
 
-    // Default to DEBUG if invalid level provided
-    UserOutputManager::warning("Invalid log level '", level_str, "', using DEBUG instead.");
-    return LogLevel::DEBUG;
+    // Default to NORMAL if invalid level provided (match global default)
+    UserOutputManager::warning("Invalid log level '", level_str, "'. Valid levels: INFO, NORMAL, DEBUG, ERROR, CRITICAL. Using NORMAL instead.");
+    return LogLevel::NORMAL;
 }
 
 cql::adapters::TimestampFormat ApplicationController::string_to_timestamp_format(const std::string& format_str) {
@@ -70,9 +70,16 @@ void ApplicationController::initialize_logger(bool log_to_console,
         auto multi_logger = std::make_unique<cql::adapters::MultiLogger>();
 
         // Add file logger with rotation and timestamp configuration
-        // Set FileLogger to DEBUG so it accepts all levels - filtering done by LevelFilteredLogger
+        // DESIGN NOTE: FileLogger is set to DEBUG internally to accept all log levels.
+        // The actual filtering is performed by the LevelFilteredLogger wrapper below.
+        // This two-layer design allows:
+        // 1. FileLogger to focus on file I/O and rotation logic
+        // 2. LevelFilteredLogger to handle level filtering independently
+        // 3. Different log levels for console and file (Phase 5 feature)
+        // Without this, FileLogger's internal filter would block messages before
+        // LevelFilteredLogger could apply its independent level control.
         auto file_logger = std::make_unique<cql::adapters::FileLogger>(log_file_path);
-        file_logger->set_min_level(LogLevel::DEBUG);  // Accept all, filter via wrapper
+        file_logger->set_min_level(LogLevel::DEBUG);  // Accept all, filtering done by wrapper
         file_logger->set_timestamp_format(ts_format);
         if (rotation_max_size > 0) {
             file_logger->enable_rotation(rotation_max_size, rotation_max_files);
@@ -92,9 +99,10 @@ void ApplicationController::initialize_logger(bool log_to_console,
         cql::LoggerManager::initialize(std::move(multi_logger));
     } else {
         // Default: log to file only
-        // Set FileLogger to DEBUG so it accepts all levels - filtering done by LevelFilteredLogger
+        // DESIGN NOTE: Same two-layer design as multi-logger case above.
+        // FileLogger set to DEBUG, LevelFilteredLogger applies actual filtering.
         auto file_logger = std::make_unique<cql::adapters::FileLogger>(log_file_path);
-        file_logger->set_min_level(LogLevel::DEBUG);  // Accept all, filter via wrapper
+        file_logger->set_min_level(LogLevel::DEBUG);  // Accept all, filtering done by wrapper
         file_logger->set_timestamp_format(ts_format);
         if (rotation_max_size > 0) {
             file_logger->enable_rotation(rotation_max_size, rotation_max_files);

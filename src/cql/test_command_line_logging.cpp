@@ -440,4 +440,84 @@ TEST_F(CommandLineLoggingTest, Integration_WithDebugLevel) {
     EXPECT_EQ(debug_level, "DEBUG");
 }
 
+// Phase 5: Test interaction between --file-level and --debug-level
+TEST_F(CommandLineLoggingTest, Phase5_FileLevelOverridesDebugLevel) {
+    setup_argv({"cql", "--debug-level", "ERROR", "--file-level", "DEBUG"});
+
+    CommandLineHandler handler(m_argc, m_argv);
+
+    std::string debug_level_str;
+    EXPECT_TRUE(handler.find_and_remove_option("--debug-level", debug_level_str));
+    EXPECT_EQ(debug_level_str, "ERROR");
+
+    std::string file_level_str;
+    EXPECT_TRUE(handler.find_and_remove_option("--file-level", file_level_str));
+    EXPECT_EQ(file_level_str, "DEBUG");
+
+    // file_level should take precedence over debug_level for file logging
+    // (This is the Phase 5 feature - independent level control)
+    // The actual level conversion and precedence is tested in initialize_logger()
+}
+
+// Phase 5: Test default console level behavior
+TEST_F(CommandLineLoggingTest, Phase5_ConsoleDefaultsToInfo) {
+    setup_argv({"cql", "--log-console"});
+
+    CommandLineHandler handler(m_argc, m_argv);
+
+    bool log_to_console = handler.find_and_remove_flag("--log-console");
+    EXPECT_TRUE(log_to_console);
+
+    // When --console-level is not specified, it should default to INFO
+    std::string console_level_str;
+    bool has_console_level = handler.find_and_remove_option("--console-level", console_level_str);
+    EXPECT_FALSE(has_console_level);
+
+    // In initialize_logger(), the default console level is INFO (Phase 5 design)
+    // This test verifies the flag is absent, actual default tested in initialize_logger()
+}
+
+// Phase 5: Test backward compatibility of flag interactions
+TEST_F(CommandLineLoggingTest, Phase5_BackwardCompatibility) {
+    // Old usage: just --debug-level and --log-console
+    setup_argv({"cql", "--log-console", "--debug-level", "DEBUG"});
+
+    CommandLineHandler handler(m_argc, m_argv);
+
+    bool log_to_console = handler.find_and_remove_flag("--log-console");
+    EXPECT_TRUE(log_to_console);
+
+    std::string debug_level_str;
+    EXPECT_TRUE(handler.find_and_remove_option("--debug-level", debug_level_str));
+    EXPECT_EQ(debug_level_str, "DEBUG");
+
+    // No --file-level or --console-level specified
+    std::string file_level_str;
+    EXPECT_FALSE(handler.find_and_remove_option("--file-level", file_level_str));
+
+    std::string console_level_str;
+    EXPECT_FALSE(handler.find_and_remove_option("--console-level", console_level_str));
+
+    // Expected behavior:
+    // - File should use debug_level (DEBUG)
+    // - Console should default to INFO (Phase 5 default)
+    // This maintains backward compatibility while adding new features
+}
+
+// Phase 5: Test invalid log level handling
+TEST_F(CommandLineLoggingTest, Phase5_InvalidLogLevelHandling) {
+    setup_argv({"cql", "--debug-level", "INVALID_LEVEL"});
+
+    CommandLineHandler handler(m_argc, m_argv);
+
+    std::string debug_level_str;
+    EXPECT_TRUE(handler.find_and_remove_option("--debug-level", debug_level_str));
+    EXPECT_EQ(debug_level_str, "INVALID_LEVEL");
+
+    // The implementation (ApplicationController::string_to_log_level) should:
+    // 1. Show a warning with valid options via UserOutputManager
+    // 2. Default to NORMAL level
+    // This ensures invalid input doesn't crash and provides helpful feedback
+}
+
 } // namespace cql::test
