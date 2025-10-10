@@ -146,7 +146,7 @@ void CommandLineHandler::print_help() {
               << "  --version, -v           Show version information\n"
               << "  --interactive, -i       Run in interactive mode\n"
               << "  --clipboard, -c         Copy output to clipboard instead of writing to a file\n"
-              << "  --env                   Load environment variables from .env file\n"
+              << "  --env [PATH]            Load environment variables from .env file (default: .env in current dir)\n"
               << "  --include-header        Include compiler headers and status messages in output\n"
               << "  --debug-level LEVEL     Set log level (INFO|NORMAL|DEBUG|ERROR|CRITICAL, default: NORMAL)\n"
               << "  --log-console           Enable logging to console (default: file only, console at INFO)\n"

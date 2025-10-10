@@ -244,17 +244,28 @@ int ApplicationController::run(int argc, char* argv[]) {
     bool include_headers = cmd_handler.find_and_remove_flag("--include-header");
 
     // Check for --env flag to load .env file
-    if (cmd_handler.find_and_remove_flag("--env")) {
+    std::string env_file_path;
+    bool load_env = false;
+
+    // Check if --env has a value (custom path) or is just a flag (default .env)
+    if (cmd_handler.find_and_remove_option("--env", env_file_path)) {
+        load_env = true;
+    } else if (cmd_handler.find_and_remove_flag("--env")) {
+        load_env = true;
+        env_file_path = ".env";  // Default path
+    }
+
+    if (load_env) {
         try {
-            if (util::load_env_file()) {
+            if (util::load_env_file(env_file_path)) {
                 // Only show if headers are enabled to keep output clean
                 if (include_headers) {
-                    UserOutputManager::success("Successfully loaded .env file");
+                    UserOutputManager::success("Successfully loaded .env file from: ", env_file_path);
                 }
-                logger.log(LogLevel::DEBUG, "Environment variables loaded from .env file");
+                logger.log(LogLevel::DEBUG, "Environment variables loaded from .env file: ", env_file_path);
             } else {
-                UserOutputManager::warning("Could not load .env file");
-                logger.log(LogLevel::DEBUG, "Failed to load .env file - file may not exist");
+                UserOutputManager::warning("Could not load .env file: ", env_file_path);
+                logger.log(LogLevel::DEBUG, "Failed to load .env file: ", env_file_path);
             }
         } catch (const SecurityValidationError& e) {
             UserOutputManager::error("Security Error: ", e.what());

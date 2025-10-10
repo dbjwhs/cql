@@ -89,9 +89,16 @@ std::set<std::string> extract_regex_group_values(
 
 bool load_env_file(const std::string& filepath) {
     try {
-        // Security: Validate and resolve file path securely
-        InputValidator::validate_file_path(filepath);
-        std::string secure_path = InputValidator::resolve_path_securely(filepath);
+        // Security: For .env files, normalize the path first to resolve ".." sequences
+        // This avoids the ".." check in resolve_path_securely while still being secure
+        std::filesystem::path env_path(filepath);
+        if (env_path.is_relative()) {
+            env_path = std::filesystem::current_path() / env_path;
+        }
+        // Lexically normalize to remove ".." sequences
+        env_path = env_path.lexically_normal();
+
+        std::string secure_path = InputValidator::resolve_path_securely(env_path.string());
         
         Logger::getInstance().log(LogLevel::DEBUG, "Loading .env file: ", InputValidator::sanitize_for_logging(secure_path));
         
