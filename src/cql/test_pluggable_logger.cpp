@@ -764,4 +764,233 @@ TEST_F(PluggableLoggerTest, FileLoggerUnlimitedRotation) {
     }
 }
 
+// Phase 5: Multi-logger with independent level control tests
+
+TEST_F(PluggableLoggerTest, LevelFilteredLoggerBasicFiltering) {
+    auto test_logger = std::make_unique<TestLogger>();
+    auto* test_logger_ptr = test_logger.get();
+    test_logger_ptr->set_min_level(LogLevel::DEBUG); // TestLogger accepts all levels
+
+    // Wrap with filter at INFO level
+    auto filtered = std::make_unique<adapters::LevelFilteredLogger>(
+        std::move(test_logger), LogLevel::INFO);
+
+    // Test level checking
+    EXPECT_FALSE(filtered->is_level_enabled(LogLevel::DEBUG));
+    EXPECT_TRUE(filtered->is_level_enabled(LogLevel::INFO));
+    EXPECT_TRUE(filtered->is_level_enabled(LogLevel::NORMAL));
+    EXPECT_TRUE(filtered->is_level_enabled(LogLevel::ERROR));
+    EXPECT_TRUE(filtered->is_level_enabled(LogLevel::CRITICAL));
+
+    // Log messages at different levels
+    filtered->log(LogLevel::DEBUG, "Debug message - should be filtered");
+    filtered->log(LogLevel::INFO, "Info message - should pass");
+    filtered->log(LogLevel::NORMAL, "Normal message - should pass");
+    filtered->log(LogLevel::ERROR, "Error message - should pass");
+    filtered->flush();
+
+    // Verify only appropriate levels were logged
+    auto entries = test_logger_ptr->get_entries();
+    EXPECT_EQ(entries.size(), 3);
+    EXPECT_EQ(entries[0].level, LogLevel::INFO);
+    EXPECT_EQ(entries[0].message, "Info message - should pass");
+    EXPECT_EQ(entries[1].level, LogLevel::NORMAL);
+    EXPECT_EQ(entries[2].level, LogLevel::ERROR);
+}
+
+TEST_F(PluggableLoggerTest, LevelFilteredLoggerDynamicLevelChange) {
+    auto test_logger = std::make_unique<TestLogger>();
+    auto* test_logger_ptr = test_logger.get();
+    test_logger_ptr->set_min_level(LogLevel::DEBUG);
+
+    auto filtered = std::make_unique<adapters::LevelFilteredLogger>(
+        std::move(test_logger), LogLevel::INFO);
+
+    // Initial state - INFO and above
+    filtered->log(LogLevel::DEBUG, "Debug 1 - filtered");
+    filtered->log(LogLevel::INFO, "Info 1 - pass");
+
+    EXPECT_EQ(test_logger_ptr->get_entries().size(), 1);
+    test_logger_ptr->clear_entries();
+
+    // Change to DEBUG level
+    filtered->set_min_level(LogLevel::DEBUG);
+    EXPECT_EQ(filtered->get_min_level(), LogLevel::DEBUG);
+
+    filtered->log(LogLevel::DEBUG, "Debug 2 - pass");
+    filtered->log(LogLevel::INFO, "Info 2 - pass");
+
+    EXPECT_EQ(test_logger_ptr->get_entries().size(), 2);
+    test_logger_ptr->clear_entries();
+
+    // Change to ERROR level
+    filtered->set_min_level(LogLevel::ERROR);
+
+    filtered->log(LogLevel::DEBUG, "Debug 3 - filtered");
+    filtered->log(LogLevel::INFO, "Info 3 - filtered");
+    filtered->log(LogLevel::ERROR, "Error 3 - pass");
+
+    auto entries = test_logger_ptr->get_entries();
+    EXPECT_EQ(entries.size(), 1);
+    EXPECT_EQ(entries[0].level, LogLevel::ERROR);
+}
+
+TEST_F(PluggableLoggerTest, MultiLoggerWithIndependentLevels) {
+    // Create two test loggers
+    auto file_logger = std::make_unique<TestLogger>();
+    auto console_logger = std::make_unique<TestLogger>();
+
+    auto* file_logger_ptr = file_logger.get();
+    auto* console_logger_ptr = console_logger.get();
+
+    file_logger_ptr->set_min_level(LogLevel::DEBUG);
+    console_logger_ptr->set_min_level(LogLevel::DEBUG);
+
+    // Create multi-logger with independent filtering
+    auto multi_logger = std::make_unique<adapters::MultiLogger>();
+
+    // File logger gets DEBUG and above
+    auto filtered_file = std::make_unique<adapters::LevelFilteredLogger>(
+        std::move(file_logger), LogLevel::DEBUG);
+    multi_logger->add_logger(std::move(filtered_file));
+
+    // Console logger gets INFO and above (Phase 5 default)
+    auto filtered_console = std::make_unique<adapters::LevelFilteredLogger>(
+        std::move(console_logger), LogLevel::INFO);
+    multi_logger->add_logger(std::move(filtered_console));
+
+    // Log messages at different levels
+    multi_logger->log(LogLevel::DEBUG, "Debug message");
+    multi_logger->log(LogLevel::INFO, "Info message");
+    multi_logger->log(LogLevel::ERROR, "Error message");
+    multi_logger->flush();
+
+    // Verify file logger got all messages
+    auto file_entries = file_logger_ptr->get_entries();
+    EXPECT_EQ(file_entries.size(), 3);
+    EXPECT_EQ(file_entries[0].message, "Debug message");
+    EXPECT_EQ(file_entries[1].message, "Info message");
+    EXPECT_EQ(file_entries[2].message, "Error message");
+
+    // Verify console logger only got INFO and above
+    auto console_entries = console_logger_ptr->get_entries();
+    EXPECT_EQ(console_entries.size(), 2);
+    EXPECT_EQ(console_entries[0].message, "Info message");
+    EXPECT_EQ(console_entries[1].message, "Error message");
+}
+
+TEST_F(PluggableLoggerTest, MultiLoggerIndependentLevelsRealWorld) {
+    // Simulate Phase 5 real-world scenario:
+    // File: DEBUG level for detailed logging
+    // Console: INFO level for clean output
+
+    std::string log_file_path = (m_temp_dir / "detailed.log").string();
+
+    auto file_logger = std::make_unique<adapters::FileLogger>(log_file_path);
+    file_logger->set_min_level(LogLevel::DEBUG); // Accept all levels, filter via wrapper
+    auto console_logger = std::make_unique<TestLogger>();
+    auto* console_logger_ptr = console_logger.get();
+    console_logger_ptr->set_min_level(LogLevel::DEBUG);
+
+    auto multi_logger = std::make_unique<adapters::MultiLogger>();
+
+    // File at DEBUG
+    auto filtered_file = std::make_unique<adapters::LevelFilteredLogger>(
+        std::move(file_logger), LogLevel::DEBUG);
+    multi_logger->add_logger(std::move(filtered_file));
+
+    // Console at INFO
+    auto filtered_console = std::make_unique<adapters::LevelFilteredLogger>(
+        std::move(console_logger), LogLevel::INFO);
+    multi_logger->add_logger(std::move(filtered_console));
+
+    // Log various levels
+    multi_logger->log(LogLevel::DEBUG, "Detailed debug info");
+    multi_logger->log(LogLevel::INFO, "User-facing info");
+    multi_logger->log(LogLevel::NORMAL, "Normal operation");
+    multi_logger->log(LogLevel::ERROR, "Error occurred");
+    multi_logger->flush();
+
+    // Console should only have INFO and above
+    auto console_entries = console_logger_ptr->get_entries();
+    EXPECT_EQ(console_entries.size(), 3);
+    EXPECT_EQ(console_entries[0].message, "User-facing info");
+    EXPECT_EQ(console_entries[1].message, "Normal operation");
+    EXPECT_EQ(console_entries[2].message, "Error occurred");
+
+    // File should have all messages
+    EXPECT_TRUE(std::filesystem::exists(log_file_path));
+    std::ifstream file(log_file_path);
+    std::string file_content((std::istreambuf_iterator<char>(file)),
+                            std::istreambuf_iterator<char>());
+    file.close();
+
+    EXPECT_NE(file_content.find("Detailed debug info"), std::string::npos);
+    EXPECT_NE(file_content.find("User-facing info"), std::string::npos);
+    EXPECT_NE(file_content.find("Normal operation"), std::string::npos);
+    EXPECT_NE(file_content.find("Error occurred"), std::string::npos);
+}
+
+TEST_F(PluggableLoggerTest, LevelFilteredLoggerNullProtection) {
+    // Test that LevelFilteredLogger rejects null loggers
+    EXPECT_THROW({
+        auto filtered = std::make_unique<adapters::LevelFilteredLogger>(
+            nullptr, LogLevel::INFO);
+    }, std::invalid_argument);
+}
+
+TEST_F(PluggableLoggerTest, MultiLoggerWithDifferentLevelCombinations) {
+    // Test various level combinations to ensure flexibility
+
+    auto logger1 = std::make_unique<TestLogger>();
+    auto logger2 = std::make_unique<TestLogger>();
+    auto logger3 = std::make_unique<TestLogger>();
+
+    auto* logger1_ptr = logger1.get();
+    auto* logger2_ptr = logger2.get();
+    auto* logger3_ptr = logger3.get();
+
+    logger1_ptr->set_min_level(LogLevel::DEBUG);
+    logger2_ptr->set_min_level(LogLevel::DEBUG);
+    logger3_ptr->set_min_level(LogLevel::DEBUG);
+
+    auto multi_logger = std::make_unique<adapters::MultiLogger>();
+
+    // Logger 1: Only CRITICAL
+    auto filtered1 = std::make_unique<adapters::LevelFilteredLogger>(
+        std::move(logger1), LogLevel::CRITICAL);
+    multi_logger->add_logger(std::move(filtered1));
+
+    // Logger 2: NORMAL and above
+    auto filtered2 = std::make_unique<adapters::LevelFilteredLogger>(
+        std::move(logger2), LogLevel::NORMAL);
+    multi_logger->add_logger(std::move(filtered2));
+
+    // Logger 3: DEBUG and above (everything)
+    auto filtered3 = std::make_unique<adapters::LevelFilteredLogger>(
+        std::move(logger3), LogLevel::DEBUG);
+    multi_logger->add_logger(std::move(filtered3));
+
+    // Log all levels
+    multi_logger->log(LogLevel::DEBUG, "Debug");
+    multi_logger->log(LogLevel::INFO, "Info");
+    multi_logger->log(LogLevel::NORMAL, "Normal");
+    multi_logger->log(LogLevel::ERROR, "Error");
+    multi_logger->log(LogLevel::CRITICAL, "Critical");
+    multi_logger->flush();
+
+    // Logger 1 should only have CRITICAL
+    EXPECT_EQ(logger1_ptr->get_entries().size(), 1);
+    EXPECT_EQ(logger1_ptr->get_entries()[0].level, LogLevel::CRITICAL);
+
+    // Logger 2 should have NORMAL, ERROR, CRITICAL
+    EXPECT_EQ(logger2_ptr->get_entries().size(), 3);
+    EXPECT_EQ(logger2_ptr->get_entries()[0].level, LogLevel::NORMAL);
+    EXPECT_EQ(logger2_ptr->get_entries()[1].level, LogLevel::ERROR);
+    EXPECT_EQ(logger2_ptr->get_entries()[2].level, LogLevel::CRITICAL);
+
+    // Logger 3 should have all 5
+    EXPECT_EQ(logger3_ptr->get_entries().size(), 5);
+}
+
 } // namespace cql::test

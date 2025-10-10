@@ -4,10 +4,17 @@ This document provides comprehensive context for AI assistants working on the CQ
 
 ## Current Work Status
 
-**Active Branch**: `main` (all phases complete and merged)
-**Latest PR**: [#49 - Fix failing tests after Phase 3 merge](https://github.com/dbjwhs/cql/pull/49) - MERGED ✅
+**Active Branch**: `main` (all 5 core phases complete)
+**Latest PR**: Ready for Phase 5 review
 
-### All Core Logging Phases Complete! 🎉
+### Phase 5 Complete - Multi-Logger with Independent Level Control! 🎉
+
+**Phase 5 Implementation:**
+- ✅ **LevelFilteredLogger**: New wrapper class for independent level filtering
+- ✅ **Independent Level Control**: Console and file loggers can have different levels
+- ✅ **CLI Flags**: `--console-level` and `--file-level` for fine-grained control
+- ✅ **Smart Defaults**: Console defaults to INFO for clean output
+- ✅ **Comprehensive Tests**: 6 new tests covering all scenarios (245 total tests passing)
 
 **Recently Merged:**
 - ✅ **PR #49**: Fixed all failing tests after Phase 3 merge
@@ -19,7 +26,6 @@ This document provides comprehensive context for AI assistants working on the CQ
   - All 239 tests passing
 
 **What's Next:**
-- Phase 5: Multi-logger with independent level control
 - Phase 6: Documentation and examples
 - Multi-provider AI support expansion
 
@@ -30,7 +36,7 @@ This document provides comprehensive context for AI assistants working on the CQ
 - ✅ Phase 2: Separate user output from debug logging (PR #45 - MERGED)
 - ✅ Phase 3: Enhanced file logger configuration (rotation, timestamps) (PR #48 - MERGED)
 - ✅ Phase 4: Clean up mixed output patterns (PR #46 - MERGED)
-- 📋 Phase 5: Multi-logger with independent level control
+- ✅ Phase 5: Multi-logger with independent level control (Ready for PR)
 - 📋 Phase 6: Documentation and examples
 
 ## Project Overview
@@ -136,22 +142,40 @@ CQL provides flexible logging configuration with secure file-based logging by de
 ./build/cql input.llm --log-file ./logs/debug.log
 ```
 
-**`--log-console`** - Enable console logging in addition to file logging
+**`--log-console`** - Enable console logging in addition to file logging (console defaults to INFO)
 ```bash
-# Log to both file and console
+# Log to both file and console (console at INFO for clean output)
 ./build/cql input.llm --log-console
 
 # Combine with custom log file
 ./build/cql input.llm --log-console --log-file debug.log
 ```
 
-**`--debug-level LEVEL`** - Set minimum log level (INFO|NORMAL|DEBUG|ERROR|CRITICAL)
+**`--debug-level LEVEL`** - Set minimum log level for file logging (INFO|NORMAL|DEBUG|ERROR|CRITICAL)
 ```bash
 # Debug level logging to file
 ./build/cql input.llm --debug-level DEBUG
 
-# Debug level logging to both file and console
+# File at DEBUG, console at INFO (default)
 ./build/cql input.llm --log-console --debug-level DEBUG
+```
+
+**`--console-level LEVEL`** - Set console log level independently (Phase 5, defaults to INFO)
+```bash
+# Console at DEBUG for verbose output
+./build/cql input.llm --log-console --console-level DEBUG
+
+# Console errors only, file gets everything
+./build/cql input.llm --log-console --console-level ERROR --file-level DEBUG
+```
+
+**`--file-level LEVEL`** - Set file log level independently (Phase 5, defaults to --debug-level)
+```bash
+# File at DEBUG, console at INFO (clean output, detailed logs)
+./build/cql input.llm --log-console --file-level DEBUG
+
+# Both at NORMAL
+./build/cql input.llm --log-console --file-level NORMAL --console-level NORMAL
 ```
 
 **`--log-max-size BYTES`** - Enable log file rotation at specified size
@@ -196,11 +220,17 @@ CQL provides flexible logging configuration with secure file-based logging by de
 # Production use - quiet console, detailed file logging
 ./build/cql production.llm --debug-level INFO
 
-# Development - see logs in real-time
-./build/cql development.llm --log-console --debug-level DEBUG
+# Development - see logs in real-time (console at INFO by default for clean output)
+./build/cql development.llm --log-console --file-level DEBUG
 
-# Debugging specific issue - custom log location
-./build/cql problem.llm --log-console --debug-level DEBUG --log-file /tmp/debug.log
+# Phase 5: Console at INFO (clean), file at DEBUG (detailed)
+./build/cql development.llm --log-console --console-level INFO --file-level DEBUG
+
+# Phase 5: Debugging with verbose console output
+./build/cql problem.llm --log-console --console-level DEBUG --file-level DEBUG --log-file /tmp/debug.log
+
+# Phase 5: Production - console shows important messages only, file gets all details
+./build/cql production.llm --log-console --console-level NORMAL --file-level DEBUG
 
 # CI/CD pipeline - errors only to specific file
 ./build/cql pipeline.llm --debug-level ERROR --log-file build.log
@@ -208,8 +238,9 @@ CQL provides flexible logging configuration with secure file-based logging by de
 # Production with log rotation - rotate at 50MB, keep 10 files
 ./build/cql production.llm --log-max-size 52428800 --log-max-files 10 --log-timestamp iso8601
 
-# Long-running service - rotation with ISO timestamps
-./build/cql service.llm --log-max-size 10485760 --log-max-files 20 --log-timestamp iso8601-local
+# Long-running service - rotation with ISO timestamps and independent levels
+./build/cql service.llm --log-console --console-level ERROR --file-level DEBUG \
+  --log-max-size 10485760 --log-max-files 20 --log-timestamp iso8601-local
 ```
 
 #### Security Considerations
@@ -568,4 +599,4 @@ When working on this project:
 This project represents a security-hardened approach to query language development with comprehensive tooling, testing, and enterprise-grade security measures.
 
 ---
-**Last Updated**: 2025-10-08 - All 4 core logging phases complete (PRs #44, #45, #46, #48, #49 merged), ready for Phase 5
+**Last Updated**: 2025-10-08 - Phase 5 complete (Multi-logger with independent level control), ready for PR review

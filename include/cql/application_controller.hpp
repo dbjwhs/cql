@@ -51,17 +51,21 @@ private:
      * @brief Initialize the logger system with appropriate configuration
      * @param log_to_console Enable console logging
      * @param log_file_path Path to log file
-     * @param debug_level Minimum log level to use
+     * @param debug_level Minimum log level to use (fallback for file if file_level not specified)
      * @param rotation_max_size Maximum file size for rotation (0 = disabled)
      * @param rotation_max_files Maximum number of rotated files to keep
      * @param timestamp_format Timestamp format for log messages
+     * @param console_level Log level for console output (defaults to INFO for clean output)
+     * @param file_level Log level for file output (uses debug_level if not specified)
      */
     static void initialize_logger(bool log_to_console,
                                   const std::string& log_file_path,
                                   LogLevel debug_level,
                                   size_t rotation_max_size = 0,
                                   size_t rotation_max_files = 5,
-                                  const std::string& timestamp_format = "simple");
+                                  const std::string& timestamp_format = "simple",
+                                  std::optional<LogLevel> console_level = std::nullopt,
+                                  std::optional<LogLevel> file_level = std::nullopt);
 
     /**
      * @brief Convert string to TimestampFormat
