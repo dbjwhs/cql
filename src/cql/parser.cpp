@@ -27,7 +27,8 @@ const std::unordered_map<TokenType, Parser::ParseFunction> Parser::m_dispatch_ta
     {TokenType::MAX_TOKENS, &Parser::parse_max_tokens},
     {TokenType::TEMPERATURE, &Parser::parse_temperature},
     {TokenType::PATTERN, &Parser::parse_pattern},
-    {TokenType::STRUCTURE, &Parser::parse_structure}
+    {TokenType::STRUCTURE, &Parser::parse_structure},
+    {TokenType::PROVIDER, &Parser::parse_provider}
 };
 
 // parsererror implementation
@@ -46,8 +47,23 @@ void Parser::advance() {
     m_current_token = m_lexer.next_token();
 }
 
+void Parser::synchronize() {
+    // Advance tokens until we find one in the dispatch table or EOF
+    while (m_current_token) {
+        if (m_current_token->m_type == TokenType::NEWLINE) {
+            advance();
+            continue;
+        }
+        if (m_dispatch_table.find(m_current_token->m_type) != m_dispatch_table.end()) {
+            return; // Found a valid directive to resume from
+        }
+        advance();
+    }
+}
+
 std::vector<std::unique_ptr<QueryNode>> Parser::parse() {
     std::vector<std::unique_ptr<QueryNode>> nodes;
+    m_error_reporter.clear();
 
     while (m_current_token) {
         if (m_current_token->m_type == TokenType::NEWLINE) {
@@ -55,47 +71,48 @@ std::vector<std::unique_ptr<QueryNode>> Parser::parse() {
             continue;
         }
 
-        // validate the token is a keyword
-        if (m_current_token->m_type != TokenType::LANGUAGE &&
-            m_current_token->m_type != TokenType::DESCRIPTION &&
-            m_current_token->m_type != TokenType::CONTEXT &&
-            m_current_token->m_type != TokenType::TEST &&
-            m_current_token->m_type != TokenType::DEPENDENCY &&
-            m_current_token->m_type != TokenType::PERFORMANCE &&
-            m_current_token->m_type != TokenType::COPYRIGHT &&
-            m_current_token->m_type != TokenType::ARCHITECTURE &&
-            m_current_token->m_type != TokenType::CONSTRAINT &&
-            m_current_token->m_type != TokenType::EXAMPLE &&
-            m_current_token->m_type != TokenType::SECURITY &&
-            m_current_token->m_type != TokenType::COMPLEXITY &&
-            m_current_token->m_type != TokenType::MODEL &&
-            m_current_token->m_type != TokenType::FORMAT &&
-            m_current_token->m_type != TokenType::VARIABLE &&
-            m_current_token->m_type != TokenType::OUTPUT_FORMAT &&
-            m_current_token->m_type != TokenType::MAX_TOKENS &&
-            m_current_token->m_type != TokenType::TEMPERATURE &&
-            m_current_token->m_type != TokenType::PATTERN &&
-            m_current_token->m_type != TokenType::STRUCTURE) {
-            
-            if (!m_current_token) {
-                throw ParserError("Expected keyword but reached end of input", 
-                                  m_lexer.current_line(), m_lexer.current_column());
-            } else {
-                throw ParserError("Expected keyword", 
-                                  m_current_token->m_line, m_current_token->m_column);
-            }
+        // Validate the token is a known directive via dispatch table lookup
+        const auto it = m_dispatch_table.find(m_current_token->m_type);
+        if (it == m_dispatch_table.end()) {
+            // Record the error and recover
+            ParseDiagnostic diag;
+            diag.line = m_current_token->m_line;
+            diag.column = m_current_token->m_column;
+            diag.error_code = parser_errors::UNEXPECTED_TOKEN;
+            diag.message = "Expected directive keyword";
+            diag.offending_token = m_current_token->m_value;
+            diag.expected = "@directive";
+            m_error_reporter.add_error(std::move(diag));
+
+            advance(); // Skip the bad token
+            synchronize();
+            continue;
         }
 
-        // parse the appropriate node type using dispatch table
-        const auto it = m_dispatch_table.find(m_current_token->m_type);
-        if (it != m_dispatch_table.end()) {
-            // Call the appropriate parser function using member function pointer
+        // Try to parse the directive, recovering on error
+        try {
             nodes.push_back((this->*(it->second))());
-        } else {
-            throw ParserError("Unexpected token type", m_current_token->m_line, m_current_token->m_column,
-                              parser_errors::UNEXPECTED_TOKEN);
+        } catch (const ParserError& e) {
+            ParseDiagnostic diag;
+            diag.line = e.line();
+            diag.column = e.column();
+            diag.error_code = e.error_code();
+            diag.message = e.what();
+            m_error_reporter.add_error(std::move(diag));
+            synchronize();
+        } catch (const LexerError& e) {
+            ParseDiagnostic diag;
+            diag.line = e.line();
+            diag.column = e.column();
+            diag.error_code = parser_errors::INVALID_STRING;
+            diag.message = e.what();
+            m_error_reporter.add_error(std::move(diag));
+            synchronize();
         }
     }
+
+    // After parsing, throw if any errors accumulated
+    m_error_reporter.throw_if_errors();
 
     return nodes;
 }
@@ -332,6 +349,12 @@ std::unique_ptr<QueryNode> Parser::parse_structure() {
     advance(); // skip @structure
     std::string structure_def = parse_string();
     return std::make_unique<StructureNode>(structure_def);
+}
+
+std::unique_ptr<QueryNode> Parser::parse_provider() {
+    advance(); // skip @provider
+    std::string provider_name = parse_string();
+    return std::make_unique<ProviderNode>(provider_name);
 }
 
 } // namespace cql

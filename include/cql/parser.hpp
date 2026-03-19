@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include "lexer.hpp"
 #include "nodes.hpp"
+#include "error_reporter.hpp"
 
 namespace cql {
 
@@ -53,15 +54,19 @@ public:
 private:
     Lexer m_lexer;
     std::optional<Token> m_current_token;
-    
+    ErrorReporter m_error_reporter;
+
     // Type alias for parser function pointer
     using ParseFunction = std::unique_ptr<QueryNode> (Parser::*)();
-    
+
     // Dispatch table for mapping token types to parser functions
     static const std::unordered_map<TokenType, ParseFunction> m_dispatch_table;
 
     // move to the next token in the input
     void advance();
+
+    // synchronize to next directive after an error (panic-mode recovery)
+    void synchronize();
     
     // parse a string token
     std::string parse_string();
@@ -86,6 +91,7 @@ private:
     std::unique_ptr<QueryNode> parse_temperature();
     std::unique_ptr<QueryNode> parse_pattern();
     std::unique_ptr<QueryNode> parse_structure();
+    std::unique_ptr<QueryNode> parse_provider();
 };
 
 /**
