@@ -26,6 +26,7 @@
 #include "../../include/cql/input_validator.hpp"
 #include "ailib/detail/json_utils.hpp"
 #include "../../include/cql/error_context.hpp"
+#include "../../include/cql/error_reporter.hpp"
 #include "../../include/cql/test_utils.hpp"
 #include "../../third_party/include/nlohmann/json.hpp"
 
@@ -1421,6 +1422,115 @@ invalid_line_without_equals
     unsetenv("EMPTY_VALUE");
     
     std::cout << "✅ .env file loading tests passed - comprehensive parsing and security validation working!" << std::endl;
+}
+
+/**
+ * Tests for parser error recovery (multi-error reporting)
+ */
+TEST_F(CQLTest, ParserErrorRecovery_MultipleErrors) {
+    // Input with two errors: unknown identifier and a bad directive argument
+    const std::string input = "badtoken\n@context \"valid context\"\nworse\n";
+
+    try {
+        cql::Parser parser(input);
+        parser.parse();
+        FAIL() << "Should have thrown ParserError";
+    } catch (const cql::ParserError& e) {
+        std::string msg = e.what();
+        // Should report 2 errors (badtoken + worse)
+        EXPECT_TRUE(msg.find("2 error") != std::string::npos)
+            << "Expected 2 errors, got: " << msg;
+    }
+}
+
+TEST_F(CQLTest, ParserErrorRecovery_SingleError) {
+    // Single error should behave like before
+    const std::string input = "badtoken\n";
+
+    try {
+        cql::Parser parser(input);
+        parser.parse();
+        FAIL() << "Should have thrown ParserError";
+    } catch (const cql::ParserError& e) {
+        std::string msg = e.what();
+        EXPECT_TRUE(msg.find("1 error") != std::string::npos)
+            << "Expected 1 error, got: " << msg;
+    }
+}
+
+TEST_F(CQLTest, ParserErrorRecovery_ValidAfterInvalid) {
+    // Valid directives after invalid one should still be parsed (but errors thrown)
+    const std::string input = "badtoken\n@context \"valid context\"\n";
+
+    try {
+        cql::Parser parser(input);
+        parser.parse();
+        FAIL() << "Should have thrown ParserError";
+    } catch (const cql::ParserError& e) {
+        std::string msg = e.what();
+        // Only 1 error (badtoken), the @context should have been parsed fine
+        EXPECT_TRUE(msg.find("1 error") != std::string::npos)
+            << "Expected 1 error, got: " << msg;
+    }
+}
+
+TEST_F(CQLTest, ParserErrorRecovery_ErrorFormat) {
+    const std::string input = "badtoken\n";
+
+    try {
+        cql::Parser parser(input);
+        parser.parse();
+        FAIL() << "Should have thrown ParserError";
+    } catch (const cql::ParserError& e) {
+        std::string msg = e.what();
+        // Check that error includes line and column info
+        EXPECT_TRUE(msg.find("line") != std::string::npos)
+            << "Error should include line number, got: " << msg;
+        EXPECT_TRUE(msg.find("column") != std::string::npos)
+            << "Error should include column number, got: " << msg;
+    }
+}
+
+/**
+ * Tests for @provider directive (lexer, parser, compiler)
+ */
+TEST_F(CQLTest, LexerProviderToken) {
+    cql::Lexer lexer("@provider \"openai\"");
+    auto token = lexer.next_token();
+    ASSERT_TRUE(token.has_value());
+    EXPECT_EQ(token->m_type, cql::TokenType::PROVIDER);
+    EXPECT_EQ(token->m_value, "provider");
+}
+
+TEST_F(CQLTest, ParserProviderNode) {
+    const std::string input = "@language \"C++\"\n@description \"test\"\n@provider \"openai\"\n";
+    cql::Parser parser(input);
+    auto nodes = parser.parse();
+    ASSERT_EQ(nodes.size(), 2); // CodeRequestNode + ProviderNode
+
+    // Verify the second node is a ProviderNode by compiling
+    cql::QueryCompiler compiler;
+    for (const auto& node : nodes) {
+        node->accept(compiler);
+    }
+    std::string query = compiler.get_compiled_query();
+    EXPECT_TRUE(query.find("Provider: openai") != std::string::npos)
+        << "Compiled query should contain provider info, got: " << query;
+}
+
+TEST_F(CQLTest, ParserProviderNodeAnthropicDefault) {
+    const std::string input = "@language \"C++\"\n@description \"test\"\n@provider \"anthropic\"\n";
+    cql::Parser parser(input);
+    auto nodes = parser.parse();
+    ASSERT_EQ(nodes.size(), 2);
+
+    cql::QueryCompiler compiler;
+    for (const auto& node : nodes) {
+        node->accept(compiler);
+    }
+    std::string query = compiler.get_compiled_query();
+    EXPECT_TRUE(query.find("Provider: anthropic") != std::string::npos)
+        << "Compiled query should contain provider info, got: " << query;
 }
 
 } // namespace cql::test

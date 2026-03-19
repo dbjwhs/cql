@@ -1,6 +1,6 @@
 # CLAUDE.md - CQL (Claude Query Language)
 
-A structured prompt compiler for LLM interactions. Takes `.llm` files with directives (`@context`, `@language`, `@test`, etc.) and compiles them into formatted prompts. Optionally submits to Claude API for code generation.
+A structured prompt compiler for LLM interactions. Takes `.llm` files with directives (`@context`, `@language`, `@test`, `@provider`, etc.) and compiles them into formatted prompts. Submits to Anthropic or OpenAI APIs for code generation.
 
 ## Build & Run
 
@@ -9,6 +9,7 @@ mkdir -p build && cd build && cmake .. && make
 ./cql_test                                    # Run all tests
 ./cql input.llm output.txt                    # Compile a prompt
 ./cql --submit input.llm --output-dir ./out   # Submit to Claude API
+./cql --submit input.llm --provider openai    # Submit to OpenAI
 ./cql --interactive                           # Interactive mode
 ```
 

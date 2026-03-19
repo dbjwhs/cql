@@ -2,6 +2,39 @@
 
 ## Development History
 
+### CQL Reactivation (4-Phase Initiative)
+
+**Phase 4: MCP Server**
+- New `cql-mcp` binary implementing Model Context Protocol over stdio
+- JSON-RPC 2.0 request/response handling
+- Tools: `compile_prompt`, `validate_llm_file`, `list_directives`
+- 12 MCP tests (JSON-RPC parsing, tool dispatch, lifecycle)
+
+**Phase 3: Streaming Support**
+- `--stream` CLI flag for streaming API responses
+- ProgressDisplay spinner for non-streaming mode (background thread)
+- OpenAI SSE format parsing (`data: {"choices":[{"delta":{"content":"..."}}]}`)
+
+**Phase 2: OpenAI Provider**
+- OpenAIProvider implementation (generate, generate_async, generate_stream)
+- `@provider` directive in lexer/parser/AST/compiler
+- Provider registered in ProviderFactory alongside Anthropic
+- `--provider` CLI flag for `--submit` command
+- 6 OpenAI provider tests, 3 provider directive tests
+
+**Phase 1: Parser Error Recovery**
+- Panic-mode error recovery: parser records errors and continues to next `@` directive
+- ErrorReporter class for accumulating ParseDiagnostics
+- Replaced 20-line token validation chain with dispatch table lookup
+- All errors reported together with line/column/offending token
+- 4 error recovery tests
+
+**Phase 0: README Reframe**
+- IaC narrative: `.llm` files as HCL, `cql compile` as `terraform plan`
+- Multi-provider quick start documentation
+- Updated architecture diagram with ProviderFactory
+- Removed resolved limitations (single provider, no streaming, first-error-only)
+
 ### Logging System Enhancement (5-Phase Initiative)
 
 **Phase 5: Multi-Logger with Independent Level Control**
