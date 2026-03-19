@@ -1,8 +1,17 @@
 # CQL (Claude Query Language)
 
-A structured prompt compiler for LLM interactions. Write `.llm` files with typed directives, compile them into formatted prompts, optionally submit to Claude for code generation.
+Infrastructure-as-code for LLM interactions. Define prompts as `.llm` files with typed directives, compile them into structured prompts, and submit to multiple AI providers.
 
-250 tests | Zero warnings | C++20
+250+ tests | Zero warnings | C++20
+
+## The Idea
+
+`.llm` files are to LLM prompts what HCL is to infrastructure:
+- **`cql compile`** = validate and preview (like `terraform plan`)
+- **`cql --submit`** = execute against an API (like `terraform apply`)
+- **`@directive` grammar** = enforcement at parse time, not runtime
+
+Directives catch mistakes before they reach the API. A missing `@description` is a parse error, not a wasted API call.
 
 ## What It Does
 
@@ -45,7 +54,7 @@ Please include tests for the following cases:
 - Test thread safety with concurrent logging
 ```
 
-With `--submit`, the compiled prompt goes directly to the Claude API and the generated code is organized into files.
+With `--submit`, the compiled prompt goes directly to an AI provider API and the generated code is organized into files.
 
 ## Quick Start
 
@@ -63,39 +72,59 @@ mkdir -p build && cd build && cmake .. && make
 ./cql --interactive
 ```
 
+### Multi-Provider Quick Start
+
+```bash
+# Set up API keys in .env
+cp .env.example .env
+# Edit .env with your keys
+
+# Submit to Anthropic (default)
+./cql --submit input.llm --output-dir ./out
+
+# Submit to OpenAI
+./cql --submit input.llm --output-dir ./out --provider openai
+
+# Or specify provider in the .llm file itself
+# @provider "openai"
+```
+
 ## Architecture
 
 ```
 .llm file → Lexer → Parser → AST → Validator → Compiler → Formatted Prompt
                                                                 ↓ (--submit)
-                                                          Claude API
-                                                                ↓
+                                                      ProviderFactory
+                                                       ↓           ↓
+                                                  Anthropic     OpenAI
+                                                       ↓           ↓
                                                      Response Processor
-                                                                ↓
-                                                      Extracted Files
+                                                            ↓
+                                                     Extracted Files
 ```
 
-The compiler pipeline is a hand-written lexer/parser (no generator tools). The AST supports 20 directive types including `@context`, `@language`, `@test`, `@security`, `@performance`, `@dependency`, `@architecture`, and more.
+The compiler pipeline is a hand-written lexer/parser (no generator tools). The AST supports 20+ directive types including `@context`, `@language`, `@test`, `@security`, `@performance`, `@dependency`, `@architecture`, `@provider`, and more.
+
+**Error recovery:** The parser uses panic-mode recovery — when it hits an error, it records it and skips to the next `@` directive. All errors are reported together, so you fix everything in one pass instead of playing whack-a-mole.
 
 ## Key Components
 
 | Component | What It Does |
 |-----------|-------------|
 | **CQL Compiler** | Lexer → parser → AST → validator → prompt formatter |
-| **AILib** | C++ AI provider library (Anthropic Claude, extensible to others) |
+| **AILib** | C++ AI provider library (Anthropic Claude, OpenAI, extensible) |
+| **ProviderFactory** | Unified provider creation with fallback chains |
 | **HTTP Client** | CURL-based with exponential backoff retry logic |
 | **SecureString** | Memory-locked API key storage, zeroed on destruction |
 | **Logging System** | File + console with independent levels, rotation, timestamps |
 | **Template System** | Reusable prompt templates with variables and inheritance |
+| **MCP Server** | Model Context Protocol server for IDE integration |
 
 ## Limitations
 
 Being honest about what this is and isn't:
 
-- **~15 directive types** — no conditionals, no loops, no macros in the language itself
-- **Parser stops on first error** — no error recovery or multi-error reporting
-- **Single provider** — Anthropic Claude only (OpenAI/Gemini planned but not implemented)
-- **No streaming** — responses are received in full, not streamed
+- **~20 directive types** — no conditionals, no loops, no macros in the language itself
 - **Generated examples are scaffolding** — the 25 example outputs are structured starting points (headers, class declarations), not complete implementations
 
 The value proposition is structured prompt engineering with type safety and repeatability, not a general-purpose programming language.
@@ -105,8 +134,9 @@ The value proposition is structured prompt engineering with type safety and repe
 ```
 cql/
 ├── src/cql/            # Core compiler (lexer, parser, AST, validator, compiler)
+├── src/mcp/            # MCP server implementation
 ├── include/cql/        # Public headers
-├── lib/ailib/          # AI provider library (Anthropic integration)
+├── lib/ailib/          # AI provider library (Anthropic, OpenAI)
 │   ├── include/ailib/  # Provider interfaces, HTTP client, auth
 │   ├── src/            # Implementation
 │   └── tests/          # AILib-specific tests
