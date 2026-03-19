@@ -151,6 +151,12 @@ public:
      */
     void visit(const StructureNode& node) override;
 
+    /**
+     * @brief Process a ProviderNode
+     * @param node The node containing provider selection
+     */
+    void visit(const ProviderNode& node) override;
+
     //------------------------------------------------------------------------------
     // Output methods
     //------------------------------------------------------------------------------
@@ -185,6 +191,9 @@ private:
     std::string m_max_tokens;                       ///< Maximum token limit
     std::string m_temperature;                      ///< Temperature value
     
+    // Provider selection
+    std::string m_provider;                         ///< Selected AI provider name
+
     // Template variables for string interpolation
     std::unordered_map<std::string, std::string> m_variables; ///< Variable name to value mapping
     

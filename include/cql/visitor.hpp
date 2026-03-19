@@ -26,6 +26,7 @@ class MaxTokensNode;
 class TemperatureNode;
 class PatternNode;
 class StructureNode;
+class ProviderNode;
 
 /**
  * @class QueryVisitor
@@ -172,6 +173,16 @@ public:
      * @param node The node to visit
      */
     virtual void visit(const StructureNode& node) = 0;
+
+    //------------------------------------------------------------------------------
+    // Provider selection directive
+    //------------------------------------------------------------------------------
+
+    /**
+     * @brief Visit a ProviderNode
+     * @param node The node to visit
+     */
+    virtual void visit(const ProviderNode& node) = 0;
 };
 
 } // namespace cql

@@ -36,6 +36,7 @@ enum class TokenType {
     TEMPERATURE,    // @temperature
     PATTERN,        // @pattern
     STRUCTURE,      // @structure
+    PROVIDER,       // @provider
     IDENTIFIER,     // any text
     STRING,         // "quoted text"
     NEWLINE,        // \n

@@ -30,6 +30,7 @@ std::string token_type_to_string(TokenType type) {
         case TokenType::TEMPERATURE:   return "TEMPERATURE";
         case TokenType::PATTERN:       return "PATTERN";
         case TokenType::STRUCTURE:     return "STRUCTURE";
+        case TokenType::PROVIDER:      return "PROVIDER";
         case TokenType::IDENTIFIER:    return "IDENTIFIER";
         case TokenType::STRING:        return "STRING";
         case TokenType::NEWLINE:       return "NEWLINE";
@@ -194,6 +195,7 @@ std::optional<Token> Lexer::lex_keyword() {
     else if (keyword == "temperature") type = TokenType::TEMPERATURE;
     else if (keyword == "pattern") type = TokenType::PATTERN;
     else if (keyword == "structure") type = TokenType::STRUCTURE;
+    else if (keyword == "provider") type = TokenType::PROVIDER;
     else {
         throw LexerError("Unknown keyword: @" + keyword, m_line, start_column - 1);
     }

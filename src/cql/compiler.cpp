@@ -183,6 +183,18 @@ void QueryCompiler::visit(const PatternNode& node) {
     patterns_section += "\n";
 }
 
+void QueryCompiler::visit(const ProviderNode& node) {
+    m_provider = node.provider_name();
+    if (!m_result_sections.contains("model_parameters")) {
+        m_result_sections["model_parameters"] = "Model Parameters:\n";
+    }
+    std::string& params_section = m_result_sections["model_parameters"];
+    params_section.reserve(params_section.size() + 14 + node.provider_name().size());
+    params_section += "- Provider: ";
+    params_section += node.provider_name();
+    params_section += "\n";
+}
+
 void QueryCompiler::visit(const StructureNode& node) {
     if (!m_result_sections.contains("file_structure")) {
         m_result_sections["file_structure"] = "File Structure:\n";

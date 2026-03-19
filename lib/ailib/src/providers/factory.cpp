@@ -3,6 +3,7 @@
 
 #include "ailib/providers/factory.hpp"
 #include "ailib/providers/anthropic.hpp"
+#include "ailib/providers/openai.hpp"
 #include "ailib/core/config.hpp"
 #include "../../../../include/cql/project_utils.hpp"
 #include <stdexcept>
@@ -155,10 +156,15 @@ void ProviderFactory::register_builtin_providers() {
         return std::make_unique<AnthropicProvider>(config);
     });
     
-    // Future providers will be registered here
-    // register_provider("openai", ...);
-    // register_provider("google", ...);
-    // register_provider("cohere", ...);
+    // OpenAI GPT provider
+    register_provider("openai", [](const Config& config) -> std::unique_ptr<AIProvider> {
+        Logger::getInstance().log(LogLevel::INFO,
+            "Creating OpenAI provider");
+        Logger::getInstance().log(LogLevel::DEBUG,
+            "Config received - API key configured: ", !config.get_api_key("openai").empty());
+
+        return std::make_unique<OpenAIProvider>(config);
+    });
 }
 
 // ProviderRegistrar implementation

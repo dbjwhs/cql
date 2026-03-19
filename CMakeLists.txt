@@ -131,6 +131,9 @@ set(CQL_CORE_SOURCES
     src/cql/mock_server.cpp
     lib/ailib/src/providers/factory.cpp
     lib/ailib/src/providers/anthropic.cpp
+    lib/ailib/src/providers/openai.cpp
+    src/cql/error_reporter.cpp
+    src/cql/progress_display.cpp
     lib/ailib/src/config.cpp
     lib/ailib/src/http/curl_client.cpp
     src/cql/stubs.cpp
@@ -176,6 +179,7 @@ set(CQL_TEST_SOURCES
     src/cql/test_security.cpp
     lib/ailib/tests/test_http_client.cpp
     lib/ailib/tests/test_anthropic_provider.cpp
+    lib/ailib/tests/test_openai_provider.cpp
     src/cql/test_pluggable_logger.cpp
     src/cql/test_logger_bridge.cpp
     src/cql/test_command_line_logging.cpp
@@ -185,6 +189,10 @@ set(CQL_TEST_SOURCES
     src/cql/test_hybrid_compiler.cpp
     src/cql/test_intelligent_cache.cpp
     src/cql/test_meta_prompt_cli.cpp
+    src/mcp/tests/test_mcp.cpp
+    src/mcp/mcp_server.cpp
+    src/mcp/mcp_tools.cpp
+    src/mcp/jsonrpc.cpp
 )
 
 # Find required packages
@@ -290,8 +298,20 @@ target_link_libraries(cql_test PRIVATE
     GTest::gtest
 )
 
+# MCP Server executable
+set(MCP_SOURCES
+    src/mcp/main.cpp
+    src/mcp/mcp_server.cpp
+    src/mcp/mcp_tools.cpp
+    src/mcp/jsonrpc.cpp
+)
+
+add_executable(cql-mcp ${MCP_SOURCES} $<TARGET_OBJECTS:cql_lib>)
+target_link_libraries(cql-mcp PRIVATE CURL::libcurl nlohmann_json ${PLATFORM_LIBRARIES})
+target_include_directories(cql-mcp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/mcp)
+
 # Installation
-install(TARGETS cql DESTINATION bin)
+install(TARGETS cql cql-mcp DESTINATION bin)
 install(FILES LICENSE DESTINATION share/doc/cql)
 
 # Enable testing

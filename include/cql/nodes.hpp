@@ -814,6 +814,28 @@ private:
     std::string m_structure_def; ///< The structure definition
 };
 
+/**
+ * @class ProviderNode
+ * @brief Node for specifying the AI provider (@provider directive)
+ *
+ * Specifies which AI provider to use for API submission.
+ *
+ * Example:
+ * @provider "openai"
+ * @provider "anthropic"
+ */
+class ProviderNode final : public QueryNode {
+public:
+    explicit ProviderNode(std::string provider_name);
+
+    void accept(QueryVisitor& visitor) const override;
+
+    [[nodiscard]] const std::string& provider_name() const;
+
+private:
+    std::string m_provider_name;
+};
+
 } // namespace cql
 
 #endif // cql_nodes_hpp

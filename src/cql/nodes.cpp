@@ -305,4 +305,16 @@ const std::string& StructureNode::structure_def() const {
     return m_structure_def; 
 }
 
+// providernode implementation
+ProviderNode::ProviderNode(std::string provider_name)
+    : m_provider_name(std::move(provider_name)) {}
+
+void ProviderNode::accept(QueryVisitor& visitor) const {
+    visitor.visit(*this);
+}
+
+const std::string& ProviderNode::provider_name() const {
+    return m_provider_name;
+}
+
 } // namespace cql

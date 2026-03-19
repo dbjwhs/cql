@@ -855,9 +855,11 @@ int ApiClient::handle_submit_command(int argc, char* argv[]) {
     const std::string input_file = argv[2];
     std::string output_dir;
     std::string model;
+    std::string provider;
     bool overwrite = false;
     bool create_dirs = false;
     bool no_save = false;
+    [[maybe_unused]] bool stream = false;
 
     // Parse additional options
     for (int ndx = 3; ndx < argc; ndx++) {
@@ -865,12 +867,16 @@ int ApiClient::handle_submit_command(int argc, char* argv[]) {
             model = argv[++ndx];
         } else if (arg == "--output-dir" && ndx + 1 < argc) {
             output_dir = argv[++ndx];
+        } else if (arg == "--provider" && ndx + 1 < argc) {
+            provider = argv[++ndx];
         } else if (arg == "--overwrite") {
             overwrite = true;
         } else if (arg == "--create-dirs") {
             create_dirs = true;
         } else if (arg == "--no-save") {
             no_save = true;
+        } else if (arg == "--stream") {
+            stream = true;
         }
     }
 

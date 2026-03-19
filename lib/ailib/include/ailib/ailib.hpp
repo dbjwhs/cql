@@ -19,6 +19,7 @@
 
 // Provider implementations
 #include "providers/anthropic.hpp"
+#include "providers/openai.hpp"
 #include "providers/factory.hpp"
 
 // HTTP client

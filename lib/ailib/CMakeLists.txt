@@ -19,6 +19,7 @@ find_package(Threads REQUIRED)
 set(AILIB_SOURCES
     src/config.cpp
     src/providers/anthropic.cpp
+    src/providers/openai.cpp
     src/providers/factory.cpp
     src/http/curl_client.cpp
     src/auth/secure_store.cpp
@@ -64,6 +65,7 @@ if(AILIB_BUILD_TESTS)
     
     add_executable(ailib_test
         tests/test_anthropic_provider.cpp
+        tests/test_openai_provider.cpp
         tests/test_http_client.cpp
         tests/test_config.cpp
         tests/test_config_enhanced.cpp
