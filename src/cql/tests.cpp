@@ -28,7 +28,7 @@
 #include "../../include/cql/error_context.hpp"
 #include "../../include/cql/error_reporter.hpp"
 #include "../../include/cql/test_utils.hpp"
-#include "../../third_party/include/nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 
 // note file exists in the cpp-snippets repo, you will need to check this out and have it and cql share the
 // same root directory

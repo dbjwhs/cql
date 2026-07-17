@@ -93,6 +93,7 @@ function(fetch_dependency dep_name url)
   FetchContent_Declare(
     ${dep_name}
     URL ${url}
+    SYSTEM
   )
   
   FetchContent_MakeAvailable(${dep_name})
@@ -113,6 +114,17 @@ fetch_dependency(
   googletest
   https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip
 )
+
+# GoogleTest's own sources trip newer compilers' warnings (e.g. AppleClang's
+# -Wcharacter-conversion on char8_t in gtest-printers.h). Our project builds with
+# -Werror, but third-party code must not gate our build: silence warnings for
+# GoogleTest's own targets only. Our own targets keep the full -Wall -Wextra
+# -Wpedantic -Werror bar.
+foreach(_gtest_target gtest gtest_main gmock gmock_main)
+    if(TARGET ${_gtest_target})
+        target_compile_options(${_gtest_target} PRIVATE -w)
+    endif()
+endforeach()
 
 # Define source files by category
 set(CQL_CORE_SOURCES
@@ -244,7 +256,9 @@ endif()
 
 # Create interface library for nlohmann_json with compile features
 add_library(nlohmann_json INTERFACE)
-target_include_directories(nlohmann_json INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include)
+# SYSTEM: nlohmann/json is third-party; its headers must not be held to our
+# -Werror bar (e.g. AppleClang's -Wdeprecated-literal-operator on `operator"" _json`).
+target_include_directories(nlohmann_json SYSTEM INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include)
 # Ensure nlohmann_json uses the same C++ standard
 target_compile_features(nlohmann_json INTERFACE cxx_std_20)
 
@@ -276,7 +290,7 @@ add_library(cql_lib_test OBJECT ${CQL_CORE_SOURCES} ${PLATFORM_SOURCES})
 set_property(TARGET cql_lib_test PROPERTY POSITION_INDEPENDENT_CODE 1)
 target_compile_definitions(cql_lib_test PUBLIC CQL_TESTING=1)
 target_link_libraries(cql_lib_test PUBLIC CURL::libcurl nlohmann_json ${PLATFORM_LIBRARIES})
-target_include_directories(cql_lib_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/googletest-src/googletest/include)
+target_include_directories(cql_lib_test SYSTEM PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/googletest-src/googletest/include)
 
 # Enable precompiled headers for the test library (exclude Objective-C++ files)
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")

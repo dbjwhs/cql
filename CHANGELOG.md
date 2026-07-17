@@ -2,6 +2,21 @@
 
 ## Development History
 
+### Hardening & CI Pass
+
+**Build: third-party headers no longer break `-Werror`**
+- GoogleTest and nlohmann/json are now treated as SYSTEM dependencies, and GoogleTest's
+  own targets are exempted from our warning flags. A strict `-Wall -Wextra -Wpedantic
+  -Werror` build no longer fails when a newer compiler adds warnings inside third-party
+  code (observed on AppleClang 21: `-Wcharacter-conversion` in `gtest-printers.h` and
+  `-Wdeprecated-literal-operator` in nlohmann/json 3.11.2). Our own code keeps the full
+  warning bar.
+- `compiler.hpp` and `tests.cpp` now include nlohmann/json via `<nlohmann/json.hpp>`
+  (resolved through the SYSTEM include path) instead of a relative quoted path that
+  bypassed `-isystem`.
+- Net effect: a clean `cmake .. && make` is green again on AppleClang 21; the full suite
+  (274 run / 262 pass / 12 external-skipped / 1 disabled) builds warning-clean.
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**
