@@ -182,11 +182,18 @@ struct ApiClient::Impl {
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 2L);
         curl_easy_setopt(m_curl, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
         
-        // Security: Follow redirects only to HTTPS
+        // Security: Follow redirects only to HTTPS. The enum CURLOPT_PROTOCOLS forms were
+        // deprecated in libcurl 7.85 in favour of the string forms; use the string forms
+        // where available, fall back to the enum on older libcurl.
         curl_easy_setopt(m_curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(m_curl, CURLOPT_MAXREDIRS, 3L);
+#if defined(CURL_AT_LEAST_VERSION) && CURL_AT_LEAST_VERSION(7, 85, 0)
+        curl_easy_setopt(m_curl, CURLOPT_PROTOCOLS_STR, "https");
+        curl_easy_setopt(m_curl, CURLOPT_REDIR_PROTOCOLS_STR, "https");
+#else
         curl_easy_setopt(m_curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
         curl_easy_setopt(m_curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTPS);
+#endif
         
         // Set headers
         struct curl_slist* headers = nullptr;

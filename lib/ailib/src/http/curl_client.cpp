@@ -235,8 +235,15 @@ void CurlClient::configure_curl(CURL* curl, const Request& req,
     // plaintext http:// base_url (e.g. from a config file) or a 3xx redirect to an
     // http/other-scheme URL would send the API-key request headers in cleartext or to an
     // unexpected protocol handler. Mirrors the legacy api_client.cpp behaviour.
+    // The enum CURLOPT_PROTOCOLS forms were deprecated in libcurl 7.85 in favour of the
+    // string forms; use the string forms where available, fall back on older libcurl.
+#if defined(CURL_AT_LEAST_VERSION) && CURL_AT_LEAST_VERSION(7, 85, 0)
+    curl_easy_setopt(curl, CURLOPT_PROTOCOLS_STR, "https");
+    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS_STR, "https");
+#else
     curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
     curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTPS);
+#endif
     
     // SSL verification
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, req.verify_ssl ? 1L : 0L);

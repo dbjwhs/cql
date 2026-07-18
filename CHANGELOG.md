@@ -104,6 +104,14 @@
   read callback), and the `SecureString` example (the key leaves secure storage on use). The
   guide now describes what the code does, not what it aspires to.
 
+**Build: libcurl 7.85+ deprecation broke the GCC -Werror build (caught by the new CI)**
+- `CURLOPT_PROTOCOLS`/`CURLOPT_REDIR_PROTOCOLS` (used by the HTTPS-enforcement fix and,
+  latently, by the legacy `api_client.cpp`) were deprecated in libcurl 7.85 in favour of the
+  `_STR` string forms. On Ubuntu's newer libcurl this failed `-Werror=deprecated-declarations`
+  on the first CI run (AppleClang's headers don't flag it, so macOS and local builds passed).
+  Guard with `CURL_AT_LEAST_VERSION(7,85,0)`: use `CURLOPT_PROTOCOLS_STR`/
+  `CURLOPT_REDIR_PROTOCOLS_STR` where available, fall back to the enum on older libcurl.
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**
