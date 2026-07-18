@@ -1,5 +1,7 @@
 # CQL (Claude Query Language)
 
+[![CI](https://github.com/dbjwhs/cql/actions/workflows/ci.yml/badge.svg)](https://github.com/dbjwhs/cql/actions/workflows/ci.yml)
+
 Infrastructure-as-code for LLM interactions. Define prompts as `.llm` files with typed directives, compile them into structured prompts, and submit to multiple AI providers.
 
 250+ tests | Zero warnings | C++20
@@ -144,6 +146,13 @@ cql/
 ├── docs/               # Technical specifications and guides
 └── scripts/            # Build and utility scripts
 ```
+
+## Continuous Integration
+
+Every push to `main`/`hardening/**` and every pull request builds CQL on Linux (GCC) and
+macOS (AppleClang) with `-Wall -Wextra -Wpedantic -Werror`, then runs the full test suite
+in deterministic offline mode (`CQL_SKIP_EXTERNAL_TESTS=1` — external and live-API tests are
+skipped). See [.github/workflows/ci.yml](.github/workflows/ci.yml).
 
 ## License
 

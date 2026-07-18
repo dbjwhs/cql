@@ -1,0 +1,58 @@
+name: CI
+
+# Build and test CQL on every push to a mainline/hardening branch and every PR.
+# This is the gate the project previously lacked: a clean, warnings-as-errors build
+# plus the full test suite in deterministic offline mode (external/live tests skipped).
+
+on:
+  push:
+    branches: [ main, 'hardening/**' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+# A newer push to the same ref cancels an in-flight run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: build & test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install libcurl (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
+
+      - name: Set up CMake (>= 3.30) and Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build (warnings are errors)
+        run: cmake --build build --parallel
+
+      - name: Test (deterministic, offline)
+        working-directory: build
+        env:
+          CQL_SKIP_EXTERNAL_TESTS: "1"
+        run: ctest --output-on-failure --timeout 180
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cql-logs-${{ matrix.os }}
+          path: |
+            build/Testing/**/*.log
+            **/*.log
+          if-no-files-found: ignore

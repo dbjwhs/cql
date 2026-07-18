@@ -24,6 +24,13 @@
   now skip uniformly when `CQL_SKIP_EXTERNAL_TESTS` is set, matching the five cases that
   already did. `CQL_SKIP_EXTERNAL_TESTS=1 ./cql_test` is now deterministic and offline.
 
+**CI: build + test workflow (GitHub Actions)**
+- New `.github/workflows/ci.yml` builds on Linux (GCC) and macOS (AppleClang) with the full
+  `-Werror` warning set and runs the suite via `ctest` in offline mode on every push to
+  `main`/`hardening/**` and every PR. The project previously had no build/test CI, so the
+  suite was a local-only gate; this makes "green build + passing tests" enforceable. (The
+  macOS leg matches local verification; the Linux/GCC leg runs for the first time on push.)
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**
