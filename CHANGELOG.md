@@ -62,6 +62,12 @@
   normal), `validate_template_name` (accepts names and category paths; rejects empty, invalid
   characters, and `..` traversal), and `sanitize_template_variables` (replaces `${...}`).
 
+**Build/CI: optional AddressSanitizer + UndefinedBehaviorSanitizer**
+- New `-DENABLE_SANITIZERS=ON` CMake option builds with `-fsanitize=address,undefined`. A CI
+  `sanitizers` job builds with it and runs the full suite under ASan/UBSan (with LeakSanitizer
+  on Linux) so memory errors and undefined behavior fail the build. Off by default; the normal
+  build is unaffected.
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**

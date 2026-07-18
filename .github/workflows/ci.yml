@@ -56,3 +56,30 @@ jobs:
             build/Testing/**/*.log
             **/*.log
           if-no-files-found: ignore
+
+  sanitizers:
+    name: sanitizers (asan + ubsan)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install libcurl (Linux)
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
+
+      - name: Set up CMake (>= 3.30) and Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Configure (sanitizers)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZERS=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Test under ASan/UBSan
+        working-directory: build
+        env:
+          CQL_SKIP_EXTERNAL_TESTS: "1"
+          ASAN_OPTIONS: "detect_leaks=1"
+          UBSAN_OPTIONS: "print_stacktrace=1:halt_on_error=1"
+        run: ctest --output-on-failure --timeout 300

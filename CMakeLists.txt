@@ -60,6 +60,19 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 endif()
 
+# Optional AddressSanitizer + UndefinedBehaviorSanitizer build (off by default).
+# Configure with -DENABLE_SANITIZERS=ON to catch memory errors and undefined behavior.
+option(ENABLE_SANITIZERS "Build with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+if(ENABLE_SANITIZERS)
+    if(MSVC)
+        message(WARNING "ENABLE_SANITIZERS is not supported for MSVC; ignoring")
+    else()
+        message(STATUS "Building with AddressSanitizer + UndefinedBehaviorSanitizer")
+        add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer -g)
+        add_link_options(-fsanitize=address,undefined)
+    endif()
+endif()
+
 # Set include directories
 include_directories(
     ${PROJECT_SOURCE_DIR}/include
