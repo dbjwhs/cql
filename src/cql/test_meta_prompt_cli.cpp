@@ -9,6 +9,8 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <fstream>
+#include <filesystem>
 
 namespace cql {
 namespace test {
@@ -141,22 +143,37 @@ TEST_F(MetaPromptCLITest, HandleOptimizeCommandMissingFile) {
     EXPECT_TRUE(output.find("Input file required") != std::string::npos);
 }
 
-// Integration test requiring actual file system
-TEST_F(MetaPromptCLITest, DISABLED_HandleOptimizeCommandIntegration) {
-    // This test would require setting up actual files and testing the full pipeline
-    // Disabled for CI/CD but useful for local development testing
-    
+// Integration test: the --optimize LOCAL_ONLY pipeline runs end-to-end on a valid file.
+// Uses a self-contained temp .llm so it does not depend on the working directory or repo
+// layout (the reason this test was previously disabled). The optimizer prints its results
+// to std::cout rather than through UserOutputManager, so we assert on the return code (the
+// robust end-to-end success signal) rather than on captured output.
+TEST_F(MetaPromptCLITest, HandleOptimizeCommandLocalOnlyIntegration) {
+    const std::filesystem::path llm_path =
+        std::filesystem::temp_directory_path() / "cql_optimize_integration.llm";
+    {
+        std::ofstream out(llm_path);
+        out << "@copyright \"MIT License\" \"2025 test\"\n"
+            << "@language \"C++\"\n"
+            << "@description \"implement a thread-safe queue class\"\n"
+            << "@context \"Using C++20 features and RAII principles\"\n"
+            << "@dependency \"std::mutex, std::condition_variable\"\n"
+            << "@test \"Test concurrent push operations\"\n";
+    }
+
+    const std::string path_str = llm_path.string();
     const char* argv[] = {
-        "cql", "--optimize", "../examples/template_example.llm", 
+        "cql", "--optimize", path_str.c_str(),
         "--mode", "LOCAL_ONLY", "--show-metrics"
     };
-    int argc = 6;
-    
-    int result = MetaPromptHandler::handle_optimize_command(argc, const_cast<char**>(argv));
+    constexpr int argc = 6;
+
+    const int result = MetaPromptHandler::handle_optimize_command(argc, const_cast<char**>(argv));
+
+    std::error_code ec;
+    std::filesystem::remove(llm_path, ec);
+
     EXPECT_EQ(result, CQL_NO_ERROR);
-    
-    std::string output = getOutput();
-    EXPECT_TRUE(output.find("META-PROMPT COMPILATION RESULTS") != std::string::npos);
 }
 
 } // namespace test

@@ -80,6 +80,14 @@
   `cql --test` CLI harness still lists them; that harness is a separate mirage tracked for
   follow-up.
 
+**Test: enable the previously-disabled --optimize integration test**
+- `MetaPromptCLITest.DISABLED_HandleOptimizeCommandIntegration` was disabled and, when run,
+  failed: it asserted on output captured via `UserOutputManager`, but the optimizer prints its
+  results to `std::cout`, so the marker was never captured. Rewrite it as a hermetic test that
+  writes a self-contained `.llm` to a temp path and asserts the `--optimize` LOCAL_ONLY pipeline
+  returns `CQL_NO_ERROR` end-to-end, and enable it (drop the `DISABLED_` prefix). The suite now
+  has zero disabled tests.
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**
