@@ -17,6 +17,13 @@
 - Net effect: a clean `cmake .. && make` is green again on AppleClang 21; the full suite
   (274 run / 262 pass / 12 external-skipped / 1 disabled) builds warning-clean.
 
+**Tests: all network-dependent tests honor `CQL_SKIP_EXTERNAL_TESTS`**
+- Eleven `HttpClientTest`/`MockHttpClientTest` cases that call httpbin.org (or expect a
+  live external response) previously ignored the `CQL_SKIP_EXTERNAL_TESTS` escape hatch
+  and only skipped on an HTTP 503, so "CI mode" still made ~11 live network calls. They
+  now skip uniformly when `CQL_SKIP_EXTERNAL_TESTS` is set, matching the five cases that
+  already did. `CQL_SKIP_EXTERNAL_TESTS=1 ./cql_test` is now deterministic and offline.
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**

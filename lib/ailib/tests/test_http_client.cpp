@@ -53,6 +53,9 @@ TEST_F(HttpClientTest, GetAvailableImplementations) {
 }
 
 TEST_F(HttpClientTest, SimpleGetRequest) {
+    if (std::getenv("CQL_SKIP_EXTERNAL_TESTS")) {
+        GTEST_SKIP() << "Skipping external service test (CQL_SKIP_EXTERNAL_TESTS set)";
+    }
     // Test with httpbin.org echo service
     Request req;
     req.url = "https://httpbin.org/get";
@@ -71,6 +74,9 @@ TEST_F(HttpClientTest, SimpleGetRequest) {
 }
 
 TEST_F(HttpClientTest, PostRequestWithBody) {
+    if (std::getenv("CQL_SKIP_EXTERNAL_TESTS")) {
+        GTEST_SKIP() << "Skipping external service test (CQL_SKIP_EXTERNAL_TESTS set)";
+    }
     Request req;
     req.url = "https://httpbin.org/post";
     req.method = "POST";
@@ -90,6 +96,9 @@ TEST_F(HttpClientTest, PostRequestWithBody) {
 }
 
 TEST_F(HttpClientTest, AsyncRequest) {
+    if (std::getenv("CQL_SKIP_EXTERNAL_TESTS")) {
+        GTEST_SKIP() << "Skipping external service test (CQL_SKIP_EXTERNAL_TESTS set)";
+    }
     Request req;
     req.url = "https://httpbin.org/delay/1";
     req.method = "GET";
@@ -111,6 +120,9 @@ TEST_F(HttpClientTest, AsyncRequest) {
 }
 
 TEST_F(HttpClientTest, HandleErrorResponse) {
+    if (std::getenv("CQL_SKIP_EXTERNAL_TESTS")) {
+        GTEST_SKIP() << "Skipping external service test (CQL_SKIP_EXTERNAL_TESTS set)";
+    }
     Request req;
     req.url = "https://httpbin.org/status/404";
     req.method = "GET";
@@ -128,6 +140,9 @@ TEST_F(HttpClientTest, HandleErrorResponse) {
 }
 
 TEST_F(HttpClientTest, HandleServerError) {
+    if (std::getenv("CQL_SKIP_EXTERNAL_TESTS")) {
+        GTEST_SKIP() << "Skipping external service test (CQL_SKIP_EXTERNAL_TESTS set)";
+    }
     Request req;
     req.url = "https://httpbin.org/status/500";
     req.method = "GET";
@@ -145,6 +160,9 @@ TEST_F(HttpClientTest, HandleServerError) {
 }
 
 TEST_F(HttpClientTest, RequestTimeout) {
+    if (std::getenv("CQL_SKIP_EXTERNAL_TESTS")) {
+        GTEST_SKIP() << "Skipping external service test (CQL_SKIP_EXTERNAL_TESTS set)";
+    }
     Request req;
     req.url = "https://httpbin.org/delay/10";
     req.method = "GET";
@@ -162,6 +180,9 @@ TEST_F(HttpClientTest, RequestTimeout) {
 }
 
 TEST_F(HttpClientTest, CustomHeaders) {
+    if (std::getenv("CQL_SKIP_EXTERNAL_TESTS")) {
+        GTEST_SKIP() << "Skipping external service test (CQL_SKIP_EXTERNAL_TESTS set)";
+    }
     Request req;
     req.url = "https://httpbin.org/headers";
     req.method = "GET";
@@ -181,6 +202,9 @@ TEST_F(HttpClientTest, CustomHeaders) {
 }
 
 TEST_F(HttpClientTest, ProgressCallback) {
+    if (std::getenv("CQL_SKIP_EXTERNAL_TESTS")) {
+        GTEST_SKIP() << "Skipping external service test (CQL_SKIP_EXTERNAL_TESTS set)";
+    }
     std::atomic<bool> progress_called{false};
     std::atomic<size_t> bytes_received{0};
 
@@ -206,6 +230,9 @@ TEST_F(HttpClientTest, ProgressCallback) {
 }
 
 TEST_F(HttpClientTest, MultipleAsyncRequests) {
+    if (std::getenv("CQL_SKIP_EXTERNAL_TESTS")) {
+        GTEST_SKIP() << "Skipping external service test (CQL_SKIP_EXTERNAL_TESTS set)";
+    }
     std::vector<std::future<Response>> futures;
 
     // Launch multiple async requests with increased timeout and retry logic
@@ -258,6 +285,9 @@ TEST_F(HttpClientTest, MultipleAsyncRequests) {
 }
 
 TEST_F(HttpClientTest, RetryOnServerError) {
+    if (std::getenv("CQL_SKIP_EXTERNAL_TESTS")) {
+        GTEST_SKIP() << "Skipping external service test (CQL_SKIP_EXTERNAL_TESTS set)";
+    }
     // Test retry on 5xx errors
     Request req;
     req.url = "https://httpbin.org/status/503";  // Service Unavailable
@@ -552,6 +582,9 @@ TEST_F(MockHttpClientTest, RetryBehaviorValidation_NetworkErrors) {
 }
 
 TEST_F(MockHttpClientTest, TimeoutBehavior_Predictable) {
+    if (std::getenv("CQL_SKIP_EXTERNAL_TESTS")) {
+        GTEST_SKIP() << "Skipping external service test (CQL_SKIP_EXTERNAL_TESTS set)";
+    }
     // Test timeout behavior with very short timeout
     Request req;
     req.url = "https://httpbin.org/delay/10"; // 10 second delay
