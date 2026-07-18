@@ -31,6 +31,19 @@
   suite was a local-only gate; this makes "green build + passing tests" enforceable. (The
   macOS leg matches local verification; the Linux/GCC leg runs for the first time on push.)
 
+**Fix: template directive validation inspects every line and the full directive set**
+- `TemplateValidator` directive extraction used a non-multiline `^(@...)` regex, so only the
+  first line's directive was ever seen: invalid directives after line 1 went undetected and a
+  `@description` below the first line was falsely reported "missing". It now matches a
+  directive at the start of any line.
+- The validator's valid-directive set was missing nine directives the lexer accepts
+  (`@performance`, `@model`, `@format`, `@provider`, `@output_format`, `@max_tokens`,
+  `@temperature`, `@pattern`, `@structure`), which the extraction bug had masked. Completed it
+  (kept in sync with `Lexer::lex_keyword`) so valid templates are no longer flagged invalid.
+- New `src/cql/test_template_validator.cpp` (8 tests) locks in multi-line extraction, the
+  essential-`@description` check, invalid-directive detection, the completed directive set,
+  and declared/referenced-variable consistency.
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**

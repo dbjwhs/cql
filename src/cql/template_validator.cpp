@@ -310,11 +310,15 @@ std::vector<TemplateValidationIssue> TemplateValidator::check_directives(const s
         }
     }
     
-    // check for uncommon or potentially incorrect directives
+    // Flag directives that aren't part of the CQL language. The compiler directives
+    // here must stay in sync with Lexer::lex_keyword() (src/cql/lexer.cpp); @inherit is
+    // a template-only directive handled by TemplateManager.
     static const std::unordered_set<std::string> common_directives = {
-        "@copyright", "@language", "@description", "@context", "@dependency", 
-        "@test", "@architecture", "@constraint", "@security", "@complexity",
-        "@example", "@variable", "@inherit"
+        "@architecture", "@complexity", "@constraint", "@context", "@copyright",
+        "@dependency", "@description", "@example", "@format", "@inherit",
+        "@language", "@max_tokens", "@model", "@output_format", "@pattern",
+        "@performance", "@provider", "@security", "@structure", "@temperature",
+        "@test", "@variable"
     };
     
     for (const auto& directive : directives) {
@@ -360,7 +364,10 @@ std::set<std::string> TemplateValidator::extract_referenced_variables(const std:
 }
 
 std::set<std::string> TemplateValidator::extract_directives(const std::string& content) {
-    return cql::util::extract_regex_group_values(content, "^(@[a-zA-Z_]+)\\s+", 1);
+    // Match a directive at the start of any line. The pattern is anchored with
+    // (?:^|\n) rather than ^ because std::regex is not built with the multiline flag,
+    // so a bare ^ would only match the very first line and miss every later directive.
+    return cql::util::extract_regex_group_values(content, "(?:^|\\n)(@[a-zA-Z_]+)", 1);
 }
 
 } // namespace cql
