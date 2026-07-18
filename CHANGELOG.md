@@ -111,6 +111,12 @@
   on the first CI run (AppleClang's headers don't flag it, so macOS and local builds passed).
   Guard with `CURL_AT_LEAST_VERSION(7,85,0)`: use `CURLOPT_PROTOCOLS_STR`/
   `CURLOPT_REDIR_PROTOCOLS_STR` where available, fall back to the enum on older libcurl.
+- Give `CompilerFlags::custom_timeout` a default member initializer so designated initializers
+  that omit it no longer trip GCC's `-Werror=missing-field-initializers` (Clang does not warn).
+- Build position-independent throughout (`CMAKE_POSITION_INDEPENDENT_CODE ON`) so the shared
+  precompiled header and the executables that reuse it agree on `-fPIE/-fPIC`; otherwise GCC on
+  Ubuntu rejects the PCH with `-Werror=invalid-pch`. These were latent — the code had never been
+  built under GCC `-Werror` before CI existed.
 
 ### CQL Reactivation (4-Phase Initiative)
 

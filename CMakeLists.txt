@@ -28,6 +28,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Build all targets position-independent so the shared precompiled header (built for the
+# object libraries) and the executables that reuse it agree on -fPIE/-fPIC. Without this,
+# GCC on PIE-by-default distributions (Ubuntu) rejects the PCH with -Werror=invalid-pch.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # Enable precompiled headers support
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")
     set(CMAKE_PCH_INSTANTIATE_TEMPLATES ON)
