@@ -185,6 +185,7 @@ set(CQL_TEST_SOURCES
     src/cql/main_test.cpp
     src/cql/tests.cpp
     src/cql/test_template_validator.cpp
+    src/cql/test_response_processor.cpp
     src/cql/test_architecture_patterns.cpp
     src/cql/test_api_integration.cpp
     lib/ailib/tests/test_config.cpp

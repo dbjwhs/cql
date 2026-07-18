@@ -49,6 +49,13 @@
   by the CLI's template tooling: default-schema contents, directive lookup, required
   directives, custom directive registration, and validation-rule round-tripping.
 
+**Test: real coverage for ResponseProcessor**
+- Add `src/cql/test_response_processor.cpp` (6 tests). `process_response` code-block
+  extraction is exercised through the public API (language detection, explicit `filename:`
+  hints, class-name-derived filenames, test-block detection), and `save_generated_file`
+  writes into a per-test temp directory, including the no-overwrite `.new` fallback. The only
+  prior direct test for this module was a `pass()` stub.
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**
