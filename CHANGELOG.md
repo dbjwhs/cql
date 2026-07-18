@@ -88,6 +88,14 @@
   returns `CQL_NO_ERROR` end-to-end, and enable it (drop the `DISABLED_` prefix). The suite now
   has zero disabled tests.
 
+**Security: HTTP client enforces HTTPS for requests and redirects**
+- The ailib CURL client set `CURLOPT_FOLLOWLOCATION` but no protocol restriction, so a
+  plaintext `http://` provider `base_url` (from a config file) or a 3xx redirect to another
+  scheme/host would send the API-key header in cleartext or to an unexpected host — a
+  regression from the legacy `api_client.cpp`, which already restricted to HTTPS. Add
+  `CURLOPT_PROTOCOLS`/`CURLOPT_REDIR_PROTOCOLS = CURLPROTO_HTTPS`; non-HTTPS URLs are now
+  refused before any connection. New offline test `HttpClientTest.RejectsNonHttpsUrl`.
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**

@@ -548,6 +548,22 @@ TEST_F(HttpClientTest, InvalidUrlHandling) {
     // Don't check specific status code as it may vary by implementation
 }
 
+TEST_F(HttpClientTest, RejectsNonHttpsUrl) {
+    // A plaintext http:// URL must be refused before any connection is made, so a
+    // misconfigured or malicious base_url cannot send API-key headers in cleartext.
+    // This makes no network call: libcurl rejects the disallowed protocol locally.
+    Request req;
+    req.url = "http://example.com/";
+    req.method = "GET";
+    req.timeout = std::chrono::seconds(2);
+    req.retry_policy.max_retries = 0;  // fail fast; a rejected protocol must not connect
+
+    auto response = m_client->send(req);
+
+    EXPECT_FALSE(response.is_success());
+    EXPECT_TRUE(response.error_message.has_value());
+}
+
 // Mock/Test Double Tests - No external dependencies
 class MockHttpClientTest : public ::testing::Test {
 protected:

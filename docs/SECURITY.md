@@ -46,7 +46,9 @@ std::string masked = api_key.masked(); // Shows only "sk-...abc" format
 ```
 
 #### Network Security
-- **HTTPS Enforcement**: All API communications use HTTPS only
+- **HTTPS Enforcement**: The HTTP client restricts both requests and redirects to HTTPS
+  (`CURLOPT_PROTOCOLS`/`CURLOPT_REDIR_PROTOCOLS` = `CURLPROTO_HTTPS`); a non-HTTPS URL —
+  including a misconfigured provider `base_url` — is refused before any connection is made
 - **Timeout Configuration**: User-configurable timeouts prevent hanging connections
 - **Retry Logic**: Exponential backoff with jitter prevents API abuse
 - **Circuit Breaker**: Automatic failure detection and recovery

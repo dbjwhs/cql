@@ -228,8 +228,15 @@ void CurlClient::configure_curl(CURL* curl, const Request& req,
     
     // Set redirects
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 
+    curl_easy_setopt(curl, CURLOPT_MAXREDIRS,
                     static_cast<long>(req.max_redirects));
+
+    // Restrict both the initial request and any redirects to HTTPS. Without this, a
+    // plaintext http:// base_url (e.g. from a config file) or a 3xx redirect to an
+    // http/other-scheme URL would send the API-key request headers in cleartext or to an
+    // unexpected protocol handler. Mirrors the legacy api_client.cpp behaviour.
+    curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+    curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTPS);
     
     // SSL verification
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, req.verify_ssl ? 1L : 0L);
