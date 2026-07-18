@@ -28,10 +28,14 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Build all targets position-independent so the shared precompiled header (built for the
-# object libraries) and the executables that reuse it agree on -fPIE/-fPIC. Without this,
-# GCC on PIE-by-default distributions (Ubuntu) rejects the PCH with -Werror=invalid-pch.
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+# GCC on PIE-by-default distributions (Ubuntu) rejects the reused precompiled header with a
+# -fpie mismatch (-Werror=invalid-pch): object libraries build -fPIC while the executables that
+# REUSE_FROM their PCH build -fPIE, and GCC treats those as incompatible PCH settings. The PCH
+# is only a build-speed optimization, so disable it under GCC; it stays enabled for
+# Clang/AppleClang where it works.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
+endif()
 
 # Enable precompiled headers support
 if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")
