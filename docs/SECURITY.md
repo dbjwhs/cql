@@ -40,10 +40,16 @@ std::string secure_path = InputValidator::resolve_path_securely(user_input);
 - **Key Masking**: API keys are masked in logs and error messages
 
 ```cpp
-// Secure API key handling
-SecureString api_key = config.get_api_key("anthropic");
-std::string masked = api_key.masked(); // Shows only "sk-...abc" format
+// API keys are stored in a SecureString (mlock'd, zeroed on destruction).
+SecureString stored_key{"sk-..."};
+std::string masked = stored_key.masked(); // e.g. "sk-...abc"
 ```
+
+> **Caveat (known limitation).** `Config::get_api_key()` returns a `std::string`, and
+> `SecureString::data()` copies the secret into an ordinary (unlocked, non-zeroed) buffer, so
+> the key value leaves secure storage as soon as it is used to build a request header. Treat
+> the "memory-locked / zeroed" property as covering the *storage object's* lifetime only, not
+> the key's whole lifetime in the process. Ending this copy is tracked as hardening work.
 
 #### Network Security
 - **HTTPS Enforcement**: The HTTP client restricts both requests and redirects to HTTPS
@@ -54,9 +60,14 @@ std::string masked = api_key.masked(); // Shows only "sk-...abc" format
 - **Circuit Breaker**: Automatic failure detection and recovery
 
 #### Request Security
-- **Request Validation**: All API requests are validated before transmission
-- **Header Sanitization**: HTTP headers are sanitized to prevent injection
-- **Body Size Limits**: Request bodies are limited to prevent resource exhaustion
+- **Request Validation**: Request bodies are serialized with `nlohmann::json`, which escapes
+  content correctly
+- **Header handling**: header values are passed to libcurl as-is; **no CRLF sanitization is
+  performed today**. This is safe only because header values are not built from untrusted
+  input. (An earlier "headers are sanitized to prevent injection" claim did not match the code.)
+- **Size limits**: `InputValidator` defines `MAX_QUERY_LENGTH`/`MAX_RESPONSE_SIZE`, but the
+  response-size limit is **not yet enforced inside the HTTP read callback** — a large response
+  is fully buffered before any check. Enforcing it at the callback is tracked as future work.
 
 ### 🚫 Injection Attack Prevention
 
@@ -117,27 +128,17 @@ Logger::getInstance().log(LogLevel::INFO, "Processing: ", safe_input);
 ### Environment Variables
 
 ```bash
-# Required for API access
-export ANTHROPIC_API_KEY="your-api-key-here"
-
-# Optional security settings
-export CQL_MAX_REQUEST_SIZE="10485760"  # 10MB limit
-export CQL_TIMEOUT_SECONDS="120"       # 2 minute timeout
-export CQL_ENABLE_VALIDATION="true"    # Enable semantic validation
+# API key for the default (Anthropic) provider; must be 30+ characters.
+# Without it, LOCAL_ONLY compilation still works.
+export CQL_API_KEY="your-anthropic-api-key-here"
 ```
 
-### Configuration File Security
-
-```json
-{
-  "security": {
-    "max_request_size": 10485760,
-    "timeout_seconds": 120,
-    "enable_path_validation": true,
-    "log_level": "INFO"
-  }
-}
-```
+> **Accuracy note.** Earlier revisions of this guide documented `CQL_MAX_REQUEST_SIZE`,
+> `CQL_TIMEOUT_SECONDS`, and `CQL_ENABLE_VALIDATION` environment variables and a JSON
+> `"security"` configuration block. **None of these are read by the code today** — setting
+> them has no effect. Request/response and input size limits are currently compile-time
+> constants in `InputValidator` (`MAX_QUERY_LENGTH`, `MAX_RESPONSE_SIZE`,
+> `MAX_DIRECTIVE_LENGTH`, …). Wiring these to runtime configuration is future work.
 
 ## Secure Development Guidelines
 

@@ -96,6 +96,14 @@
   `CURLOPT_PROTOCOLS`/`CURLOPT_REDIR_PROTOCOLS = CURLPROTO_HTTPS`; non-HTTPS URLs are now
   refused before any connection. New offline test `HttpClientTest.RejectsNonHttpsUrl`.
 
+**Docs: correct SECURITY.md over-claims**
+- Remove the `CQL_MAX_REQUEST_SIZE`/`CQL_TIMEOUT_SECONDS`/`CQL_ENABLE_VALIDATION` environment
+  variables and the JSON `"security"` configuration block from the guide — none are read by the
+  code, so the documented settings had no effect. Correct the "header sanitization" claim (not
+  implemented), the response-size-limit claim (constants exist but aren't enforced at the HTTP
+  read callback), and the `SecureString` example (the key leaves secure storage on use). The
+  guide now describes what the code does, not what it aspires to.
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**
