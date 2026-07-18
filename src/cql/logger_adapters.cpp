@@ -2,6 +2,8 @@
 // Copyright (c) 2025 dbjwhs
 
 #include "../../include/cql/logger_adapters.hpp"
+#include <iostream>
+#include <filesystem>
 #include <fstream>
 #include <chrono>
 #include <iomanip>

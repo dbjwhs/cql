@@ -3,6 +3,7 @@
 
 #include "../../include/cql/nodes.hpp"
 #include "../../include/cql/visitor.hpp"
+#include <algorithm>
 
 namespace cql {
 

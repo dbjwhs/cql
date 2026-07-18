@@ -118,6 +118,11 @@
   because object libraries build `-fPIC` while the executables that reuse the PCH build `-fPIE`.
   The PCH is a build-speed optimization only and stays enabled for Clang/AppleClang. These were
   latent — the code had never been built under GCC `-Werror` before CI existed.
+- Add the standard-library includes four sources relied on the precompiled header to provide:
+  `config.cpp` (`<set>`), `logger_adapters.cpp` (`<iostream>`, `<filesystem>`),
+  `logger_interface.cpp` (`<thread>`), and `nodes.cpp` (`<algorithm>`). With the PCH disabled on
+  GCC these failed to compile. Verified with a local GCC 16 `-Wall -Wextra -Wpedantic -Werror`
+  sweep over every source (core, main, MCP, and tests): clean.
 
 ### CQL Reactivation (4-Phase Initiative)
 

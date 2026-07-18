@@ -3,6 +3,7 @@
 
 #include "../../include/cql/logger_interface.hpp"
 #include <iostream>
+#include <thread>
 #include <chrono>
 #include <iomanip>
 #include <sstream>
