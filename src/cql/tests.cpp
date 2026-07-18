@@ -459,51 +459,6 @@ TEST_F(CQLTest, PhaseExampleCompilation) {
     ASSERT_TRUE(result.passed()) << result.get_error_message();
 }
 
-TEST_F(CQLTest, TemplateInheritance) {
-    const TestResult result = test_template_inheritance();
-    ASSERT_TRUE(result.passed()) << result.get_error_message();
-}
-
-TEST_F(CQLTest, TemplateValidator) {
-    const TestResult result = test_template_validator();
-    ASSERT_TRUE(result.passed()) << result.get_error_message();
-}
-
-TEST_F(CQLTest, APIClient) {
-    const TestResult result = test_api_client();
-    ASSERT_TRUE(result.passed()) << result.get_error_message();
-}
-
-TEST_F(CQLTest, ResponseProcessor) {
-    const TestResult result = test_response_processor();
-    ASSERT_TRUE(result.passed()) << result.get_error_message();
-}
-
-TEST_F(CQLTest, ExamplesCompilation) {
-    const TestResult result = test_examples_compilation();
-    ASSERT_TRUE(result.passed()) << result.get_error_message();
-}
-
-TEST_F(CQLTest, LexerStandalone) {
-    const TestResult result = test_lexer_standalone();
-    ASSERT_TRUE(result.passed()) << result.get_error_message();
-}
-
-TEST_F(CQLTest, ParserStandalone) {
-    const TestResult result = test_parser_standalone();
-    ASSERT_TRUE(result.passed()) << result.get_error_message();
-}
-
-TEST_F(CQLTest, CompilerStandalone) {
-    const TestResult result = test_compiler_standalone();
-    ASSERT_TRUE(result.passed()) << result.get_error_message();
-}
-
-TEST_F(CQLTest, JSONFormatOutput) {
-    const TestResult result = test_json_format_output();
-    ASSERT_TRUE(result.passed()) << result.get_error_message();
-}
-
 /**
  * Test for comments and whitespace handling in CQL files
  */

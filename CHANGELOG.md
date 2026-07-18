@@ -68,6 +68,18 @@
   on Linux) so memory errors and undefined behavior fail the build. Off by default; the normal
   build is unaffected.
 
+**Test: remove pass()-stub "mirage" gtest cases**
+- Remove nine `CQLTest` GoogleTest cases (TemplateInheritance, TemplateValidator, APIClient,
+  ResponseProcessor, ExamplesCompilation, LexerStandalone, ParserStandalone,
+  CompilerStandalone, JSONFormatOutput) that delegated to `test_*()` functions returning
+  `TestResult::pass()` and asserted nothing, implying coverage that did not exist.
+  TemplateValidator and ResponseProcessor now have real coverage (added above); lexer/parser/
+  compiler are covered end-to-end by the `QueryProcessor::compile` tests. ApiClient's real
+  HTTP path, JSON output formatting, template inheritance, and example compilation remain as
+  honestly-uncovered gaps. The `pass()` stub functions are retained for now because the legacy
+  `cql --test` CLI harness still lists them; that harness is a separate mirage tracked for
+  follow-up.
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**
