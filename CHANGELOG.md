@@ -56,6 +56,12 @@
   writes into a per-test temp directory, including the no-overwrite `.new` fallback. The only
   prior direct test for this module was a `pass()` stub.
 
+**Test: cover InputValidator size/limit and template-name methods**
+- Add `SecurityTest` cases for four previously-untested public methods: `validate_query_length`
+  (accepts normal, rejects one past `MAX_QUERY_LENGTH`), `validate_response_size` (accepts
+  normal), `validate_template_name` (accepts names and category paths; rejects empty, invalid
+  characters, and `..` traversal), and `sanitize_template_variables` (replaces `${...}`).
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**

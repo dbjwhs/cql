@@ -476,4 +476,42 @@ TEST_F(SecurityTest, EdgeCaseSecurity) {
         << "Unicode characters should be handled without crashes";
 }
 
+// --- InputValidator size/limit, template-name, and variable-sanitize methods ---
+// These public methods previously had no direct coverage.
+
+TEST_F(SecurityTest, ValidateQueryLengthAcceptsNormalAndRejectsOversized) {
+    EXPECT_NO_THROW(InputValidator::validate_query_length("a reasonable query"));
+    // MAX_QUERY_LENGTH is 50000; one character past the limit must throw.
+    const std::string oversized(InputValidator::MAX_QUERY_LENGTH + 1, 'x');
+    EXPECT_THROW(InputValidator::validate_query_length(oversized), SecurityValidationError);
+}
+
+TEST_F(SecurityTest, ValidateResponseSizeAcceptsNormalResponse) {
+    // A normal-sized response is accepted. The 100 MB over-limit path is intentionally
+    // not exercised here to avoid allocating that much memory in a unit test.
+    EXPECT_NO_THROW(InputValidator::validate_response_size("some response body"));
+}
+
+TEST_F(SecurityTest, ValidateTemplateNameAcceptsValidNames) {
+    EXPECT_NO_THROW(InputValidator::validate_template_name("my_template"));
+    EXPECT_NO_THROW(InputValidator::validate_template_name("category/my-template"));
+}
+
+TEST_F(SecurityTest, ValidateTemplateNameRejectsInvalidNames) {
+    EXPECT_THROW(InputValidator::validate_template_name(""), SecurityValidationError);
+    EXPECT_THROW(InputValidator::validate_template_name("has spaces"), SecurityValidationError);
+    EXPECT_THROW(InputValidator::validate_template_name("bad!char"), SecurityValidationError);
+    // Path traversal attempts must be rejected.
+    EXPECT_THROW(InputValidator::validate_template_name("../evil"), SecurityValidationError);
+}
+
+TEST_F(SecurityTest, SanitizeTemplateVariablesReplacesPlaceholders) {
+    EXPECT_EQ(InputValidator::sanitize_template_variables("hello ${name} world"),
+              "hello TEMPLATE_VAR world");
+    EXPECT_EQ(InputValidator::sanitize_template_variables("${a} and ${b}"),
+              "TEMPLATE_VAR and TEMPLATE_VAR");
+    EXPECT_EQ(InputValidator::sanitize_template_variables("no variables here"),
+              "no variables here");
+}
+
 } // namespace cql::test
