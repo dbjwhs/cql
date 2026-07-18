@@ -44,6 +44,11 @@
   essential-`@description` check, invalid-directive detection, the completed directive set,
   and declared/referenced-variable consistency.
 
+**Test: cover TemplateValidatorSchema (previously untested)**
+- Add a `TemplateValidatorSchemaTest` suite (5 tests) for the directive-schema registry used
+  by the CLI's template tooling: default-schema contents, directive lookup, required
+  directives, custom directive registration, and validation-rule round-tripping.
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**

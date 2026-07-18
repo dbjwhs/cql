@@ -3,7 +3,10 @@
 
 #include <gtest/gtest.h>
 #include <string>
+#include <vector>
+#include <algorithm>
 #include "../../include/cql/template_validator.hpp"
+#include "../../include/cql/template_validator_schema.hpp"
 
 namespace cql::test {
 
@@ -131,6 +134,58 @@ TEST_F(TemplateValidatorTest, WellFormedTemplateHasNoErrors) {
 
     EXPECT_EQ(result.count_errors(), 0u) << result.get_summary();
     EXPECT_FALSE(result.has_issues(TemplateValidationLevel::ERROR));
+}
+
+// ---------------------------------------------------------------------------
+// TemplateValidatorSchema — the directive-schema registry used by the CLI's
+// template documentation/validation. Previously had no direct test coverage.
+// These tests assert the public contract without pinning the exact directive
+// set (which is known to be incomplete relative to the lexer).
+// ---------------------------------------------------------------------------
+
+class TemplateValidatorSchemaTest : public ::testing::Test {};
+
+TEST_F(TemplateValidatorSchemaTest, DefaultSchemaRegistersStandardDirectives) {
+    const auto schema = TemplateValidatorSchema::create_default_schema();
+    const auto& directives = schema.get_all_directives();
+    EXPECT_GE(directives.size(), 14u);
+    EXPECT_TRUE(directives.contains("@description"));
+    EXPECT_TRUE(directives.contains("@copyright"));
+    EXPECT_TRUE(directives.contains("@variable"));
+    EXPECT_TRUE(directives.contains("@performance"));
+}
+
+TEST_F(TemplateValidatorSchemaTest, DirectiveLookupReturnsSchemaOrNullopt) {
+    const auto schema = TemplateValidatorSchema::create_default_schema();
+    const auto description = schema.get_directive_schema("@description");
+    ASSERT_TRUE(description.has_value());
+    EXPECT_EQ(description->name, "@description");
+    EXPECT_FALSE(schema.get_directive_schema("@no_such_directive").has_value());
+}
+
+TEST_F(TemplateValidatorSchemaTest, DefaultSchemaHasRequiredDirectives) {
+    const auto schema = TemplateValidatorSchema::create_default_schema();
+    EXPECT_FALSE(schema.get_required_directives().empty());
+}
+
+TEST_F(TemplateValidatorSchemaTest, RegisterCustomDirectiveRoundTrips) {
+    TemplateValidatorSchema schema;
+    schema.register_directive(TemplateValidatorSchema::DirectiveSchema("@custom", /*required=*/true));
+    const auto found = schema.get_directive_schema("@custom");
+    ASSERT_TRUE(found.has_value());
+    EXPECT_TRUE(found->required);
+    const auto required = schema.get_required_directives();
+    EXPECT_NE(std::find(required.begin(), required.end(), "@custom"), required.end());
+}
+
+TEST_F(TemplateValidatorSchemaTest, ValidationRulesRoundTrip) {
+    const auto default_schema = TemplateValidatorSchema::create_default_schema();
+    EXPECT_FALSE(default_schema.get_validation_rules().empty());
+
+    TemplateValidatorSchema schema;
+    schema.add_validation_rule("my_rule",
+        [](const std::string&) { return std::vector<TemplateValidationIssue>{}; });
+    EXPECT_TRUE(schema.get_validation_rules().contains("my_rule"));
 }
 
 } // namespace cql::test
