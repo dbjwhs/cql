@@ -124,6 +124,14 @@
   GCC these failed to compile. Verified with a local GCC 16 `-Wall -Wextra -Wpedantic -Werror`
   sweep over every source (core, main, MCP, and tests): clean.
 
+**Fix: HTTP client leaked the request header list (found by CI LeakSanitizer)**
+- `CurlClient::configure_curl` built the `curl_slist` of request headers, set it on the handle,
+  and returned without freeing it; `send()`/`send_stream()`'s `CurlCleanup` freed its own
+  (always-null) member instead, so every request leaked the header strings (which include the
+  API key) — 64 bytes direct + 128 indirect per call. Hand the list back through a
+  `curl_slist*&` out-parameter so the caller's `CurlCleanup` frees it. Caught by the new
+  sanitizer CI job's LeakSanitizer (Linux-only; macOS AddressSanitizer has no LSan).
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**

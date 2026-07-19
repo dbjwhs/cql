@@ -120,9 +120,10 @@ public:
     std::string get_implementation_name() const override;
     
 private:
-    void configure_curl(CURL* curl, const Request& req, 
+    void configure_curl(CURL* curl, const Request& req,
                        std::string& response_body,
-                       std::map<std::string, std::string>& response_headers);
+                       std::map<std::string, std::string>& response_headers,
+                       struct curl_slist*& out_headers);
     Response execute_request(CURL* curl, std::string& response_body,
                             std::map<std::string, std::string>& response_headers);
     
@@ -176,7 +177,8 @@ CurlClient::~CurlClient() {
 
 void CurlClient::configure_curl(CURL* curl, const Request& req,
                                std::string& response_body,
-                               std::map<std::string, std::string>& response_headers) {
+                               std::map<std::string, std::string>& response_headers,
+                               struct curl_slist*& out_headers) {
     // Set URL
     curl_easy_setopt(curl, CURLOPT_URL, req.url.c_str());
     
@@ -197,23 +199,24 @@ void CurlClient::configure_curl(CURL* curl, const Request& req,
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req.body.c_str());
     }
     
-    // Set headers
-    struct curl_slist* headers = nullptr;
-    
+    // Set headers. The list is handed back via out_headers so the caller owns it and frees it
+    // (curl_slist_free_all) after the transfer completes; keeping it local here leaked it.
+    out_headers = nullptr;
+
     // Add default headers from config
     for (const auto& [key, value] : m_config.default_headers) {
         std::string header = key + ": " + value;
-        headers = curl_slist_append(headers, header.c_str());
+        out_headers = curl_slist_append(out_headers, header.c_str());
     }
-    
+
     // Add request-specific headers
     for (const auto& [key, value] : req.headers) {
         std::string header = key + ": " + value;
-        headers = curl_slist_append(headers, header.c_str());
+        out_headers = curl_slist_append(out_headers, header.c_str());
     }
-    
-    if (headers) {
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+    if (out_headers) {
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, out_headers);
     }
     
     // Set callbacks
@@ -352,7 +355,7 @@ Response CurlClient::send(const Request& req) {
         std::string response_body;
         std::map<std::string, std::string> response_headers;
         
-        configure_curl(curl, req, response_body, response_headers);
+        configure_curl(curl, req, response_body, response_headers, cleanup.headers);
         
         // Execute the request
         last_response = execute_request(curl, response_body, response_headers);
@@ -418,8 +421,8 @@ void CurlClient::send_stream(const Request& req, StreamCallback callback) {
     
     std::string response_body; // Not used for streaming
     std::map<std::string, std::string> response_headers;
-    
-    configure_curl(curl, req, response_body, response_headers);
+
+    configure_curl(curl, req, response_body, response_headers, cleanup.headers);
     
     // Override write callback for streaming
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, stream_callback);
