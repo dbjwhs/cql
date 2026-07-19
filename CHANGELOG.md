@@ -132,6 +132,12 @@
   `curl_slist*&` out-parameter so the caller's `CurlCleanup` frees it. Caught by the new
   sanitizer CI job's LeakSanitizer (Linux-only; macOS AddressSanitizer has no LSan).
 
+**Fix: CommandLineHandler leaked its copied argv buffers (found by CI LeakSanitizer)**
+- `copy_arguments` duplicated each argument with raw `new char[]` and stored the pointers in a
+  `unique_ptr<char*[]>` that owns only the pointer array, not the buffers — so the argument
+  copies leaked (and `find_and_remove_*` dropped pointers to some without freeing them). Own the
+  buffers in a `vector<unique_ptr<char[]>>`; the pointer array just indexes into it.
+
 ### CQL Reactivation (4-Phase Initiative)
 
 **Phase 4: MCP Server**

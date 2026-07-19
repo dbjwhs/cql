@@ -15,15 +15,19 @@ CommandLineHandler::CommandLineHandler(int argc, char* argv[])
 }
 
 void CommandLineHandler::copy_arguments(int argc, char* argv[]) {
-    // Allocate new array
+    // Allocate the pointer array. The actual argument buffers are owned by m_arg_storage
+    // (RAII), so they are freed with the handler instead of leaking; the raw new char[]
+    // buffers used previously were never deleted. The find_and_remove_* methods only
+    // reshuffle these pointers, which remain owned by m_arg_storage.
     m_argv = std::make_unique<char*[]>(argc);
-    
-    // Copy arguments and build string vector
+    m_arg_storage.reserve(static_cast<size_t>(argc));
+
     for (int i = 0; i < argc; ++i) {
-        size_t len = std::strlen(argv[i]) + 1;
-        char* arg_copy = new char[len];
-        std::strcpy(arg_copy, argv[i]);
-        m_argv[i] = arg_copy;
+        const size_t len = std::strlen(argv[i]) + 1;
+        auto arg_copy = std::make_unique<char[]>(len);
+        std::strcpy(arg_copy.get(), argv[i]);
+        m_argv[i] = arg_copy.get();
+        m_arg_storage.push_back(std::move(arg_copy));
         m_args.emplace_back(argv[i]);
     }
 }

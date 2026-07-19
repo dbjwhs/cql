@@ -88,6 +88,7 @@ private:
     int m_argc;
     std::unique_ptr<char*[]> m_argv;
     std::vector<std::string> m_args;  // Copy of arguments for easier manipulation
+    std::vector<std::unique_ptr<char[]>> m_arg_storage;  // Owns the buffers m_argv points to
 
     /**
      * @brief Copy arguments to internal storage
